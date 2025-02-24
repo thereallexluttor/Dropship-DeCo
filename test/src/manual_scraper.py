@@ -109,8 +109,8 @@ def download_webpage_with_complete_loading(url, output_file="tkmaxx_page_complet
                 last_height = new_height
             
             # Esperar un poco más para asegurar que todos los elementos AJAX se han cargado
-            print("Esperando que todas las solicitudes AJAX terminen...")
-            time.sleep(5)
+            print("Esperando que todas las solicitudes AJAX terminen (15 segundos)...")
+            time.sleep(15)
             
         except Exception as e:
             print(f"Advertencia durante la espera de productos: {e}")
