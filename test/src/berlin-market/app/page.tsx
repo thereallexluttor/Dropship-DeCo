@@ -11,19 +11,19 @@ export default function Home() {
 
   const categories = [
     {
-      name: "Hombre",
+      name: "HOMBRE",
       items: ["Nike", "Adidas", "Puma", "Under Armour"],
     },
     {
-      name: "Mujer",
+      name: "MUJER",
       items: ["Zara", "H&M", "Mango", "Bershka"],
     },
     {
-      name: "Accesorios para hombre",
+      name: "ACCESORIOS PARA HOMBRE",
       items: ["Relojes", "Cinturones", "Corbatas", "Carteras"],
     },
     {
-      name: "Accesorios para mujer",
+      name: "ACCESORIOS PARA MUJER",
       items: ["Bolsos", "Joyería", "Bufandas", "Sombreros"],
     },
   ]
@@ -38,7 +38,7 @@ export default function Home() {
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setActiveDropdown(null)
-    }, 300) // 300ms delay before closing
+    }, 200) // 300ms delay before closing
   }
   useEffect(() => {
     return () => {
@@ -52,12 +52,17 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <header className="fixed w-full bg-white z-10 transition-colors duration-300 ease-in-out hover:bg-black group">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-2xl font-bold text-black transition-colors duration-300 ease-in-out group-hover:text-white"
-          >
-            Berlin Market
-          </Link>
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-2xl font-bold text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+        >
+      <img 
+      src="/DEU_Berlin_COA.svg.png" 
+      alt="Berlin Coat of Arms" 
+      className="h-9 w-auto" 
+    />
+  Berlin Market
+      </Link>
           <nav className="hidden md:flex space-x-6">
             {categories.map((category, index) => (
               <div
@@ -66,7 +71,7 @@ export default function Home() {
                 onMouseEnter={() => handleMouseEnter(index)}
                 onMouseLeave={handleMouseLeave}
               >
-                <button className="text-black transition-colors duration-300 ease-in-out group-hover:text-white hover:text-gold focus:outline-none">
+                <button className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white hover:text-gold focus:outline-none">
                   {category.name}
                 </button>
                 <div
