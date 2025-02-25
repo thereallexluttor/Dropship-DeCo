@@ -6,8 +6,8 @@ import { ShoppingBag, Search, Menu } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 
 export default function Home() {
-  const [activeDropdown, setActiveDropdown] = useState(null)
-  const timeoutRef = useRef(null)
+  const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const categories = [
     {
@@ -28,8 +28,10 @@ export default function Home() {
     },
   ]
 
-  const handleMouseEnter = (index) => {
-    clearTimeout(timeoutRef.current)
+  const handleMouseEnter = (index: number) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
     setActiveDropdown(index)
   }
 
@@ -38,7 +40,6 @@ export default function Home() {
       setActiveDropdown(null)
     }, 300) // 300ms delay before closing
   }
-
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
