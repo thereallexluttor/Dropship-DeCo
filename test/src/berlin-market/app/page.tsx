@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from "react"
 export default function Home() {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [activeSlide, setActiveSlide] = useState(0)
 
   const categories = [
     {
@@ -47,6 +48,14 @@ export default function Home() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((current) => (current === 3 ? 0 : current + 1));
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -106,24 +115,73 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="relative h-screen">
-          <Image
-            src="/placeholder.svg?height=1080&width=1920"
-            alt="Luxury sportswear"
-            layout="fill"
-            objectFit="cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-            <div className="text-center px-4">
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">Elevate Your Style</h1>
-              <p className="text-lg md:text-xl text-white mb-6">Luxury sportswear for the modern you</p>
-              <Link
-                href="#"
-                className="bg-gold text-black px-6 py-2 text-lg font-semibold hover:bg-opacity-90 transition-colors"
-              >
-                Shop Now
-              </Link>
+        <section className="relative w-full pt-20">
+          <div className="container mx-auto px-4">
+            <div className="relative aspect-[16/9] w-full">
+              {/* Carousel */}
+              <div className="absolute inset-0">
+                {[1, 2, 3, 4].map((_, index) => (
+                  <div
+                    key={index}
+                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                      activeSlide === index ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <Image
+                      src={`/cap.png`}
+                      alt={`Slide ${index + 1}`}
+                      width={1200}
+                      height={800} 
+                      className="w-full h-auto rounded-lg"
+                      priority={index === 0}
+                    />
+                  </div>
+                ))}
+                
+                {/* Navigation Dots */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+                  {[1, 2, 3, 4].map((_, index) => (
+                    <button
+                      key={index}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        activeSlide === index ? "bg-white w-4" : "bg-white/50"
+                      }`}
+                      onClick={() => setActiveSlide(index)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/70 to-gray-500/70 rounded-lg">
+                <div className="h-full w-full flex items-center justify-center">
+                  <div className="text-center w-full max-w-[90%] md:max-w-[80%] lg:max-w-[60%] space-y-2 md:space-y-3">
+                    <div className="bg-red-600 text-white px-2 py-0.5 md:px-3 md:py-1 inline-block rounded text-xs md:text-sm">
+                      24H LEFT
+                    </div>
+                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
+                      Winter Sale
+                    </h1>
+                    <p className="text-xl md:text-3xl lg:text-4xl font-bold text-white">
+                      25% OFF
+                    </p>
+                    <p className="text-sm md:text-base lg:text-lg text-white">
+                      MORE THAN 3000 PRODUCTS
+                    </p>
+                    <div className="bg-white inline-block px-2 py-1 md:px-4 md:py-1.5 rounded">
+                      <p className="text-xs md:text-sm lg:text-base font-semibold">Use Code: WINTER25</p>
+                    </div>
+                    <div className="pt-2 md:pt-4">
+                      <Link
+                        href="#"
+                        className="bg-black text-white px-4 py-1.5 md:px-6 md:py-2 text-xs md:text-sm lg:text-base font-semibold hover:bg-opacity-90 transition-colors inline-block rounded"
+                      >
+                        Shop Now
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -131,8 +189,8 @@ export default function Home() {
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-4 md:gap-8">
-              {[1, 2, 3, 4, 5].map((item) => (
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 md:gap-8">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div key={item} className="bg-white shadow-lg">
                   <Image
                     src={`/placeholder.svg?height=400&width=400`}
