@@ -55,6 +55,9 @@ module.exports = {
       fontFamily: {
         poppins: ['Poppins', 'sans-serif'],
       },
+      screens: {
+        'xs': '475px',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

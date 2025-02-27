@@ -5,15 +5,17 @@ import Link from "next/link"
 import { ShoppingBag, Search, Menu, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 
-export default function Home() {
+export default function MenPage() {
+  // States from main page
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [activeSlide, setActiveSlide] = useState(0)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const [activeSlide, setActiveSlide] = useState(0)
 
+  // Categories data
   const categories = [
     {
       name: "HOMBRE",
@@ -33,6 +35,7 @@ export default function Home() {
     },
   ]
 
+  // Handlers from main page
   const handleMouseEnter = (index: number) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
@@ -43,8 +46,15 @@ export default function Home() {
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setActiveDropdown(null)
-    }, 200) // 300ms delay before closing
+    }, 200)
   }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Searching for:", searchQuery)
+  }
+
+  // Cleanup timeout
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -53,6 +63,16 @@ export default function Home() {
     }
   }, [])
 
+  // Reusing the same categories data structure for the filter buttons
+  const menCategories = [
+    "Ver todo",
+    "Nike",
+    "Adidas",
+    "Puma",
+    "Under Armour"
+  ]
+
+  // Add this with the other useEffects
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((current) => (current === 3 ? 0 : current + 1));
@@ -61,15 +81,10 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Searching for:", searchQuery)
-  }
-
   return (
     <div className="min-h-screen bg-white">
       <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group">
-        {/* Mobile Search Bar - Full Width when open */}
+        {/* Mobile Search Bar */}
         <div className={`
           md:hidden
           ${isMobileSearchOpen ? 'block' : 'hidden'}
@@ -82,19 +97,7 @@ export default function Home() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products..."
-              className="
-                flex-1
-                h-10
-                px-4
-                rounded-full
-                bg-gray-100
-                text-black
-                placeholder-gray-500
-                focus:outline-none
-                focus:ring-2
-                focus:ring-blue-500
-                text-sm
-              "
+              className="flex-1 h-10 px-4 rounded-full bg-gray-100 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               autoFocus
             />
             <button
@@ -219,7 +222,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Updated Mobile Menu */}
+        {/* Mobile Menu */}
         <div className={`
           md:hidden
           ${isMobileMenuOpen ? 'block' : 'hidden'}
@@ -280,10 +283,12 @@ export default function Home() {
         </div>
       </header>
 
-      <main>
-        <section className="relative w-full pt-20">
+      {/* Rest of the page content */}
+      <div className="pt-20">
+        {/* Add Carousel Section */}
+        <section className="relative w-full mb-12">
           <div className="container mx-auto px-4">
-            <div className="relative aspect-[16/9] w-full">
+            <div className="relative aspect-[21/9] w-full">
               {/* Carousel */}
               <div className="absolute inset-0">
                 {[1, 2, 3, 4].map((_, index) => (
@@ -298,7 +303,7 @@ export default function Home() {
                       alt={`Slide ${index + 1}`}
                       width={1200}
                       height={800} 
-                      className="w-full h-auto rounded-lg"
+                      className="w-full h-full object-cover rounded-lg"
                       priority={index === 0}
                     />
                   </div>
@@ -310,28 +315,23 @@ export default function Home() {
                 <div className="h-full w-full flex items-center justify-center">
                   <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-4 transform transition-all duration-500 hover:scale-105">
                     <div className="bg-red-600 text-white px-2 py-0.5 md:px-4 md:py-1.5 inline-block rounded-full text-[8px] md:text-sm font-bold animate-pulse font-poppins">
-                      24H LEFT
+                      COLECCIÓN DE HOMBRE
                     </div>
                     <h1 className="text-lg md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight font-poppins drop-shadow-2xl transform transition-all duration-300 hover:scale-110">
-                      Winter Sale
+                      Nueva Temporada
                     </h1>
                     <p className="text-base md:text-4xl lg:text-5xl font-black text-white tracking-widest animate-bounce font-poppins">
-                      25% OFF
+                      HASTA 40% OFF
                     </p>
                     <p className="text-[8px] md:text-lg lg:text-xl text-white font-light tracking-wide uppercase font-poppins">
-                      MORE THAN 3000 PRODUCTS
+                      DESCUBRE LA NUEVA COLECCIÓN
                     </p>
-                    <div className="bg-white/90 backdrop-blur-sm inline-block px-2 py-1 md:px-6 md:py-3 rounded-lg transform transition-all duration-300 hover:rotate-2 hover:scale-110">
-                      <p className="text-[10px] md:text-base lg:text-lg font-bold text-blue-600 font-poppins">
-                        Use Code: WINTER25
-                      </p>
-                    </div>
                     <div className="pt-1 md:pt-6">
                       <Link
                         href="#"
                         className="bg-black text-white px-3 py-1.5 md:px-8 md:py-4 text-[10px] md:text-base lg:text-lg font-bold hover:bg-white hover:text-black transition-all duration-300 inline-block rounded-full transform hover:-translate-y-1 hover:shadow-xl font-poppins"
                       >
-                        Shop Now
+                        Ver Colección
                       </Link>
                     </div>
                   </div>
@@ -341,11 +341,27 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-16 bg-white">
+        {/* Categories Section */}
+        <div className="container mx-auto px-4 mb-12">
+          <h1 className="text-3xl font-bold mb-8 font-poppins">Hombre</h1>
+          <div className="flex overflow-x-auto whitespace-nowrap gap-4 mb-12 pb-2 hide-scrollbar">
+            {menCategories.map((category, index) => (
+              <Link
+                key={index}
+                href="#"
+                className="px-6 py-3 bg-gray-100 hover:bg-black hover:text-white transition-colors duration-300 rounded-md text-sm font-medium flex-shrink-0"
+              >
+                {category}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Products Grid */}
+        <section className="py-8 bg-white">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              {[1, 2, 3, 4].map((item) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
                 <div key={item} className="bg-white group flex flex-col h-full">
                   <div className="relative aspect-square">
                     <button className="absolute top-2 left-2 z-[5]">
@@ -413,34 +429,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+      </div>
 
-        <section className="py-16">
-          <div className="container mx-auto px-4 flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-8 md:mb-0">
-              <Image
-                src="/berlin4k.jpg?height=600&width=600"
-                alt="About Berlin Market"
-                width={500}
-                height={500}
-                className="rounded-lg shadow-lg"
-              />
-            </div>
-            <div className="md:w-1/2 md:pl-12">
-              <h2 className="text-3xl font-bold mb-6 font-poppins">Nuestra historia</h2>
-              <p className="text-gray-700 mb-6 font-poppins leading-relaxed">
-                Eleva tu guardarropa con lo mejor de Berlín. Nuestra exclusiva colección de ropa, accesorios y más encarna el audaz espíritu de la innovación alemana, fusionando el diseño preciso con el lujo moderno. Ahora, disponible en Colombia, cada pieza celebra la artesanía europea, lista para transformar tu estilo cotidiano en algo extraordinario.
-              </p>
-              <Link
-                href="#"
-                className="inline-block bg-black text-white px-6 py-3 font-semibold hover:bg-opacity-90 transition-colors font-poppins transform hover:scale-105 duration-300"
-              >
-                Learn More
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-
+      {/* Add Footer Section */}
       <footer className="bg-black text-white py-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -566,5 +557,4 @@ export default function Home() {
       </footer>
     </div>
   )
-}
-
+} 
