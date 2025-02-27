@@ -2,13 +2,17 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { ShoppingBag, Search, Menu } from "lucide-react"
+import { ShoppingBag, Search, Menu, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 
 export default function Home() {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [activeSlide, setActiveSlide] = useState(0)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
 
   const categories = [
     {
@@ -57,21 +61,67 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Searching for:", searchQuery)
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <header className="fixed w-full bg-white z-10 transition-colors duration-300 ease-in-out hover:bg-black group">
+        {/* Mobile Search Bar - Full Width when open */}
+        <div className={`
+          md:hidden
+          ${isMobileSearchOpen ? 'block' : 'hidden'}
+          absolute top-0 left-0 right-0 bg-white z-20 px-4 py-3
+          shadow-lg
+        `}>
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products..."
+              className="
+                flex-1
+                h-10
+                px-4
+                rounded-full
+                bg-gray-100
+                text-black
+                placeholder-gray-500
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-500
+                text-sm
+              "
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileSearchOpen(false)
+                setSearchQuery("")
+              }}
+              className="p-2"
+            >
+              <X className="h-6 w-6 text-gray-500" />
+            </button>
+          </form>
+        </div>
+
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-2xl font-bold text-black transition-colors duration-300 ease-in-out group-hover:text-white"
-        >
-      <img 
-      src="/DEU_Berlin_COA.svg.png" 
-      alt="Berlin Coat of Arms" 
-      className="h-9 w-auto" 
-    />
-  Berlin Market
-      </Link>
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-2xl font-bold text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+          >
+            <img 
+              src="/DEU_Berlin_COA.svg.png" 
+              alt="Berlin Coat of Arms" 
+              className="h-9 w-auto" 
+            />
+            Berlin Market
+          </Link>
           <nav className="hidden md:flex space-x-6">
             {categories.map((category, index) => (
               <div
@@ -107,9 +157,122 @@ export default function Home() {
             ))}
           </nav>
           <div className="flex items-center space-x-4">
-            <Search className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer" />
+            {/* Desktop Search */}
+            <div className="relative hidden md:block">
+              <form onSubmit={handleSearch} className="flex items-center">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products..."
+                  className={`
+                    ${isSearchOpen ? 'w-48 md:w-64 px-4 opacity-100' : 'w-0 opacity-0'}
+                    transition-all duration-300 ease-in-out
+                    h-9 rounded-full
+                    bg-gray-100 group-hover:bg-gray-800
+                    text-black group-hover:text-white
+                    placeholder-gray-500 group-hover:placeholder-gray-400
+                    focus:outline-none focus:ring-2 focus:ring-blue-500
+                    text-sm
+                  `}
+                />
+                {isSearchOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSearchOpen(false)
+                      setSearchQuery("")
+                    }}
+                    className="absolute right-2 text-gray-500 hover:text-gray-700 group-hover:text-gray-400"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+                  >
+                    <Search className="h-6 w-6" />
+                  </button>
+                )}
+              </form>
+            </div>
+
+            {/* Mobile Search Icon */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen(true)}
+              className="md:hidden text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+            >
+              <Search className="h-6 w-6" />
+            </button>
+
             <ShoppingBag className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer" />
-            <Menu className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer md:hidden" />
+            <Menu 
+              className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer md:hidden" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            />
+          </div>
+        </div>
+
+        {/* Updated Mobile Menu */}
+        <div className={`
+          md:hidden
+          ${isMobileMenuOpen ? 'block' : 'hidden'}
+          absolute top-full left-0 right-0
+          bg-white
+          shadow-lg
+          z-10
+        `}>
+          <div className="divide-y divide-gray-100">
+            {categories.map((category, index) => (
+              <div key={index} className="px-4">
+                <button 
+                  className="
+                    flex justify-between items-center
+                    w-full py-4
+                    text-black text-sm font-bold
+                    transition-colors duration-200
+                    hover:text-blue-600
+                  "
+                  onClick={() => setActiveDropdown(activeDropdown === index ? null : index)}
+                >
+                  {category.name}
+                  <svg
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      activeDropdown === index ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div 
+                  className={`
+                    overflow-hidden transition-all duration-300 ease-in-out
+                    ${activeDropdown === index ? 'max-h-64 pb-4' : 'max-h-0'}
+                  `}
+                >
+                  {category.items.map((item, itemIndex) => (
+                    <a
+                      key={itemIndex}
+                      href="#"
+                      className="
+                        block py-2 pl-4
+                        text-sm text-gray-600
+                        hover:text-blue-600
+                        transition-colors duration-200
+                      "
+                    >
+                      {item}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </header>
@@ -128,7 +291,7 @@ export default function Home() {
                     }`}
                   >
                     <Image
-                      src={`/cap.png`}
+                      src={`/cap${index + 1}.png`}
                       alt={`Slide ${index + 1}`}
                       width={1200}
                       height={800} 
@@ -137,44 +300,33 @@ export default function Home() {
                     />
                   </div>
                 ))}
-                
-                {/* Navigation Dots */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
-                  {[1, 2, 3, 4].map((_, index) => (
-                    <button
-                      key={index}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                        activeSlide === index ? "bg-white w-4" : "bg-white/50"
-                      }`}
-                      onClick={() => setActiveSlide(index)}
-                    />
-                  ))}
-                </div>
               </div>
 
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/70 to-gray-500/70 rounded-lg">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/70 to-gray-500/70 rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm">
                 <div className="h-full w-full flex items-center justify-center">
-                  <div className="text-center w-full max-w-[90%] md:max-w-[80%] lg:max-w-[60%] space-y-2 md:space-y-3">
-                    <div className="bg-red-600 text-white px-2 py-0.5 md:px-3 md:py-1 inline-block rounded text-xs md:text-sm">
+                  <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-4 transform transition-all duration-500 hover:scale-105">
+                    <div className="bg-red-600 text-white px-2 py-0.5 md:px-4 md:py-1.5 inline-block rounded-full text-[8px] md:text-sm font-bold animate-pulse font-poppins">
                       24H LEFT
                     </div>
-                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
+                    <h1 className="text-lg md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight font-poppins drop-shadow-2xl transform transition-all duration-300 hover:scale-110">
                       Winter Sale
                     </h1>
-                    <p className="text-xl md:text-3xl lg:text-4xl font-bold text-white">
+                    <p className="text-base md:text-4xl lg:text-5xl font-black text-white tracking-widest animate-bounce font-poppins">
                       25% OFF
                     </p>
-                    <p className="text-sm md:text-base lg:text-lg text-white">
+                    <p className="text-[8px] md:text-lg lg:text-xl text-white font-light tracking-wide uppercase font-poppins">
                       MORE THAN 3000 PRODUCTS
                     </p>
-                    <div className="bg-white inline-block px-2 py-1 md:px-4 md:py-1.5 rounded">
-                      <p className="text-xs md:text-sm lg:text-base font-semibold">Use Code: WINTER25</p>
+                    <div className="bg-white/90 backdrop-blur-sm inline-block px-2 py-1 md:px-6 md:py-3 rounded-lg transform transition-all duration-300 hover:rotate-2 hover:scale-110">
+                      <p className="text-[10px] md:text-base lg:text-lg font-bold text-blue-600 font-poppins">
+                        Use Code: WINTER25
+                      </p>
                     </div>
-                    <div className="pt-2 md:pt-4">
+                    <div className="pt-1 md:pt-6">
                       <Link
                         href="#"
-                        className="bg-black text-white px-4 py-1.5 md:px-6 md:py-2 text-xs md:text-sm lg:text-base font-semibold hover:bg-opacity-90 transition-colors inline-block rounded"
+                        className="bg-black text-white px-3 py-1.5 md:px-8 md:py-4 text-[10px] md:text-base lg:text-lg font-bold hover:bg-white hover:text-black transition-all duration-300 inline-block rounded-full transform hover:-translate-y-1 hover:shadow-xl font-poppins"
                       >
                         Shop Now
                       </Link>
