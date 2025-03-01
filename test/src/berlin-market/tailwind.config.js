@@ -45,7 +45,8 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        gold: "#FFD700",
+        gold: '#D4AF37',
+        'gold-light': '#F4E4BC',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -53,10 +54,29 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
+        'serif': ['Cormorant Garamond', 'serif'],
+        'sans': ['Montserrat', 'sans-serif'],
         poppins: ['Poppins', 'sans-serif'],
       },
       screens: {
         'xs': '475px',
+      },
+      animation: {
+        'gradient-slow': 'gradient 8s ease infinite',
+      },
+      keyframes: {
+        gradient: {
+          '0%': { 'background-position': '0% 50%' },
+          '50%': { 'background-position': '100% 50%' },
+          '100%': { 'background-position': '0% 50%' },
+        },
+      },
+      backgroundSize: {
+        'gradient-size': '200% 200%',
+      },
+      backgroundImage: {
+        'gold-gradient': 'linear-gradient(45deg, #b8860b 0%, #FFD700 35%, #dfc05a 50%, #FFD700 65%, #b8860b 100%)',
+        'gold-radial': 'radial-gradient(circle, #FFD700 0%, #b8860b 100%)',
       },
     },
   },

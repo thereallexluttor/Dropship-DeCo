@@ -18,20 +18,20 @@ export default function MenPage() {
   // Categories data
   const categories = [
     {
-      name: "HOMBRE",
-      items: ["Ver todo", "Nike", "Adidas", "Puma", "Under Armour"],
+      name: "COLECCIONES",
+      items: ["Ver todo", "Anillos", "Collares", "Pulseras", "Pendientes"],
     },
     {
-      name: "MUJER",
-      items: ["Zara", "H&M", "Mango", "Bershka"],
+      name: "OCASIONES",
+      items: ["Bodas", "Compromiso", "Regalos", "Edición Limitada"],
     },
     {
-      name: "ACCESORIOS PARA HOMBRE",
-      items: ["Relojes", "Cinturones", "Corbatas", "Carteras"],
+      name: "MATERIALES",
+      items: ["Oro 18k", "Platino", "Diamantes", "Piedras Preciosas"],
     },
     {
-      name: "ACCESORIOS PARA MUJER",
-      items: ["Bolsos", "Joyería", "Bufandas", "Sombreros"],
+      name: "SERVICIOS",
+      items: ["Personalización", "Grabado", "Mantenimiento", "Tasación"],
     },
   ]
 
@@ -64,12 +64,12 @@ export default function MenPage() {
   }, [])
 
   // Reusing the same categories data structure for the filter buttons
-  const menCategories = [
+  const jewelryCategories = [
     "Ver todo",
-    "Nike",
-    "Adidas",
-    "Puma",
-    "Under Armour"
+    "Anillos",
+    "Collares",
+    "Pulseras",
+    "Pendientes"
   ]
 
   // Add this with the other useEffects
@@ -82,8 +82,8 @@ export default function MenPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group">
+    <div className="min-h-screen bg-[#1a1a1a]">
+      <header className="fixed w-full bg-[#1a1a1a] z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gold/20">
         {/* Mobile Search Bar */}
         <div className={`
           md:hidden
@@ -116,14 +116,14 @@ export default function MenPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2 text-2xl font-bold text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+            className="flex items-center gap-2 text-2xl font-serif text-gold transition-colors duration-300 ease-in-out"
           >
             <img 
               src="/DEU_Berlin_COA.svg.png" 
-              alt="Berlin Coat of Arms" 
-              className="h-9 w-auto" 
+              alt="Berlin Jewelry Logo" 
+              className="h-9 w-auto opacity-90" 
             />
-            Berlin Market
+            Berlin Jewels
           </Link>
           <nav className="hidden md:flex space-x-6">
             {categories.map((category, index) => (
@@ -135,7 +135,7 @@ export default function MenPage() {
               >
                 <Link 
                   href="#"
-                  className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white hover:text-gold focus:outline-none"
+                  className="text-gold text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-gold focus:outline-none"
                 >
                   {category.name}
                 </Link>
@@ -150,7 +150,7 @@ export default function MenPage() {
                     {category.items.map((item, itemIndex) => (
                       <a
                         key={itemIndex}
-                        href={category.name === "HOMBRE" && item === "Ver todo" ? "/hombre" : "#"}
+                        href={category.name === "COLECCIONES" && item === "Ver todo" ? "/hombre" : "#"}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
                         role="menuitem"
                       >
@@ -265,7 +265,7 @@ export default function MenPage() {
                   {category.items.map((item, itemIndex) => (
                     <a
                       key={itemIndex}
-                      href={category.name === "HOMBRE" && item === "Ver todo" ? "/hombre" : "#"}
+                      href={category.name === "COLECCIONES" && item === "Ver todo" ? "/hombre" : "#"}
                       className="
                         block py-2 pl-4
                         text-sm text-gray-600
@@ -311,25 +311,40 @@ export default function MenPage() {
               </div>
 
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/70 to-gray-500/70 rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm">
-                <div className="h-full w-full flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent rounded-lg backdrop-blur-[1px] transition-all duration-500 hover:backdrop-blur-sm group">
+                <div className="absolute inset-0 bg-gradient-to-r from-gold/20 via-transparent to-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                
+                {/* Replace cat with elegant diamond icon */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="relative">
+                    <svg 
+                      className="w-24 h-24 md:w-32 md:h-32 text-gold opacity-20" 
+                      viewBox="0 0 24 24" 
+                      fill="currentColor"
+                    >
+                      <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="h-full w-full flex items-center justify-center relative z-10">
                   <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-4 transform transition-all duration-500 hover:scale-105">
-                    <div className="bg-red-600 text-white px-2 py-0.5 md:px-4 md:py-1.5 inline-block rounded-full text-[8px] md:text-sm font-bold animate-pulse font-poppins">
-                      COLECCIÓN DE HOMBRE
+                    <div className="bg-gold/90 text-black px-2 py-0.5 md:px-4 md:py-1.5 inline-block rounded-full text-[8px] md:text-sm font-bold font-serif">
+                      COLECCIÓN EXCLUSIVA
                     </div>
-                    <h1 className="text-lg md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight font-poppins drop-shadow-2xl transform transition-all duration-300 hover:scale-110">
-                      Nueva Temporada
+                    <h1 className="text-lg md:text-5xl lg:text-6xl font-serif text-gold leading-tight tracking-tight drop-shadow-2xl transform transition-all duration-300 hover:scale-110">
+                      Elegancia Atemporal
                     </h1>
-                    <p className="text-base md:text-4xl lg:text-5xl font-black text-white tracking-widest animate-bounce font-poppins">
-                      HASTA 40% OFF
+                    <p className="text-base md:text-4xl lg:text-5xl font-serif text-white tracking-widest">
+                      PIEZAS ÚNICAS
                     </p>
-                    <p className="text-[8px] md:text-lg lg:text-xl text-white font-light tracking-wide uppercase font-poppins">
-                      DESCUBRE LA NUEVA COLECCIÓN
+                    <p className="text-[8px] md:text-lg lg:text-xl text-gold/80 font-light tracking-wide uppercase font-serif">
+                      DESCUBRE NUESTRA NUEVA COLECCIÓN
                     </p>
                     <div className="pt-1 md:pt-6">
                       <Link
                         href="#"
-                        className="bg-black text-white px-3 py-1.5 md:px-8 md:py-4 text-[10px] md:text-base lg:text-lg font-bold hover:bg-white hover:text-black transition-all duration-300 inline-block rounded-full transform hover:-translate-y-1 hover:shadow-xl font-poppins"
+                        className="bg-gold text-black px-3 py-1.5 md:px-8 md:py-4 text-[10px] md:text-base lg:text-lg font-serif hover:bg-white hover:text-black transition-all duration-300 inline-block rounded-full transform hover:-translate-y-1 hover:shadow-xl"
                       >
                         Ver Colección
                       </Link>
@@ -343,13 +358,13 @@ export default function MenPage() {
 
         {/* Categories Section */}
         <div className="container mx-auto px-4 mb-12">
-          <h1 className="text-3xl font-bold mb-8 font-poppins">Hombre</h1>
+          <h1 className="text-3xl font-serif text-gold mb-8">Colecciones</h1>
           <div className="flex overflow-x-auto whitespace-nowrap gap-4 mb-12 pb-2 hide-scrollbar">
-            {menCategories.map((category, index) => (
+            {jewelryCategories.map((category, index) => (
               <Link
                 key={index}
                 href="#"
-                className="px-6 py-3 bg-gray-100 hover:bg-black hover:text-white transition-colors duration-300 rounded-md text-sm font-medium flex-shrink-0"
+                className="px-6 py-3 bg-black/50 text-gold hover:bg-gold hover:text-black transition-colors duration-300 rounded-md text-sm font-serif flex-shrink-0 border border-gold/20"
               >
                 {category}
               </Link>
@@ -358,15 +373,15 @@ export default function MenPage() {
         </div>
 
         {/* Products Grid */}
-        <section className="py-8 bg-white">
+        <section className="py-8 bg-[#1a1a1a]">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
-                <div key={item} className="bg-white group flex flex-col h-full">
+                <div key={item} className="bg-black/30 group flex flex-col h-full border border-gold/10 hover:border-gold/30 transition-all duration-300">
                   <div className="relative aspect-square">
                     <button className="absolute top-2 left-2 z-[5]">
                       <svg 
-                        className="w-6 h-6 text-gray-500 hover:text-red-500 transition-colors" 
+                        className="w-6 h-6 text-gold/50 hover:text-gold transition-colors" 
                         fill="none" 
                         stroke="currentColor" 
                         viewBox="0 0 24 24"
@@ -379,12 +394,12 @@ export default function MenPage() {
                         />
                       </svg>
                     </button>
-                    <div className="absolute top-2 right-2 bg-gray-100 px-2 py-1 text-[10px] font-medium">
-                      MADE IN EUROPE
+                    <div className="absolute top-2 right-2 bg-gold/90 px-2 py-1 text-[10px] font-medium text-black">
+                      PIEZA ÚNICA
                     </div>
                     <Image
                       src={`/placeholder.svg?height=400&width=400`}
-                      alt={`Product ${item}`}
+                      alt={`Joya ${item}`}
                       width={400}
                       height={400}
                       className="w-full h-full object-cover"
@@ -392,24 +407,24 @@ export default function MenPage() {
                   </div>
                   <div className="p-4 flex flex-col flex-grow">
                     <div className="mb-2">
-                      <p className="text-sm font-medium text-gray-500">SATISFY</p>
-                      <h3 className="text-sm">Moth/Tech T-Shirt "Skorpio"</h3>
+                      <p className="text-sm font-medium text-gold/80 font-serif">COLECCIÓN ROYAL</p>
+                      <h3 className="text-sm text-white font-serif">Anillo Diamante "Eternidad"</h3>
                     </div>
                     <div className="flex justify-between items-center mb-4">
-                      <p className="text-sm font-medium">119 €</p>
+                      <p className="text-sm font-medium text-gold">4,999 €</p>
                     </div>
                     
                     <div className="mt-auto space-y-3">
                       <div className="flex flex-row flex-wrap justify-start items-center gap-1.5">
-                        {['XS', 'S', 'M', 'L', 'XL'].map((size) => (
+                        {['14', '15', '16', '17', '18'].map((size) => (
                           <button
                             key={size}
                             className="min-w-[40px] flex-1 xs:flex-none
                               text-[10px] xs:text-xs sm:text-sm
                               px-2 xs:px-3 sm:px-4 py-1.5
-                              border border-gray-200
-                              hover:border-black transition-colors duration-200
-                              focus:outline-none text-center
+                              border border-gold/20
+                              hover:border-gold transition-colors duration-200
+                              focus:outline-none text-center text-gold
                               whitespace-nowrap"
                           >
                             {size}
@@ -417,10 +432,10 @@ export default function MenPage() {
                         ))}
                       </div>
 
-                      <button className="w-full bg-black text-white py-2
-                        hover:bg-gray-900 transition-colors duration-300
-                        text-[11px] sm:text-sm font-medium">
-                        Add to Cart
+                      <button className="w-full bg-gold text-black py-2
+                        hover:bg-white transition-colors duration-300
+                        text-[11px] sm:text-sm font-medium font-serif">
+                        Añadir al Carrito
                       </button>
                     </div>
                   </div>
@@ -432,7 +447,7 @@ export default function MenPage() {
       </div>
 
       {/* Add Footer Section */}
-      <footer className="bg-black text-white py-12">
+      <footer className="bg-black text-white py-12 border-t border-gold/20">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -543,7 +558,7 @@ export default function MenPage() {
             </div>
           </div>
           <div className="mt-12 border-t border-gray-800 pt-8 flex justify-between items-center">
-            <p className="text-sm">&copy; 2023 Berlin Market. All rights reserved.</p>
+            <p className="text-sm">&copy; 2023 Berlin Jewels. All rights reserved.</p>
             <div className="flex space-x-6">
               <Link href="#" className="text-sm hover:text-gold transition-colors">
                 Privacy Policy

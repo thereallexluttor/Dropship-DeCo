@@ -16,20 +16,41 @@ export default function Home() {
 
   const categories = [
     {
-      name: "HOMBRE",
-      items: ["Ver todo", "Nike", "Adidas", "Puma", "Under Armour"],
+      name: "COLECCIONES",
+      items: [
+        { name: "Ver todo", href: "#" },
+        { name: "Anillos", href: "/anillos" },
+        { name: "Collares", href: "#" },
+        { name: "Pulseras", href: "#" },
+        { name: "Pendientes", href: "#" }
+      ],
     },
     {
-      name: "MUJER",
-      items: ["Zara", "H&M", "Mango", "Bershka"],
+      name: "OCASIONES",
+      items: [
+        { name: "Bodas", href: "#" },
+        { name: "Compromiso", href: "#" },
+        { name: "Regalos", href: "#" },
+        { name: "Edición Limitada", href: "#" }
+      ],
     },
     {
-      name: "ACCESORIOS PARA HOMBRE",
-      items: ["Relojes", "Cinturones", "Corbatas", "Carteras"],
+      name: "MATERIALES",
+      items: [
+        { name: "Oro 18k", href: "#" },
+        { name: "Platino", href: "#" },
+        { name: "Diamantes", href: "#" },
+        { name: "Piedras Preciosas", href: "#" }
+      ],
     },
     {
-      name: "ACCESORIOS PARA MUJER",
-      items: ["Bolsos", "Joyería", "Bufandas", "Sombreros"],
+      name: "SERVICIOS",
+      items: [
+        { name: "Personalización", href: "#" },
+        { name: "Grabado", href: "#" },
+        { name: "Mantenimiento", href: "#" },
+        { name: "Tasación", href: "#" }
+      ],
     },
   ]
 
@@ -68,7 +89,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group">
+      <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gray-200">
         {/* Mobile Search Bar - Full Width when open */}
         <div className={`
           md:hidden
@@ -110,17 +131,17 @@ export default function Home() {
           </form>
         </div>
 
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2 text-2xl font-bold text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+            className="flex items-center gap-2 text-2xl font-sans text-black transition-colors duration-300 ease-in-out group-hover:text-white"
           >
             <img 
               src="/DEU_Berlin_COA.svg.png" 
-              alt="Berlin Coat of Arms" 
-              className="h-9 w-auto" 
+              alt="Berlin Jewelry Logo" 
+              className="h-11 w-auto transition-all duration-300 ease-in-out group-hover:[filter:brightness(0)_invert(1)]" 
             />
-            Berlin Market
+            Berlin Jewels
           </Link>
           <nav className="hidden md:flex space-x-6">
             {categories.map((category, index) => (
@@ -132,7 +153,7 @@ export default function Home() {
               >
                 <Link 
                   href="#"
-                  className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white hover:text-gold focus:outline-none"
+                  className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white"
                 >
                   {category.name}
                 </Link>
@@ -145,14 +166,14 @@ export default function Home() {
                 >
                   <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                     {category.items.map((item, itemIndex) => (
-                      <a
+                      <Link
                         key={itemIndex}
-                        href={category.name === "HOMBRE" && item === "Ver todo" ? "/hombre" : "#"}
+                        href={item.href}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
                         role="menuitem"
                       >
-                        {item}
-                      </a>
+                        {item.name}
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -213,7 +234,7 @@ export default function Home() {
 
             <ShoppingBag className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer" />
             <Menu 
-              className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer md:hidden" 
+              className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer md:hidden"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
           </div>
@@ -260,18 +281,13 @@ export default function Home() {
                   `}
                 >
                   {category.items.map((item, itemIndex) => (
-                    <a
+                    <Link
                       key={itemIndex}
-                      href={category.name === "HOMBRE" && item === "Ver todo" ? "/hombre" : "#"}
-                      className="
-                        block py-2 pl-4
-                        text-sm text-gray-600
-                        hover:text-blue-600
-                        transition-colors duration-200
-                      "
+                      href={item.href}
+                      className="block py-2 pl-4 text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
                     >
-                      {item}
-                    </a>
+                      {item.name}
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -283,7 +299,7 @@ export default function Home() {
       <main>
         <section className="relative w-full pt-20">
           <div className="container mx-auto px-4">
-            <div className="relative aspect-[16/9] w-full">
+            <div className="relative aspect-[21/9] w-full">
               {/* Carousel */}
               <div className="absolute inset-0">
                 {[1, 2, 3, 4].map((_, index) => (
@@ -294,11 +310,10 @@ export default function Home() {
                     }`}
                   >
                     <Image
-                      src={`/cap${index + 1}.png`}
+                      src={`/cap${index + 1}.jpg`}
                       alt={`Slide ${index + 1}`}
-                      width={1200}
-                      height={800} 
-                      className="w-full h-auto rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
                       priority={index === 0}
                     />
                   </div>
@@ -306,32 +321,43 @@ export default function Home() {
               </div>
 
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/70 to-gray-500/70 rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm">
-                <div className="h-full w-full flex items-center justify-center">
-                  <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-4 transform transition-all duration-500 hover:scale-105">
-                    <div className="bg-red-600 text-white px-2 py-0.5 md:px-4 md:py-1.5 inline-block rounded-full text-[8px] md:text-sm font-bold animate-pulse font-poppins">
-                      24H LEFT
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                
+                {/* Diamond icon */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="relative">
+                    <svg 
+                      className="w-24 h-24 md:w-32 md:h-32 text-[#C6A55C] opacity-10" 
+                      viewBox="0 0 24 24" 
+                      fill="currentColor"
+                    >
+                      <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="h-full w-full flex items-center justify-center relative z-10">
+                  <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-3 transform transition-all duration-500 hover:scale-105">
+                    <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
+                      EDICIÓN LIMITADA
                     </div>
-                    <h1 className="text-lg md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight font-poppins drop-shadow-2xl transform transition-all duration-300 hover:scale-110">
-                      Winter Sale
+                    <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
+                      <span className="block text-white font-extralight">Colección</span>
+                      <span className="block font-medium">Elegancia Atemporal</span>
                     </h1>
-                    <p className="text-base md:text-4xl lg:text-5xl font-black text-white tracking-widest animate-bounce font-poppins">
-                      25% OFF
+                    <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
+                      Piezas únicas hechas a mano
                     </p>
-                    <p className="text-[8px] md:text-lg lg:text-xl text-white font-light tracking-wide uppercase font-poppins">
-                      MORE THAN 3000 PRODUCTS
-                    </p>
-                    <div className="bg-white/90 backdrop-blur-sm inline-block px-2 py-1 md:px-6 md:py-3 rounded-lg transform transition-all duration-300 hover:rotate-2 hover:scale-110">
-                      <p className="text-[10px] md:text-base lg:text-lg font-bold text-blue-600 font-poppins">
-                        Use Code: WINTER25
-                      </p>
-                    </div>
-                    <div className="pt-1 md:pt-6">
+                    <div className="pt-1 md:pt-4">
                       <Link
                         href="#"
-                        className="bg-black text-white px-3 py-1.5 md:px-8 md:py-4 text-[10px] md:text-base lg:text-lg font-bold hover:bg-white hover:text-black transition-all duration-300 inline-block rounded-full transform hover:-translate-y-1 hover:shadow-xl font-poppins"
+                        className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
                       >
-                        Shop Now
+                        <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
+                          DESCUBRIR COLECCIÓN
+                        </span>
+                        <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
                       </Link>
                     </div>
                   </div>
@@ -343,14 +369,15 @@ export default function Home() {
 
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              {[1, 2, 3, 4].map((item) => (
-                <div key={item} className="bg-white group flex flex-col h-full">
+            <h2 className="text-3xl font-sans text-black text-center mb-12">Joyas Destacadas</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((item) => (
+                <div key={item} className="bg-white group flex flex-col h-full border border-gray-200 hover:border-black/20 transition-all duration-500 rounded-lg overflow-hidden">
                   <div className="relative aspect-square">
-                    <button className="absolute top-2 left-2 z-[5]">
+                    {/* Wishlist Button */}
+                    <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
                       <svg 
-                        className="w-6 h-6 text-gray-500 hover:text-red-500 transition-colors" 
+                        className="w-5 h-5 text-black transition-colors" 
                         fill="none" 
                         stroke="currentColor" 
                         viewBox="0 0 24 24"
@@ -358,55 +385,36 @@ export default function Home() {
                         <path 
                           strokeLinecap="round" 
                           strokeLinejoin="round" 
-                          strokeWidth={2} 
+                          strokeWidth={1.5} 
                           d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
                         />
                       </svg>
                     </button>
-                    <div className="absolute top-2 right-2 bg-gray-100 px-2 py-1 text-[10px] font-medium">
-                      MADE IN EUROPE
-                    </div>
-                    <Image
-                      src={`/placeholder.svg?height=400&width=400`}
-                      alt={`Product ${item}`}
-                      width={400}
-                      height={400}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-4 flex flex-col flex-grow">
-                    <div className="mb-2">
-                      <p className="text-sm font-medium text-gray-500">SATISFY</p>
-                      <h3 className="text-sm">Moth/Tech T-Shirt "Skorpio"</h3>
-                    </div>
-                    <div className="flex justify-between items-center mb-4">
-                      <p className="text-sm font-medium">119 €</p>
-                    </div>
                     
-                    <div className="mt-auto space-y-3">
-                      <div className="flex flex-row flex-wrap justify-start items-center gap-1.5">
-                        {['XS', 'S', 'M', 'L', 'XL'].map((size) => (
-                          <button
-                            key={size}
-                            className="min-w-[40px] flex-1 xs:flex-none
-                              text-[10px] xs:text-xs sm:text-sm
-                              px-2 xs:px-3 sm:px-4 py-1.5
-                              border border-gray-200
-                              hover:border-black transition-colors duration-200
-                              focus:outline-none text-center
-                              whitespace-nowrap"
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-
-                      <button className="w-full bg-black text-white py-2
-                        hover:bg-gray-900 transition-colors duration-300
-                        text-[11px] sm:text-sm font-medium">
-                        Add to Cart
-                      </button>
+                    {/* Product Image with Hover Effect */}
+                    <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
+                      <Image
+                        src={`/placeholder.svg`}
+                        alt={`Joya ${item}`}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
+                  </div>
+
+                  {/* Product Info with New Layout */}
+                  <div className="p-4 flex flex-col items-center text-center">
+                    <p className="text-xs tracking-wider text-gray-500 font-light mb-1 font-sans">COLECCIÓN ROYAL</p>
+                    <h3 className="text-sm font-medium text-black mb-2 font-sans">Anillo Diamante "Eternidad"</h3>
+                    <p className="text-sm font-light text-black mb-4">4.999 €</p>
+                    
+                    {/* New Call-to-action Button */}
+                    <Link
+                      href="#"
+                      className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300 font-sans"
+                    >
+                      Descubrir Pieza
+                    </Link>
                   </div>
                 </div>
               ))}
@@ -414,34 +422,33 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-16">
-          <div className="container mx-auto px-4 flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-8 md:mb-0">
+        <section className="py-12 bg-gray-50">
+          <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
+            <div className="md:w-1/3 relative aspect-square">
               <Image
-                src="/berlin4k.jpg?height=600&width=600"
-                alt="About Berlin Market"
-                width={500}
-                height={500}
-                className="rounded-lg shadow-lg"
+                src="/berlin4k.jpg"
+                alt="About Berlin Jewels"
+                fill
+                className="object-cover rounded-lg shadow-lg"
               />
             </div>
-            <div className="md:w-1/2 md:pl-12">
-              <h2 className="text-3xl font-bold mb-6 font-poppins">Nuestra historia</h2>
-              <p className="text-gray-700 mb-6 font-poppins leading-relaxed">
-                Eleva tu guardarropa con lo mejor de Berlín. Nuestra exclusiva colección de ropa, accesorios y más encarna el audaz espíritu de la innovación alemana, fusionando el diseño preciso con el lujo moderno. Ahora, disponible en Colombia, cada pieza celebra la artesanía europea, lista para transformar tu estilo cotidiano en algo extraordinario.
+            <div className="md:w-2/3 md:pl-10">
+              <h2 className="text-2xl font-sans text-black mb-4">Nuestra Historia</h2>
+              <p className="text-sm text-black/80 mb-6 font-sans leading-relaxed">
+                Desde 1920, Berlin Jewels ha sido sinónimo de elegancia y artesanía excepcional. Cada pieza que creamos es un testimonio de nuestra dedicación a la excelencia y nuestra pasión por la joyería fina.
               </p>
               <Link
                 href="#"
-                className="inline-block bg-black text-white px-6 py-3 font-semibold hover:bg-opacity-90 transition-colors font-poppins transform hover:scale-105 duration-300"
+                className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300 font-sans"
               >
-                Learn More
+                Descubrir Más
               </Link>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="bg-black text-white py-12">
+      <footer className="bg-black text-white py-12 border-t border-gold/20">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -552,7 +559,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-12 border-t border-gray-800 pt-8 flex justify-between items-center">
-            <p className="text-sm">&copy; 2023 Berlin Market. All rights reserved.</p>
+            <p className="text-sm">&copy; 2023 Berlin Jewels. All rights reserved.</p>
             <div className="flex space-x-6">
               <Link href="#" className="text-sm hover:text-gold transition-colors">
                 Privacy Policy
