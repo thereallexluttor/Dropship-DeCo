@@ -22,7 +22,7 @@ export default function AnillosPage() {
       items: [
         { name: "Ver todo", href: "#" },
         { name: "Anillos", href: "/anillos" },
-        { name: "Collares", href: "#" },
+        { name: "Collares", href: "/collares" },
         { name: "Pulseras", href: "#" },
         { name: "Pendientes", href: "#" }
       ],
