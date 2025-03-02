@@ -14,6 +14,7 @@ export default function AnillosPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const [activeSlide, setActiveSlide] = useState(0)
 
   const categories = [
     {
@@ -82,6 +83,14 @@ export default function AnillosPage() {
     }
   }, [])
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((current) => (current === 3 ? 0 : current + 1));
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-white">
@@ -137,7 +146,7 @@ export default function AnillosPage() {
                 alt="Berlin Jewelry Logo" 
                 className="h-11 w-auto transition-all duration-300 ease-in-out group-hover:[filter:brightness(0)_invert(1)]" 
               />
-              Berlin Jewels
+              
             </Link>
 
             {/* Desktop Navigation */}
@@ -296,22 +305,89 @@ export default function AnillosPage() {
           </div>
         </header>
 
-        <main className="pt-24">
-          <div className="container mx-auto px-4">
-            <h1 className="text-4xl font-sans text-black mb-8 text-center">Anillos</h1>
+        <main>
+          <section className="relative w-full pt-20">
+            <div className="container mx-auto px-4">
+              <div className="relative aspect-[21/9] w-full">
+                <div className="absolute inset-0">
+                  {[1, 2, 3, 4].map((_, index) => (
+                    <div
+                      key={index}
+                      className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                        activeSlide === index ? "opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      <Image
+                        src={`/cap${index + 1}.jpg`}
+                        alt={`Slide ${index + 1}`}
+                        fill
+                        className="object-cover rounded-lg"
+                        priority={index === 0}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                  
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="relative">
+                      <svg 
+                        className="w-24 h-24 md:w-32 md:h-32 text-[#C6A55C] opacity-10" 
+                        viewBox="0 0 24 24" 
+                        fill="currentColor"
+                      >
+                        <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="h-full w-full flex items-center justify-center relative z-10">
+                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-3 transform transition-all duration-500 hover:scale-105">
+                      <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
+                        COLECCIÓN DE ANILLOS
+                      </div>
+                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
+                        <span className="block text-white font-extralight">Descubre</span>
+                        <span className="block font-medium">Nuestros Anillos</span>
+                      </h1>
+                      <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
+                        Artesanía y diseño excepcional
+                      </p>
+                      <div className="pt-1 md:pt-4">
+                        <Link
+                          href="#"
+                          className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
+                        >
+                          <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
+                            VER COLECCIÓN
+                          </span>
+                          <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="container mx-auto px-4 mt-16">
+            <h1 className="text-4xl font-bold font-sans text-black mb-8 text-center">Anillos</h1>
             
             {/* Filters Section */}
             <div className="mb-8 flex flex-wrap gap-4 justify-center">
-              <button className="px-4 py-2 border border-black/20 rounded-full text-sm hover:bg-black hover:text-white transition-all">
+              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
                 Todos los Anillos
               </button>
-              <button className="px-4 py-2 border border-black/20 rounded-full text-sm hover:bg-black hover:text-white transition-all">
+              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
                 Compromiso
               </button>
-              <button className="px-4 py-2 border border-black/20 rounded-full text-sm hover:bg-black hover:text-white transition-all">
+              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
                 Bodas
               </button>
-              <button className="px-4 py-2 border border-black/20 rounded-full text-sm hover:bg-black hover:text-white transition-all">
+              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
                 Diamantes
               </button>
             </div>
@@ -351,13 +427,13 @@ export default function AnillosPage() {
 
                   {/* Product Info */}
                   <div className="p-4 flex flex-col items-center text-center">
-                    <p className="text-xs tracking-wider text-gray-500 font-light mb-1 font-sans">ANILLOS</p>
-                    <h3 className="text-sm font-medium text-black mb-2 font-sans">Anillo Diamante Solitario</h3>
+                    <p className="text-xs tracking-wider text-gray-500 font-light mb-1">ANILLOS</p>
+                    <h3 className="text-sm font-medium text-black mb-2">Anillo Diamante Solitario</h3>
                     <p className="text-sm font-light text-black mb-4">2.999 €</p>
                     
                     <Link
                       href="#"
-                      className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300 font-sans"
+                      className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300"
                     >
                       Ver Detalles
                     </Link>
