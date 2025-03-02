@@ -20,11 +20,10 @@ export default function AnillosPage() {
     {
       name: "COLECCIONES",
       items: [
-        { name: "Ver todo", href: "#" },
         { name: "Anillos", href: "/anillos" },
         { name: "Collares", href: "/collares" },
-        { name: "Pulseras", href: "#" },
-        { name: "Pendientes", href: "#" }
+        { name: "Pulseras", href: "/pulseras" },
+        { name: "Pendientes", href: "/pendientes" }
       ],
     },
     {

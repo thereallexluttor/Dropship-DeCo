@@ -4,18 +4,17 @@ import Image from "next/image"
 import Link from "next/link"
 import { ShoppingBag, Search, Menu, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
-import PageTransition from "./components/PageTransition"
-import MainLayout from "./components/MainLayout"
-import ProductCard from "./components/ProductCard"
+import PageTransition from "../components/PageTransition"
 
-export default function Home() {
+export default function PendientesPage() {
+  // State management
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [activeSlide, setActiveSlide] = useState(0)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const [activeSlide, setActiveSlide] = useState(0)
 
   const categories = [
     {
@@ -56,6 +55,7 @@ export default function Home() {
     },
   ]
 
+  // Event handlers
   const handleMouseEnter = (index: number) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
@@ -66,8 +66,15 @@ export default function Home() {
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setActiveDropdown(null)
-    }, 200) // 300ms delay before closing
+    }, 200)
   }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Searching for:", searchQuery)
+  }
+
+  // Effects
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -79,21 +86,17 @@ export default function Home() {
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((current) => (current === 3 ? 0 : current + 1));
-    }, 5000); // Change slide every 5 seconds
+    }, 5000);
 
     return () => clearInterval(timer);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Searching for:", searchQuery)
-  }
-
   return (
-    <MainLayout>
+    <PageTransition>
       <div className="min-h-screen bg-white">
+        {/* Header */}
         <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gray-200">
-          {/* Mobile Search Bar - Full Width when open */}
+          {/* Mobile Search Bar */}
           <div className={`
             md:hidden
             ${isMobileSearchOpen ? 'block' : 'hidden'}
@@ -134,6 +137,7 @@ export default function Home() {
             </form>
           </div>
 
+          {/* Main Header Content */}
           <div className="container mx-auto px-4 py-2 flex items-center justify-between">
             <Link
               href="/"
@@ -144,8 +148,9 @@ export default function Home() {
                 alt="Berlin Jewelry Logo" 
                 className="h-11 w-auto transition-all duration-300 ease-in-out group-hover:[filter:brightness(0)_invert(1)]" 
               />
-              
             </Link>
+
+            {/* Navigation Menu */}
             <nav className="hidden md:flex space-x-6">
               {categories.map((category, index) => (
                 <div
@@ -183,6 +188,8 @@ export default function Home() {
                 </div>
               ))}
             </nav>
+
+            {/* Header Icons */}
             <div className="flex items-center space-x-4">
               {/* Desktop Search */}
               <div className="relative hidden md:block">
@@ -243,7 +250,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Updated Mobile Menu */}
+          {/* Mobile Menu */}
           <div className={`
             md:hidden
             ${isMobileMenuOpen ? 'block' : 'hidden'}
@@ -300,6 +307,7 @@ export default function Home() {
         </header>
 
         <main>
+          {/* Hero Section */}
           <section className="relative w-full pt-20">
             <div className="container mx-auto px-4">
               <div className="relative aspect-[21/9] w-full">
@@ -323,7 +331,7 @@ export default function Home() {
                   ))}
                 </div>
 
-                {/* Gradient Overlay */}
+                {/* Hero Content Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
                   <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                   
@@ -340,17 +348,18 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Hero Text Content */}
                   <div className="h-full w-full flex items-center justify-center relative z-10">
                     <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-3 transform transition-all duration-500 hover:scale-105">
                       <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
-                        EDICIÓN LIMITADA
+                        COLECCIÓN DE PENDIENTES
                       </div>
                       <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
-                        <span className="block text-white font-extralight">Colección</span>
-                        <span className="block font-medium">Elegancia Atemporal</span>
+                        <span className="block text-white font-extralight">Descubre</span>
+                        <span className="block font-medium">Nuestros Pendientes</span>
                       </h1>
                       <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
-                        Piezas únicas hechas a mano
+                        Arte en cada detalle
                       </p>
                       <div className="pt-1 md:pt-4">
                         <Link
@@ -358,7 +367,7 @@ export default function Home() {
                           className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
                         >
                           <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
-                            DESCUBRIR COLECCIÓN
+                            VER COLECCIÓN
                           </span>
                           <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
                         </Link>
@@ -370,44 +379,80 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="py-16 bg-white">
-            <div className="container mx-auto px-4">
-              <h2 className="text-3xl font-sans text-black text-center mb-12">Joyas Destacadas</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((item) => (
-                  <ProductCard key={item} product={{ id: item.toString(), name: `Anillo Diamante "Eternidad"`, price: 4.999, category: "Colección Royal", image: "/placeholder.svg" }} />
-                ))}
-              </div>
+          {/* Products Section */}
+          <div className="container mx-auto px-4 mt-16">
+            <h1 className="text-4xl font-bold font-sans text-black mb-8 text-center">Pendientes</h1>
+            
+            {/* Filters */}
+            <div className="mb-8 flex flex-wrap gap-4 justify-center">
+              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+                Todos los Pendientes
+              </button>
+              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+                Aretes
+              </button>
+              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+                Pendientes Largos
+              </button>
+              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+                Ear Cuffs
+              </button>
             </div>
-          </section>
 
-          <section className="py-12 bg-gray-50">
-            <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-              <div className="md:w-1/3 relative aspect-square">
-                <Image
-                  src="/berlin4k.jpg"
-                  alt="About Berlin Jewels"
-                  fill
-                  className="object-cover rounded-lg shadow-lg"
-                />
-              </div>
-              <div className="md:w-2/3 md:pl-10">
-                <h2 className="text-2xl font-sans text-black mb-4">Nuestra Historia</h2>
-                <p className="text-sm text-black/80 mb-6 font-sans leading-relaxed">
-                  Desde 1920, Berlin Jewels ha sido sinónimo de elegancia y artesanía excepcional. Cada pieza que creamos es un testimonio de nuestra dedicación a la excelencia y nuestra pasión por la joyería fina.
-                </p>
-                <Link
-                  href="#"
-                  className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300 font-sans"
-                >
-                  Descubrir Más
-                </Link>
-              </div>
+            {/* Products Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+              {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
+                <div key={item} className="bg-white group flex flex-col h-full border border-gray-200 hover:border-black/20 transition-all duration-500 rounded-lg overflow-hidden">
+                  <div className="relative aspect-square">
+                    {/* Wishlist Button */}
+                    <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <svg 
+                        className="w-5 h-5 text-black transition-colors" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={1.5} 
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                        />
+                      </svg>
+                    </button>
+                    
+                    {/* Product Image */}
+                    <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
+                      <Image
+                        src={`/placeholder.svg`}
+                        alt={`Pendiente ${item}`}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="p-4 flex flex-col items-center text-center">
+                    <p className="text-xs tracking-wider text-gray-500 font-light mb-1">PENDIENTES</p>
+                    <h3 className="text-sm font-medium text-black mb-2">Pendientes Diamante Clásico</h3>
+                    <p className="text-sm font-light text-black mb-4">999 €</p>
+                    
+                    <Link
+                      href="#"
+                      className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300"
+                    >
+                      Ver Detalles
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
-          </section>
+          </div>
         </main>
 
-        <footer className="bg-black text-white py-12 border-t border-gold/20">
+        {/* Footer */}
+        <footer className="bg-black text-white py-12 mt-16 border-t border-gold/20">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div>
@@ -531,7 +576,6 @@ export default function Home() {
           </div>
         </footer>
       </div>
-    </MainLayout>
+    </PageTransition>
   )
-}
-
+} 

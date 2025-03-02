@@ -20,11 +20,10 @@ export default function CollaresPage() {
     {
       name: "COLECCIONES",
       items: [
-        { name: "Ver todo", href: "#" },
         { name: "Anillos", href: "/anillos" },
         { name: "Collares", href: "/collares" },
-        { name: "Pulseras", href: "#" },
-        { name: "Pendientes", href: "#" }
+        { name: "Pulseras", href: "/pulseras" },
+        { name: "Pendientes", href: "/pendientes" }
       ],
     },
     {
@@ -148,7 +147,7 @@ export default function CollaresPage() {
                 alt="Berlin Jewelry Logo" 
                 className="h-11 w-auto transition-all duration-300 ease-in-out group-hover:[filter:brightness(0)_invert(1)]" 
               />
-              Berlin Jewels
+              
             </Link>
 
             {/* Navigation Menu */}
@@ -192,7 +191,62 @@ export default function CollaresPage() {
 
             {/* Header Icons */}
             <div className="flex items-center space-x-4">
-              {/* ... existing header icons code ... */}
+              {/* Desktop Search */}
+              <div className="relative hidden md:block">
+                <form onSubmit={handleSearch} className="flex items-center">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search products..."
+                    className={`
+                      ${isSearchOpen ? 'w-48 md:w-64 px-4 opacity-100' : 'w-0 opacity-0'}
+                      transition-all duration-300 ease-in-out
+                      h-9 rounded-full
+                      bg-gray-100 group-hover:bg-gray-800
+                      text-black group-hover:text-white
+                      placeholder-gray-500 group-hover:placeholder-gray-400
+                      focus:outline-none focus:ring-2 focus:ring-blue-500
+                      text-sm
+                    `}
+                  />
+                  {isSearchOpen ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchOpen(false)
+                        setSearchQuery("")
+                      }}
+                      className="absolute right-2 text-gray-500 hover:text-gray-700 group-hover:text-gray-400"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsSearchOpen(true)}
+                      className="text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+                    >
+                      <Search className="h-6 w-6" />
+                    </button>
+                  )}
+                </form>
+              </div>
+
+              {/* Mobile Search Icon */}
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(true)}
+                className="md:hidden text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+              >
+                <Search className="h-6 w-6" />
+              </button>
+
+              <ShoppingBag className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer" />
+              <Menu 
+                className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer md:hidden"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              />
             </div>
           </div>
 
@@ -395,10 +449,13 @@ export default function CollaresPage() {
               ))}
             </div>
           </div>
+
+          {/* About Section */}
+          
         </main>
 
-        {/* Footer */}
-        <footer className="bg-black text-white py-12 border-t border-gold/20">
+        {/* Footer - adding mt-16 class */}
+        <footer className="bg-black text-white py-12 mt-16 border-t border-gold/20">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div>
