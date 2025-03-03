@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ShoppingBag, Search, Menu, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
-import PageTransition from "../components/PageTransition"
+import MainLayout from "../components/MainLayout"
 import FadeInOnScroll from '../components/FadeInOnScroll'
 
 export default function PulserasPage() {
@@ -30,7 +30,7 @@ export default function PulserasPage() {
     {
       name: "OCASIONES",
       items: [
-        { name: "Bodas", href: "#" },
+        { name: "Bodas", href: "/bodas" },
         { name: "Compromiso", href: "#" },
         { name: "Regalos", href: "#" },
         { name: "Edición Limitada", href: "#" }
@@ -93,7 +93,7 @@ export default function PulserasPage() {
   }, []);
 
   return (
-    <PageTransition>
+    <MainLayout>
       <div className="min-h-screen bg-white">
         {/* Add the header section from page.tsx */}
         <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gray-200">
@@ -377,33 +377,66 @@ export default function PulserasPage() {
             </div>
           </section>
 
-          {/* Products Section - Modified for Pulseras */}
-          <div className="container mx-auto px-4 mt-16">
-            <h1 className="text-4xl font-bold font-sans text-black mb-8 text-center">Pulseras</h1>
-            
-            {/* Filters - Modified for Pulseras */}
-            <div className="mb-8 flex flex-wrap gap-4 justify-center">
-              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+          <section className="py-16 bg-gradient-to-b from-white to-[#FDF9F3]">
+            <div className="container mx-auto px-4 text-center max-w-4xl">
+              <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">Artesanía y Excelencia</h2>
+              <p className="text-gray-600 leading-relaxed mb-8 font-light font-poppins">
+                Cada pulsera es una obra maestra única, creada con los materiales más preciosos y elaborada con dedicación artesanal.
+              </p>
+              <div className="grid grid-cols-3 gap-8 mt-12">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/icons/diamond.png" alt="Calidad" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Diamantes Certificados</h3>
+                  <p className="text-xs text-gray-500">Máxima pureza y calidad</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/icons/exclusive.png" alt="Artesanía" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Artesanía Exclusiva</h3>
+                  <p className="text-xs text-gray-500">Diseños únicos y personalizados</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/icons/warranty.png" alt="Garantía" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Garantía de por Vida</h3>
+                  <p className="text-xs text-gray-500">Compromiso con la calidad</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="container mx-auto px-4 py-16">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4">Nuestra Colección de Pulseras</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto font-light font-poppins">
+                Descubre piezas únicas que celebran la elegancia y el diseño atemporal
+              </p>
+            </div>
+
+            <div className="mb-12 flex flex-wrap gap-4 justify-center">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
                 Todas las Pulseras
               </button>
-              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
                 Rígidas
               </button>
-              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
                 Flexibles
               </button>
-              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
                 Tennis
               </button>
             </div>
 
-            {/* Products Grid - Modified for Pulseras */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
                 <FadeInOnScroll key={item} delay={item * 100}>
-                  <div className="bg-white group flex flex-col h-full border border-gray-200 hover:border-black/20 transition-all duration-500 rounded-lg overflow-hidden">
+                  <div className="bg-white group flex flex-col h-full hover:shadow-xl transition-all duration-500 rounded-sm overflow-hidden">
                     <div className="relative aspect-square">
-                      {/* Wishlist Button stays the same */}
                       <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <svg 
                           className="w-5 h-5 text-black transition-colors" 
@@ -420,10 +453,9 @@ export default function PulserasPage() {
                         </svg>
                       </button>
                       
-                      {/* Product Image */}
                       <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
                         <Image
-                          src={`/placeholder.svg`}
+                          src={`/cap1.jpg`}
                           alt={`Pulsera ${item}`}
                           fill
                           className="object-cover"
@@ -431,7 +463,6 @@ export default function PulserasPage() {
                       </div>
                     </div>
 
-                    {/* Product Info - Modified for Pulseras */}
                     <div className="p-4 flex flex-col items-center text-center">
                       <p className="text-xs tracking-wider text-gray-500 font-light mb-1">PULSERAS</p>
                       <h3 className="text-sm font-medium text-black mb-2">Pulsera Diamante Clásica</h3>
@@ -449,6 +480,26 @@ export default function PulserasPage() {
               ))}
             </div>
           </div>
+
+          {/* Add Personal Advisory Section */}
+          <section className="py-16 bg-[#FDF9F3]">
+            <div className="container mx-auto px-4">
+              <div className="max-w-3xl mx-auto text-center">
+                <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">
+                  Asesoramiento Personalizado
+                </h2>
+                <p className="text-gray-600 mb-8 font-light font-poppins">
+                  Nuestros expertos en joyería te guiarán en la elección de la pulsera perfecta que refleje tu estilo único
+                </p>
+                <Link
+                  href="/consulta"
+                  className="inline-block bg-[#C6A55C] text-white px-8 py-3 text-sm font-poppins tracking-wider hover:bg-black transition-colors duration-300"
+                >
+                  SOLICITAR CITA
+                </Link>
+              </div>
+            </div>
+          </section>
         </main>
 
         {/* Add footer section */}
@@ -521,6 +572,6 @@ export default function PulserasPage() {
           </div>
         </footer>
       </div>
-    </PageTransition>
+    </MainLayout>
   )
 } 

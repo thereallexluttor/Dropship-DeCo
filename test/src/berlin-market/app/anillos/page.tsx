@@ -6,6 +6,7 @@ import { ShoppingBag, Search, Menu, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import PageTransition from "../components/PageTransition"
 import FadeInOnScroll from '../components/FadeInOnScroll'
+import MainLayout from "../components/MainLayout"
 
 export default function AnillosPage() {
   // Reuse the same state and handlers from main page
@@ -30,7 +31,7 @@ export default function AnillosPage() {
     {
       name: "OCASIONES",
       items: [
-        { name: "Bodas", href: "#" },
+        { name: "Bodas", href: "/bodas" },
         { name: "Compromiso", href: "#" },
         { name: "Regalos", href: "#" },
         { name: "Edición Limitada", href: "#" }
@@ -92,7 +93,7 @@ export default function AnillosPage() {
   }, []);
 
   return (
-    <PageTransition>
+    <MainLayout>
       <div className="min-h-screen bg-white">
         <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gray-200">
           {/* Mobile Search Bar - Full Width when open */}
@@ -328,42 +329,33 @@ export default function AnillosPage() {
                   ))}
                 </div>
 
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/30 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                   
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="relative">
-                      <svg 
-                        className="w-24 h-24 md:w-32 md:h-32 text-[#C6A55C] opacity-10" 
-                        viewBox="0 0 24 24" 
-                        fill="currentColor"
-                      >
-                        <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
-                      </svg>
-                    </div>
-                  </div>
-
                   <div className="h-full w-full flex items-center justify-center relative z-10">
-                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-3 transform transition-all duration-500 hover:scale-105">
-                      <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
+                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-2 md:space-y-4">
+                      <div className="bg-white/90 text-black px-4 py-1.5 md:px-5 md:py-2 inline-block rounded-sm text-[8px] md:text-sm font-light tracking-[0.3em] font-poppins">
                         COLECCIÓN DE ANILLOS
                       </div>
-                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
-                        <span className="block text-white font-extralight">Descubre</span>
-                        <span className="block font-medium">Nuestros Anillos</span>
+                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl">
+                        <span className="block text-[#C6A55C] font-light italic">Diseños Únicos</span>
+                        <span className="block font-medium mt-2">Arte en Oro y Diamantes</span>
                       </h1>
-                      <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
-                        Artesanía y diseño excepcional
+                      <p className="text-[8px] md:text-base lg:text-lg text-white/90 font-light tracking-[0.2em] uppercase font-poppins max-w-2xl mx-auto">
+                        Cada anillo cuenta una historia única
                       </p>
-                      <div className="pt-1 md:pt-4">
+                      <div className="pt-2 md:pt-6 space-x-4">
                         <Link
-                          href="#"
-                          className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
+                          href="#collection"
+                          className="group/btn relative overflow-hidden bg-white/90 text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-[#C6A55C] hover:text-white"
                         >
-                          <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
-                            VER COLECCIÓN
-                          </span>
-                          <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
+                          EXPLORAR COLECCIÓN
+                        </Link>
+                        <Link
+                          href="#appointment"
+                          className="group/btn relative overflow-hidden border border-white/80 text-white px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-white hover:text-black"
+                        >
+                          RESERVAR CITA
                         </Link>
                       </div>
                     </div>
@@ -373,30 +365,65 @@ export default function AnillosPage() {
             </div>
           </section>
 
-          <div className="container mx-auto px-4 mt-16">
-            <h1 className="text-4xl font-bold font-sans text-black mb-8 text-center">Anillos</h1>
-            
-            {/* Filters Section */}
-            <div className="mb-8 flex flex-wrap gap-4 justify-center">
-              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+          <section className="py-16 bg-gradient-to-b from-white to-[#FDF9F3]">
+            <div className="container mx-auto px-4 text-center max-w-4xl">
+              <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">Artesanía y Excelencia</h2>
+              <p className="text-gray-600 leading-relaxed mb-8 font-light font-poppins">
+                Cada anillo es una obra maestra única, creada con los materiales más preciosos y elaborada con dedicación artesanal.
+              </p>
+              <div className="grid grid-cols-3 gap-8 mt-12">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/icons/diamond.png" alt="Calidad" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Diamantes Certificados</h3>
+                  <p className="text-xs text-gray-500">Máxima pureza y calidad</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/icons/exclusive.png" alt="Artesanía" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Artesanía Exclusiva</h3>
+                  <p className="text-xs text-gray-500">Diseños únicos y personalizados</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/icons/warranty.png" alt="Garantía" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Garantía de por Vida</h3>
+                  <p className="text-xs text-gray-500">Compromiso con la calidad</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="container mx-auto px-4 py-16">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4">Nuestra Colección de Anillos</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto font-light font-poppins">
+                Descubre piezas únicas que celebran la elegancia y el diseño atemporal
+              </p>
+            </div>
+
+            <div className="mb-12 flex flex-wrap gap-4 justify-center">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
                 Todos los Anillos
               </button>
-              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
                 Compromiso
               </button>
-              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
                 Bodas
               </button>
-              <button className="px-6 py-2 border border-black/20 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
                 Diamantes
               </button>
             </div>
 
-            {/* Products Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
                 <FadeInOnScroll key={item} delay={item * 100}>
-                  <div className="bg-white group flex flex-col h-full border border-gray-200 hover:border-black/20 transition-all duration-500 rounded-lg overflow-hidden">
+                  <div className="bg-white group flex flex-col h-full hover:shadow-xl transition-all duration-500 rounded-sm overflow-hidden">
                     <div className="relative aspect-square">
                       {/* Wishlist Button */}
                       <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -418,7 +445,7 @@ export default function AnillosPage() {
                       {/* Product Image */}
                       <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
                         <Image
-                          src={`/placeholder.svg`}
+                          src={`/cap1.jpg`}
                           alt={`Anillo ${item}`}
                           fill
                           className="object-cover"
@@ -445,6 +472,26 @@ export default function AnillosPage() {
             </div>
           </div>
         </main>
+
+        {/* Adding Personal Advisory Section */}
+        <section className="py-16 bg-[#FDF9F3]">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">
+                Asesoramiento Personalizado
+              </h2>
+              <p className="text-gray-600 mb-8 font-light font-poppins">
+                Nuestros expertos en joyería te guiarán en la elección del anillo perfecto que refleje tu estilo único
+              </p>
+              <Link
+                href="/consulta"
+                className="inline-block bg-[#C6A55C] text-white px-8 py-3 text-sm font-poppins tracking-wider hover:bg-black transition-colors duration-300"
+              >
+                SOLICITAR CITA
+              </Link>
+            </div>
+          </div>
+        </section>
 
         {/* Footer */}
         <footer className="bg-black text-white py-12 mt-16 border-t border-gold/20">
@@ -571,6 +618,6 @@ export default function AnillosPage() {
           </div>
         </footer>
       </div>
-    </PageTransition>
+    </MainLayout>
   )
 } 
