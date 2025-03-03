@@ -4,19 +4,19 @@ import Image from "next/image"
 import Link from "next/link"
 import { ShoppingBag, Search, Menu, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
-import PageTransition from "./components/PageTransition"
-import MainLayout from "./components/MainLayout"
-import ProductCard from "./components/ProductCard"
-import FadeInOnScroll from './components/FadeInOnScroll'
+import PageTransition from "../components/PageTransition"
+import MainLayout from "../components/MainLayout"
+import ProductCard from "../components/ProductCard"
+import FadeInOnScroll from '../components/FadeInOnScroll'
 
-export default function Home() {
+export default function Bodas() {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [activeSlide, setActiveSlide] = useState(0)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const [activeSlide, setActiveSlide] = useState(0)
 
   const categories = [
     {
@@ -67,8 +67,9 @@ export default function Home() {
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setActiveDropdown(null)
-    }, 200) // 300ms delay before closing
+    }, 200)
   }
+
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -77,6 +78,11 @@ export default function Home() {
     }
   }, [])
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Searching for:", searchQuery)
+  }
+
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((current) => (current === 3 ? 0 : current + 1));
@@ -84,11 +90,6 @@ export default function Home() {
 
     return () => clearInterval(timer);
   }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Searching for:", searchQuery)
-  }
 
   return (
     <MainLayout>
@@ -145,8 +146,10 @@ export default function Home() {
                 alt="Berlin Jewelry Logo" 
                 className="h-11 w-auto transition-all duration-300 ease-in-out group-hover:[filter:brightness(0)_invert(1)]" 
               />
-              
             </Link>
+
+            {/* Rest of the header content remains the same as in page.tsx */}
+            {/* ... Navigation, search, and mobile menu code ... */}
             <nav className="hidden md:flex space-x-6">
               {categories.map((category, index) => (
                 <div
@@ -157,7 +160,7 @@ export default function Home() {
                 >
                   <Link 
                     href="#"
-                    className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white"
+                    className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white font-poppins"
                   >
                     {category.name}
                   </Link>
@@ -244,7 +247,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Updated Mobile Menu */}
+          {/* Mobile Menu */}
           <div className={`
             md:hidden
             ${isMobileMenuOpen ? 'block' : 'hidden'}
@@ -304,7 +307,6 @@ export default function Home() {
           <section className="relative w-full pt-20">
             <div className="container mx-auto px-4">
               <div className="relative aspect-[21/9] w-full">
-                {/* Carousel */}
                 <div className="absolute inset-0">
                   {[1, 2, 3, 4].map((_, index) => (
                     <div
@@ -324,44 +326,33 @@ export default function Home() {
                   ))}
                 </div>
 
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/30 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                   
-                  {/* Diamond icon */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="relative">
-                      <svg 
-                        className="w-24 h-24 md:w-32 md:h-32 text-[#C6A55C] opacity-10" 
-                        viewBox="0 0 24 24" 
-                        fill="currentColor"
-                      >
-                        <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
-                      </svg>
-                    </div>
-                  </div>
-
                   <div className="h-full w-full flex items-center justify-center relative z-10">
-                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-3 transform transition-all duration-500 hover:scale-105">
-                      <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
-                        EDICIÓN LIMITADA
+                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-2 md:space-y-4">
+                      <div className="bg-white/90 text-black px-4 py-1.5 md:px-5 md:py-2 inline-block rounded-sm text-[8px] md:text-sm font-light tracking-[0.3em] font-poppins">
+                        JOYAS PARA EL DÍA MÁS ESPECIAL
                       </div>
-                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
-                        <span className="block text-white font-extralight">Colección</span>
-                        <span className="block font-medium">Elegancia Atemporal</span>
+                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl">
+                        <span className="block text-[#C6A55C] font-light italic">Colección Nupcial</span>
+                        <span className="block font-medium mt-2">El Arte de la Eternidad</span>
                       </h1>
-                      <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
-                        Piezas únicas hechas a mano
+                      <p className="text-[8px] md:text-base lg:text-lg text-white/90 font-light tracking-[0.2em] uppercase font-poppins max-w-2xl mx-auto">
+                        Cada pieza cuenta una historia de amor eterna
                       </p>
-                      <div className="pt-1 md:pt-4">
+                      <div className="pt-2 md:pt-6 space-x-4">
                         <Link
-                          href="#"
-                          className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
+                          href="#collection"
+                          className="group/btn relative overflow-hidden bg-white/90 text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-[#C6A55C] hover:text-white"
                         >
-                          <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
-                            DESCUBRIR COLECCIÓN
-                          </span>
-                          <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
+                          EXPLORAR COLECCIÓN
+                        </Link>
+                        <Link
+                          href="#appointment"
+                          className="group/btn relative overflow-hidden border border-white/80 text-white px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-white hover:text-black"
+                        >
+                          RESERVAR CITA
                         </Link>
                       </div>
                     </div>
@@ -371,127 +362,216 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="py-16 bg-white">
-            <div className="container mx-auto px-4">
-              <h2 className="text-3xl font-sans text-black text-center mb-12">Joyas Destacadas</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-                {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
-                  <FadeInOnScroll key={item} delay={item * 100}>
-                    <ProductCard product={{ id: item.toString(), name: `Anillo Diamante "Eternidad"`, price: 4.999, category: "Colección Royal", image: "/placeholder.svg" }} />
-                  </FadeInOnScroll>
-                ))}
+          <section className="py-16 bg-gradient-to-b from-white to-[#FDF9F3]">
+            <div className="container mx-auto px-4 text-center max-w-4xl">
+              <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">El Símbolo de Vuestro Amor</h2>
+              <p className="text-gray-600 leading-relaxed mb-8 font-light font-poppins">
+                Cada joya de nuestra colección nupcial está diseñada para capturar la esencia del amor eterno. 
+                Creadas con los materiales más preciosos y elaboradas con dedicación artesanal.
+              </p>
+              <div className="grid grid-cols-3 gap-8 mt-12">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/cap2.jpg" alt="Calidad" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Diamantes Certificados</h3>
+                  <p className="text-xs text-gray-500">Máxima pureza y calidad</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/cap3.jpg" alt="Artesanía" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Artesanía Exclusiva</h3>
+                  <p className="text-xs text-gray-500">Diseños únicos y personalizados</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <img src="/cap4.jpg" alt="Garantía" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <h3 className="text-sm font-medium mb-2">Garantía de por Vida</h3>
+                  <p className="text-xs text-gray-500">Compromiso con la calidad</p>
+                </div>
               </div>
             </div>
           </section>
 
-          <section className="py-12 bg-gray-50">
-            <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-              <div className="md:w-1/3 relative aspect-square">
-                <Image
-                  src="/berlin4k.jpg"
-                  alt="About Berlin Jewels"
-                  fill
-                  className="object-cover rounded-lg shadow-lg"
-                />
-              </div>
-              <div className="md:w-2/3 md:pl-10">
-                <h2 className="text-2xl font-sans text-black mb-4">Nuestra Historia</h2>
-                <p className="text-sm text-black/80 mb-6 font-sans leading-relaxed">
-                  Desde 1920, Berlin Jewels ha sido sinónimo de elegancia y artesanía excepcional. Cada pieza que creamos es un testimonio de nuestra dedicación a la excelencia y nuestra pasión por la joyería fina.
+          <div className="container mx-auto px-4 py-16">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4">Nuestra Colección Nupcial</h2>
+              <p className="text-gray-600 max-w-2xl mx-auto font-light font-poppins">
+                Descubre piezas únicas que celebran el amor y la unión eterna
+              </p>
+            </div>
+
+            <div className="mb-12 flex flex-wrap gap-4 justify-center">
+              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
+                Todas las Joyas
+              </button>
+              <button className="px-8 py-2.5 border border-black/10 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300 font-poppins">
+                Anillos de Compromiso
+              </button>
+              <button className="px-8 py-2.5 border border-black/10 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300 font-poppins">
+                Alianzas
+              </button>
+              <button className="px-8 py-2.5 border border-black/10 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300 font-poppins">
+                Complementos
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+              {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
+                <FadeInOnScroll key={item} delay={item * 100}>
+                  <div className="bg-white group flex flex-col h-full hover:shadow-xl transition-all duration-500 rounded-sm overflow-hidden">
+                    <div className="relative aspect-square">
+                      <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <svg 
+                          className="w-5 h-5 text-black transition-colors" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={1.5} 
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                          />
+                        </svg>
+                      </button>
+                      
+                      <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
+                        <Image
+                          src="/cap1.jpg"
+                          alt={`Joya Nupcial ${item}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 flex flex-col items-center text-center">
+                      <p className="text-xs tracking-wider text-[#C6A55C] font-poppins mb-2">COLECCIÓN NUPCIAL</p>
+                      <h3 className="text-sm font-medium text-black mb-2 font-poppins">Anillo de Compromiso Diana</h3>
+                      <p className="text-sm font-light text-black mb-4 font-poppins">2.999 €</p>
+                      
+                      <Link
+                        href="#"
+                        className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-[#C6A55C] hover:text-[#C6A55C] transition-all duration-300 font-poppins"
+                      >
+                        Descubrir
+                      </Link>
+                    </div>
+                  </div>
+                </FadeInOnScroll>
+              ))}
+            </div>
+          </div>
+
+          <section className="py-16 bg-[#FDF9F3]">
+            <div className="container mx-auto px-4">
+              <div className="max-w-3xl mx-auto text-center">
+                <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">
+                  Asesoramiento Personalizado
+                </h2>
+                <p className="text-gray-600 mb-8 font-light font-poppins">
+                  Nuestros expertos en joyería nupcial te guiarán en la elección de la pieza perfecta para tu día especial
                 </p>
                 <Link
-                  href="#"
-                  className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300 font-sans"
+                  href="/consulta"
+                  className="inline-block bg-[#C6A55C] text-white px-8 py-3 text-sm font-poppins tracking-wider hover:bg-black transition-colors duration-300"
                 >
-                  Descubrir Más
+                  SOLICITAR CITA
                 </Link>
               </div>
             </div>
           </section>
         </main>
 
-        <footer className="bg-black text-white py-12 border-t border-gold/20">
+        {/* Footer Section - Adding the footer here */}
+        <footer className="bg-black text-white py-12 mt-16 border-t border-gold/20">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div>
-                <h3 className="text-xl font-bold mb-4">Shop</h3>
+                <h3 className="text-xl font-bold mb-4 font-poppins">Shop</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Men
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Women
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Accessories
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       New Arrivals
                     </Link>
                   </li>
                 </ul>
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-4">About</h3>
+                <h3 className="text-xl font-bold mb-4 font-poppins">About</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Our Story
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Careers
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Press
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Sustainability
                     </Link>
                   </li>
                 </ul>
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-4">Customer Care</h3>
+                <h3 className="text-xl font-bold mb-4 font-poppins">Customer Care</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Contact Us
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Shipping & Returns
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Size Guide
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       FAQ
                     </Link>
                   </li>
                 </ul>
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-4">Connect</h3>
+                <h3 className="text-xl font-bold mb-4 font-poppins">Connect</h3>
                 <div className="flex space-x-4">
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
+                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
                     <span className="sr-only">Facebook</span>
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path
@@ -501,7 +581,7 @@ export default function Home() {
                       />
                     </svg>
                   </Link>
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
+                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
                     <span className="sr-only">Instagram</span>
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path
@@ -511,7 +591,7 @@ export default function Home() {
                       />
                     </svg>
                   </Link>
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
+                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
                     <span className="sr-only">Twitter</span>
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
@@ -521,12 +601,12 @@ export default function Home() {
               </div>
             </div>
             <div className="mt-12 border-t border-gray-800 pt-8 flex justify-between items-center">
-              <p className="text-sm">&copy; 2023 Berlin Jewels. All rights reserved.</p>
+              <p className="text-sm font-poppins">&copy; 2023 Berlin Jewels. All rights reserved.</p>
               <div className="flex space-x-6">
-                <Link href="#" className="text-sm hover:text-gold transition-colors">
+                <Link href="#" className="text-sm hover:text-gold transition-colors font-poppins">
                   Privacy Policy
                 </Link>
-                <Link href="#" className="text-sm hover:text-gold transition-colors">
+                <Link href="#" className="text-sm hover:text-gold transition-colors font-poppins">
                   Terms of Service
                 </Link>
               </div>
@@ -536,5 +616,4 @@ export default function Home() {
       </div>
     </MainLayout>
   )
-}
-
+} 

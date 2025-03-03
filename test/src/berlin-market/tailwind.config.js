@@ -56,6 +56,7 @@ module.exports = {
       fontFamily: {
         'serif': ['Cormorant Garamond', 'serif'],
         'sans': ['Poppins', 'sans-serif'],
+        poppins: ['var(--font-poppins)', 'sans-serif'],
       },
       screens: {
         'xs': '475px',

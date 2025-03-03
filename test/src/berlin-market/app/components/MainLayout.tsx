@@ -64,27 +64,6 @@ export default function MainLayout({ children, cartCount = 0, wishlistCount = 0 
 
         {children}
 
-        {/* Enhanced footer with animations */}
-        <footer className="bg-black text-white py-12 mt-16 border-t border-gold/20">
-          {/* Newsletter signup */}
-          <div className="max-w-md mx-auto px-4 mb-12">
-            <h3 className="text-xl font-bold mb-4 text-center">Únete a Nuestra Newsletter</h3>
-            <form onSubmit={handleNewsletterSignup} className="flex gap-2">
-              <input
-                type="email"
-                placeholder="Tu email"
-                className="flex-1 px-4 py-2 rounded-sm bg-white/10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold transition-all duration-300"
-              />
-              <button
-                type="submit"
-                className="px-6 py-2 bg-gold text-white rounded-sm hover:bg-gold/80 transition-all duration-300"
-              >
-                Suscribirse
-              </button>
-            </form>
-          </div>
-        </footer>
-        
         {/* Scroll to top button */}
         <button 
           onClick={scrollToTop}
