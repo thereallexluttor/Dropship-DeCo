@@ -372,21 +372,21 @@ export default function Bodas() {
               <div className="grid grid-cols-3 gap-8 mt-12">
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <img src="/cap2.jpg" alt="Calidad" className="w-12 h-12 opacity-80" />
+                    <img src="/icons/diamond.png" alt="Calidad" className="w-12 h-12 opacity-80" />
                   </div>
                   <h3 className="text-sm font-medium mb-2">Diamantes Certificados</h3>
                   <p className="text-xs text-gray-500">Máxima pureza y calidad</p>
                 </div>
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <img src="/cap3.jpg" alt="Artesanía" className="w-12 h-12 opacity-80" />
+                    <img src="/icons/exclusive.png" alt="Artesanía" className="w-12 h-12 opacity-80" />
                   </div>
                   <h3 className="text-sm font-medium mb-2">Artesanía Exclusiva</h3>
                   <p className="text-xs text-gray-500">Diseños únicos y personalizados</p>
                 </div>
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <img src="/cap4.jpg" alt="Garantía" className="w-12 h-12 opacity-80" />
+                    <img src="/icons/warranty.png" alt="Garantía" className="w-12 h-12 opacity-80" />
                   </div>
                   <h3 className="text-sm font-medium mb-2">Garantía de por Vida</h3>
                   <p className="text-xs text-gray-500">Compromiso con la calidad</p>
