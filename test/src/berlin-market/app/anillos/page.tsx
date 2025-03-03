@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ShoppingBag, Search, Menu, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import PageTransition from "../components/PageTransition"
+import FadeInOnScroll from '../components/FadeInOnScroll'
 
 export default function AnillosPage() {
   // Reuse the same state and handlers from main page
@@ -394,50 +395,52 @@ export default function AnillosPage() {
             {/* Products Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
-                <div key={item} className="bg-white group flex flex-col h-full border border-gray-200 hover:border-black/20 transition-all duration-500 rounded-lg overflow-hidden">
-                  <div className="relative aspect-square">
-                    {/* Wishlist Button */}
-                    <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
-                      <svg 
-                        className="w-5 h-5 text-black transition-colors" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={1.5} 
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                <FadeInOnScroll key={item} delay={item * 100}>
+                  <div className="bg-white group flex flex-col h-full border border-gray-200 hover:border-black/20 transition-all duration-500 rounded-lg overflow-hidden">
+                    <div className="relative aspect-square">
+                      {/* Wishlist Button */}
+                      <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <svg 
+                          className="w-5 h-5 text-black transition-colors" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={1.5} 
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                          />
+                        </svg>
+                      </button>
+                      
+                      {/* Product Image */}
+                      <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
+                        <Image
+                          src={`/placeholder.svg`}
+                          alt={`Anillo ${item}`}
+                          fill
+                          className="object-cover"
                         />
-                      </svg>
-                    </button>
-                    
-                    {/* Product Image */}
-                    <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
-                      <Image
-                        src={`/placeholder.svg`}
-                        alt={`Anillo ${item}`}
-                        fill
-                        className="object-cover"
-                      />
+                      </div>
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="p-4 flex flex-col items-center text-center">
+                      <p className="text-xs tracking-wider text-gray-500 font-light mb-1">ANILLOS</p>
+                      <h3 className="text-sm font-medium text-black mb-2">Anillo Diamante Solitario</h3>
+                      <p className="text-sm font-light text-black mb-4">2.999 €</p>
+                      
+                      <Link
+                        href="#"
+                        className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300"
+                      >
+                        Ver Detalles
+                      </Link>
                     </div>
                   </div>
-
-                  {/* Product Info */}
-                  <div className="p-4 flex flex-col items-center text-center">
-                    <p className="text-xs tracking-wider text-gray-500 font-light mb-1">ANILLOS</p>
-                    <h3 className="text-sm font-medium text-black mb-2">Anillo Diamante Solitario</h3>
-                    <p className="text-sm font-light text-black mb-4">2.999 €</p>
-                    
-                    <Link
-                      href="#"
-                      className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300"
-                    >
-                      Ver Detalles
-                    </Link>
-                  </div>
-                </div>
+                </FadeInOnScroll>
               ))}
             </div>
           </div>

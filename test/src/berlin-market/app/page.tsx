@@ -7,6 +7,7 @@ import { useState, useRef, useEffect } from "react"
 import PageTransition from "./components/PageTransition"
 import MainLayout from "./components/MainLayout"
 import ProductCard from "./components/ProductCard"
+import FadeInOnScroll from './components/FadeInOnScroll'
 
 export default function Home() {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
@@ -374,8 +375,10 @@ export default function Home() {
             <div className="container mx-auto px-4">
               <h2 className="text-3xl font-sans text-black text-center mb-12">Joyas Destacadas</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((item) => (
-                  <ProductCard key={item} product={{ id: item.toString(), name: `Anillo Diamante "Eternidad"`, price: 4.999, category: "Colección Royal", image: "/placeholder.svg" }} />
+                {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
+                  <FadeInOnScroll key={item} delay={item * 100}>
+                    <ProductCard product={{ id: item.toString(), name: `Anillo Diamante "Eternidad"`, price: 4.999, category: "Colección Royal", image: "/placeholder.svg" }} />
+                  </FadeInOnScroll>
                 ))}
               </div>
             </div>
