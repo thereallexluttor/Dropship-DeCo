@@ -9,7 +9,8 @@ import MainLayout from "../components/MainLayout"
 import ProductCard from "../components/ProductCard"
 import FadeInOnScroll from '../components/FadeInOnScroll'
 
-export default function Bodas() {
+export default function Compromiso() {
+  // ... existing state declarations from bodas page ...
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -18,6 +19,7 @@ export default function Bodas() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [activeSlide, setActiveSlide] = useState(0)
 
+  // ... existing categories array and handlers from bodas page ...
   const categories = [
     {
       name: "COLECCIONES",
@@ -57,6 +59,8 @@ export default function Bodas() {
     },
   ]
 
+  // ... existing handlers and effects from bodas page ...
+
   const handleMouseEnter = (index: number) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
@@ -70,6 +74,11 @@ export default function Bodas() {
     }, 200)
   }
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Searching for:", searchQuery)
+  }
+
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -77,11 +86,6 @@ export default function Bodas() {
       }
     }
   }, [])
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Searching for:", searchQuery)
-  }
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -95,7 +99,7 @@ export default function Bodas() {
     <MainLayout>
       <div className="min-h-screen bg-white">
         <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gray-200">
-          {/* Mobile Search Bar - Full Width when open */}
+          {/* Mobile Search Bar */}
           <div className={`
             md:hidden
             ${isMobileSearchOpen ? 'block' : 'hidden'}
@@ -108,19 +112,7 @@ export default function Bodas() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                className="
-                  flex-1
-                  h-10
-                  px-4
-                  rounded-full
-                  bg-gray-100
-                  text-black
-                  placeholder-gray-500
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-blue-500
-                  text-sm
-                "
+                className="flex-1 h-10 px-4 rounded-full bg-gray-100 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 autoFocus
               />
               <button
@@ -148,8 +140,7 @@ export default function Bodas() {
               />
             </Link>
 
-            {/* Rest of the header content remains the same as in page.tsx */}
-            {/* ... Navigation, search, and mobile menu code ... */}
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
               {categories.map((category, index) => (
                 <div
@@ -187,6 +178,7 @@ export default function Bodas() {
                 </div>
               ))}
             </nav>
+
             <div className="flex items-center space-x-4">
               {/* Desktop Search */}
               <div className="relative hidden md:block">
@@ -260,13 +252,7 @@ export default function Bodas() {
               {categories.map((category, index) => (
                 <div key={index} className="px-4">
                   <button 
-                    className="
-                      flex justify-between items-center
-                      w-full py-4
-                      text-black text-sm font-bold
-                      transition-colors duration-200
-                      hover:text-blue-600
-                    "
+                    className="flex justify-between items-center w-full py-4 text-black text-sm font-bold transition-colors duration-200 hover:text-blue-600"
                     onClick={() => setActiveDropdown(activeDropdown === index ? null : index)}
                   >
                     {category.name}
@@ -332,27 +318,27 @@ export default function Bodas() {
                   <div className="h-full w-full flex items-center justify-center relative z-10">
                     <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-2 md:space-y-4">
                       <div className="bg-white/90 text-black px-4 py-1.5 md:px-5 md:py-2 inline-block rounded-sm text-[8px] md:text-sm font-light tracking-[0.3em] font-poppins">
-                        JOYAS PARA EL DÍA MÁS ESPECIAL
+                        EL COMIENZO DE VUESTRA HISTORIA
                       </div>
                       <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl">
-                        <span className="block text-[#C6A55C] font-light italic">Colección Nupcial</span>
-                        <span className="block font-medium mt-2">El Arte de la Eternidad</span>
+                        <span className="block text-[#C6A55C] font-light italic">Anillos de Compromiso</span>
+                        <span className="block font-medium mt-2">Momentos Inolvidables</span>
                       </h1>
                       <p className="text-[8px] md:text-base lg:text-lg text-white/90 font-light tracking-[0.2em] uppercase font-poppins max-w-2xl mx-auto">
-                        Cada pieza cuenta una historia de amor eterna
+                        Diseños únicos para una promesa eterna
                       </p>
                       <div className="pt-2 md:pt-6 space-x-4">
                         <Link
                           href="#collection"
                           className="group/btn relative overflow-hidden bg-white/90 text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-[#C6A55C] hover:text-white"
                         >
-                          EXPLORAR COLECCIÓN
+                          VER COLECCIÓN
                         </Link>
                         <Link
                           href="#appointment"
                           className="group/btn relative overflow-hidden border border-white/80 text-white px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-white hover:text-black"
                         >
-                          RESERVAR CITA
+                          ASESORAMIENTO PERSONAL
                         </Link>
                       </div>
                     </div>
@@ -364,57 +350,58 @@ export default function Bodas() {
 
           <section className="py-16 bg-gradient-to-b from-white to-[#FDF9F3]">
             <div className="container mx-auto px-4 text-center max-w-4xl">
-              <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">El Símbolo de Vuestro Amor</h2>
+              <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">El Anillo Perfecto Para Ella</h2>
               <p className="text-gray-600 leading-relaxed mb-8 font-light font-poppins">
-                Cada joya de nuestra colección nupcial está diseñada para capturar la esencia del amor eterno. 
-                Creadas con los materiales más preciosos y elaboradas con dedicación artesanal.
+                Cada anillo de compromiso es una obra maestra que representa el inicio de vuestra historia de amor.
+                Creados con los diamantes más selectos y diseñados para brillar eternamente.
               </p>
               <div className="grid grid-cols-3 gap-8 mt-12">
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <img src="/icons/diamond.png" alt="Calidad" className="w-12 h-12 opacity-80" />
                   </div>
-                  <h3 className="text-sm font-medium mb-2">Diamantes Certificados</h3>
-                  <p className="text-xs text-gray-500">Máxima pureza y calidad</p>
+                  <h3 className="text-sm font-medium mb-2">Diamantes GIA</h3>
+                  <p className="text-xs text-gray-500">Certificación internacional</p>
                 </div>
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <img src="/icons/exclusive.png" alt="Artesanía" className="w-12 h-12 opacity-80" />
+                    <img src="/icons/exclusive.png" alt="Diseño" className="w-12 h-12 opacity-80" />
                   </div>
-                  <h3 className="text-sm font-medium mb-2">Artesanía Exclusiva</h3>
-                  <p className="text-xs text-gray-500">Diseños únicos y personalizados</p>
+                  <h3 className="text-sm font-medium mb-2">Diseño Personalizado</h3>
+                  <p className="text-xs text-gray-500">Creaciones únicas</p>
                 </div>
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <img src="/icons/warranty.png" alt="Garantía" className="w-12 h-12 opacity-80" />
                   </div>
-                  <h3 className="text-sm font-medium mb-2">Garantía de por Vida</h3>
-                  <p className="text-xs text-gray-500">Compromiso con la calidad</p>
+                  <h3 className="text-sm font-medium mb-2">Garantía Vitalicia</h3>
+                  <p className="text-xs text-gray-500">Cuidado permanente</p>
                 </div>
               </div>
             </div>
           </section>
 
+          {/* Product Grid Section */}
           <div className="container mx-auto px-4 py-16">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4">Nuestra Colección Nupcial</h2>
+              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4">Anillos de Compromiso</h2>
               <p className="text-gray-600 max-w-2xl mx-auto font-light font-poppins">
-                Descubre piezas únicas que celebran el amor y la unión eterna
+                Diseños únicos que simbolizan el comienzo de vuestra historia de amor
               </p>
             </div>
 
             <div className="mb-12 flex flex-wrap gap-4 justify-center">
               <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
-                Todas las Joyas
+                Todos los Anillos
               </button>
               <button className="px-8 py-2.5 border border-black/10 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300 font-poppins">
-                Anillos de Compromiso
+                Solitarios
               </button>
               <button className="px-8 py-2.5 border border-black/10 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300 font-poppins">
-                Alianzas
+                Con Halo
               </button>
               <button className="px-8 py-2.5 border border-black/10 rounded-sm text-sm hover:bg-black hover:text-white transition-all duration-300 font-poppins">
-                Complementos
+                Trilogía
               </button>
             </div>
 
@@ -442,7 +429,7 @@ export default function Bodas() {
                       <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
                         <Image
                           src="/cap1.jpg"
-                          alt={`Joya Nupcial ${item}`}
+                          alt={`Anillo de Compromiso ${item}`}
                           fill
                           className="object-cover"
                           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
@@ -452,15 +439,15 @@ export default function Bodas() {
                     </div>
 
                     <div className="p-6 flex flex-col items-center text-center">
-                      <p className="text-xs tracking-wider text-[#C6A55C] font-poppins mb-2">COLECCIÓN NUPCIAL</p>
-                      <h3 className="text-sm font-medium text-black mb-2 font-poppins">Anillo de Compromiso Diana</h3>
-                      <p className="text-sm font-light text-black mb-4 font-poppins">2.999 €</p>
+                      <p className="text-xs tracking-wider text-[#C6A55C] font-poppins mb-2">ANILLOS DE COMPROMISO</p>
+                      <h3 className="text-sm font-medium text-black mb-2 font-poppins">Solitario Brillante Victoria</h3>
+                      <p className="text-sm font-light text-black mb-4 font-poppins">3.499 €</p>
                       
                       <Link
                         href="#"
                         className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-[#C6A55C] hover:text-[#C6A55C] transition-all duration-300 font-poppins"
                       >
-                        Descubrir
+                        Ver Detalles
                       </Link>
                     </div>
                   </div>
@@ -469,27 +456,28 @@ export default function Bodas() {
             </div>
           </div>
 
+          {/* Consultation Section */}
           <section className="py-16 bg-[#FDF9F3]">
             <div className="container mx-auto px-4">
               <div className="max-w-3xl mx-auto text-center">
                 <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">
-                  Asesoramiento Personalizado
+                  Encuentra el Anillo Ideal
                 </h2>
                 <p className="text-gray-600 mb-8 font-light font-poppins">
-                  Nuestros expertos en joyería nupcial te guiarán en la elección de la pieza perfecta para tu día especial
+                  Nuestros expertos te guiarán en la elección del anillo de compromiso perfecto, adaptado a tu estilo y presupuesto
                 </p>
                 <Link
                   href="/consulta"
                   className="inline-block bg-[#C6A55C] text-white px-8 py-3 text-sm font-poppins tracking-wider hover:bg-black transition-colors duration-300"
                 >
-                  SOLICITAR CITA
+                  RESERVAR CITA
                 </Link>
               </div>
             </div>
           </section>
         </main>
 
-        {/* Footer Section - Adding the footer here */}
+        {/* Footer Section - Adding the full footer from bodas page */}
         <footer className="bg-black text-white py-12 mt-16 border-t border-gold/20">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
