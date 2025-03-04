@@ -33,8 +33,8 @@ export default function Bodas() {
       items: [
         { name: "Bodas", href: "/bodas" },
         { name: "Compromiso", href: "/compromiso" },
-        { name: "Regalos", href: "#" },
-        { name: "Edición Limitada", href: "#" }
+        { name: "Regalos", href: "/regalos" },
+        { name: "Edición Limitada", href: "edicion-limitada" }
       ],
     },
     {

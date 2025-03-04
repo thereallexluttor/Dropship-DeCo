@@ -4,11 +4,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { ShoppingBag, Search, Menu, X } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
+import PageTransition from "../components/PageTransition"
 import MainLayout from "../components/MainLayout"
+import ProductCard from "../components/ProductCard"
 import FadeInOnScroll from '../components/FadeInOnScroll'
 
-export default function CollaresPage() {
-  // Reuse the same state and handlers from main page
+export default function EdicionLimitada() {
+  // ... existing state declarations
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -17,6 +19,7 @@ export default function CollaresPage() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [activeSlide, setActiveSlide] = useState(0)
 
+  // ... existing categories array (same as in regalos page)
   const categories = [
     {
       name: "COLECCIONES",
@@ -33,30 +36,30 @@ export default function CollaresPage() {
         { name: "Bodas", href: "/bodas" },
         { name: "Compromiso", href: "/compromiso" },
         { name: "Regalos", href: "/regalos" },
-        { name: "Edición Limitada", href: "/edicion-limitada"}
+        { name: "Edición Limitada", href: "/edicion-limitada" }
       ],
     },
     {
       name: "MATERIALES",
       items: [
-        { name: "Oro 18k", href: "#" },
-        { name: "Platino", href: "#" },
-        { name: "Diamantes", href: "#" },
-        { name: "Piedras Preciosas", href: "#" }
+        { name: "Oro 18k", href: "/materiales/oro" },
+        { name: "Platino", href: "/materiales/platino" },
+        { name: "Diamantes", href: "/materiales/diamantes" },
+        { name: "Piedras Preciosas", href: "/materiales/piedras-preciosas" }
       ],
     },
     {
       name: "SERVICIOS",
       items: [
-        { name: "Personalización", href: "#" },
-        { name: "Grabado", href: "#" },
-        { name: "Mantenimiento", href: "#" },
-        { name: "Tasación", href: "#" }
+        { name: "Personalización", href: "/servicios/personalizacion" },
+        { name: "Grabado", href: "/servicios/grabado" },
+        { name: "Mantenimiento", href: "/servicios/mantenimiento" },
+        { name: "Tasación", href: "/servicios/tasacion" }
       ],
     },
   ]
 
-  // Reuse the same handlers from main page
+  // ... existing handlers and effects (same as in regalos page)
   const handleMouseEnter = (index: number) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
@@ -86,7 +89,7 @@ export default function CollaresPage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlide((current) => (current === 3 ? 0 : current + 1));
-    }, 5000); // Change slide every 5 seconds
+    }, 5000);
 
     return () => clearInterval(timer);
   }, []);
@@ -94,7 +97,7 @@ export default function CollaresPage() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-white">
-        {/* Header section - same as anillos page */}
+        {/* Header Section - Copied from regalos page */}
         <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gray-200">
           {/* Mobile Search Bar */}
           <div className={`
@@ -109,19 +112,7 @@ export default function CollaresPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                className="
-                  flex-1
-                  h-10
-                  px-4
-                  rounded-full
-                  bg-gray-100
-                  text-black
-                  placeholder-gray-500
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-blue-500
-                  text-sm
-                "
+                className="flex-1 h-10 px-4 rounded-full bg-gray-100 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 autoFocus
               />
               <button
@@ -137,7 +128,6 @@ export default function CollaresPage() {
             </form>
           </div>
 
-          {/* Main Header Content */}
           <div className="container mx-auto px-4 py-2 flex items-center justify-between">
             <Link
               href="/"
@@ -148,10 +138,9 @@ export default function CollaresPage() {
                 alt="Berlin Jewelry Logo" 
                 className="h-11 w-auto transition-all duration-300 ease-in-out group-hover:[filter:brightness(0)_invert(1)]" 
               />
-              
             </Link>
 
-            {/* Navigation Menu */}
+            {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
               {categories.map((category, index) => (
                 <div
@@ -162,7 +151,7 @@ export default function CollaresPage() {
                 >
                   <Link 
                     href="#"
-                    className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white"
+                    className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white font-poppins"
                   >
                     {category.name}
                   </Link>
@@ -190,7 +179,6 @@ export default function CollaresPage() {
               ))}
             </nav>
 
-            {/* Header Icons */}
             <div className="flex items-center space-x-4">
               {/* Desktop Search */}
               <div className="relative hidden md:block">
@@ -264,13 +252,7 @@ export default function CollaresPage() {
               {categories.map((category, index) => (
                 <div key={index} className="px-4">
                   <button 
-                    className="
-                      flex justify-between items-center
-                      w-full py-4
-                      text-black text-sm font-bold
-                      transition-colors duration-200
-                      hover:text-blue-600
-                    "
+                    className="flex justify-between items-center w-full py-4 text-black text-sm font-bold transition-colors duration-200 hover:text-blue-600"
                     onClick={() => setActiveDropdown(activeDropdown === index ? null : index)}
                   >
                     {category.name}
@@ -308,11 +290,10 @@ export default function CollaresPage() {
         </header>
 
         <main>
-          {/* Hero Section */}
+          {/* Hero Section - Modified for Edición Limitada */}
           <section className="relative w-full pt-20">
             <div className="container mx-auto px-4">
               <div className="relative aspect-[21/9] w-full">
-                {/* Carousel */}
                 <div className="absolute inset-0">
                   {[1, 2, 3, 4].map((_, index) => (
                     <div
@@ -332,45 +313,33 @@ export default function CollaresPage() {
                   ))}
                 </div>
 
-                {/* Hero Content Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/30 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                   
-                  {/* Diamond icon */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="relative">
-                      <svg 
-                        className="w-24 h-24 md:w-32 md:h-32 text-[#C6A55C] opacity-10" 
-                        viewBox="0 0 24 24" 
-                        fill="currentColor"
-                      >
-                        <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Hero Text Content */}
                   <div className="h-full w-full flex items-center justify-center relative z-10">
-                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-3 transform transition-all duration-500 hover:scale-105">
-                      <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
-                        COLECCIÓN DE COLLARES
+                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-2 md:space-y-4">
+                      <div className="bg-white/90 text-black px-4 py-1.5 md:px-5 md:py-2 inline-block rounded-sm text-[8px] md:text-sm font-light tracking-[0.3em] font-poppins">
+                        EDICIÓN LIMITADA
                       </div>
-                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
-                        <span className="block text-white font-extralight">Descubre</span>
-                        <span className="block font-medium">Nuestros Collares</span>
+                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl">
+                        <span className="block text-[#C6A55C] font-light italic">Piezas Exclusivas</span>
+                        <span className="block font-medium mt-2">Diseños Únicos y Numerados</span>
                       </h1>
-                      <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
-                        Elegancia en cada detalle
+                      <p className="text-[8px] md:text-base lg:text-lg text-white/90 font-light tracking-[0.2em] uppercase font-poppins max-w-2xl mx-auto">
+                        Colección limitada de joyas artesanales
                       </p>
-                      <div className="pt-1 md:pt-4">
+                      <div className="pt-2 md:pt-6 space-x-4">
                         <Link
-                          href="#"
-                          className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
+                          href="#collection"
+                          className="group/btn relative overflow-hidden bg-white/90 text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-[#C6A55C] hover:text-white"
                         >
-                          <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
-                            VER COLECCIÓN
-                          </span>
-                          <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
+                          VER COLECCIÓN
+                        </Link>
+                        <Link
+                          href="#appointment"
+                          className="group/btn relative overflow-hidden border border-white/80 text-white px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-white hover:text-black"
+                        >
+                          RESERVAR PIEZA
                         </Link>
                       </div>
                     </div>
@@ -380,62 +349,49 @@ export default function CollaresPage() {
             </div>
           </section>
 
+          {/* Features Section - Modified for Edición Limitada */}
           <section className="py-16 bg-gradient-to-b from-white to-[#FDF9F3]">
             <div className="container mx-auto px-4 text-center max-w-4xl">
-              <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">Artesanía y Excelencia</h2>
+              <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">Artesanía Excepcional</h2>
               <p className="text-gray-600 leading-relaxed mb-8 font-light font-poppins">
-                Cada collar es una obra maestra única, creada con los materiales más preciosos y elaborada con dedicación artesanal.
+                Cada pieza es única, creada con los más altos estándares de calidad y numerada individualmente
+                para garantizar su exclusividad.
               </p>
               <div className="grid grid-cols-3 gap-8 mt-12">
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <img src="/icons/diamond.png" alt="Calidad" className="w-12 h-12 opacity-80" />
+                    <img src="/icons/diamond.png" alt="Exclusividad" className="w-12 h-12 opacity-80" />
                   </div>
-                  <h3 className="text-sm font-medium mb-2">Diamantes Certificados</h3>
-                  <p className="text-xs text-gray-500">Máxima pureza y calidad</p>
+                  <h3 className="text-sm font-medium mb-2 font-poppins">Edición Numerada</h3>
+                  <p className="text-xs text-gray-500 font-poppins">Series limitadas</p>
                 </div>
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <img src="/icons/exclusive.png" alt="Artesanía" className="w-12 h-12 opacity-80" />
                   </div>
-                  <h3 className="text-sm font-medium mb-2">Artesanía Exclusiva</h3>
-                  <p className="text-xs text-gray-500">Diseños únicos y personalizados</p>
+                  <h3 className="text-sm font-medium mb-2 font-poppins">Artesanía Manual</h3>
+                  <p className="text-xs text-gray-500 font-poppins">Creación artesanal</p>
                 </div>
                 <div className="text-center">
                   <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <img src="/icons/warranty.png" alt="Garantía" className="w-12 h-12 opacity-80" />
+                    <img src="/icons/warranty.png" alt="Certificado" className="w-12 h-12 opacity-80" />
                   </div>
-                  <h3 className="text-sm font-medium mb-2">Garantía de por Vida</h3>
-                  <p className="text-xs text-gray-500">Compromiso con la calidad</p>
+                  <h3 className="text-sm font-medium mb-2 font-poppins">Certificado Único</h3>
+                  <p className="text-xs text-gray-500 font-poppins">Autenticidad garantizada</p>
                 </div>
               </div>
             </div>
           </section>
 
+          {/* Product Grid Section - Modified for Edición Limitada */}
           <div className="container mx-auto px-4 py-16">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4">Nuestra Colección de Collares</h2>
+              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4">Colección Limitada</h2>
               <p className="text-gray-600 max-w-2xl mx-auto font-light font-poppins">
-                Descubre piezas únicas que celebran la elegancia y el diseño atemporal
+                Descubre nuestras piezas más exclusivas, disponibles en cantidades limitadas
               </p>
             </div>
 
-            <div className="mb-12 flex flex-wrap gap-4 justify-center">
-              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
-                Todos los Collares
-              </button>
-              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
-                Gargantillas
-              </button>
-              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
-                Cadenas
-              </button>
-              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
-                Colgantes
-              </button>
-            </div>
-
-            {/* Update product grid images */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
                 <FadeInOnScroll key={item} delay={item * 100}>
@@ -459,22 +415,24 @@ export default function CollaresPage() {
                       
                       <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
                         <Image
-                          src={`/cap1.jpg`}
-                          alt={`Collar ${item}`}
+                          src="/cap1.jpg"
+                          alt={`Edición Limitada ${item}`}
                           fill
                           className="object-cover"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                         />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
                       </div>
                     </div>
 
-                    <div className="p-4 flex flex-col items-center text-center">
-                      <p className="text-xs tracking-wider text-gray-500 font-light mb-1">COLLARES</p>
-                      <h3 className="text-sm font-medium text-black mb-2">Collar Diamante Clásico</h3>
-                      <p className="text-sm font-light text-black mb-4">1.999 €</p>
+                    <div className="p-6 flex flex-col items-center text-center">
+                      <p className="text-xs tracking-wider text-[#C6A55C] font-poppins mb-2">EDICIÓN LIMITADA</p>
+                      <h3 className="text-sm font-medium text-black mb-2 font-poppins">Anillo Colección Única</h3>
+                      <p className="text-sm font-light text-black mb-4 font-poppins">3.999 €</p>
                       
                       <Link
                         href="#"
-                        className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300"
+                        className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-[#C6A55C] hover:text-[#C6A55C] transition-all duration-300 font-poppins"
                       >
                         Ver Detalles
                       </Link>
@@ -485,110 +443,110 @@ export default function CollaresPage() {
             </div>
           </div>
 
-          {/* Add Personal Advisory Section */}
+          {/* Consultation Section - Modified for Edición Limitada */}
           <section className="py-16 bg-[#FDF9F3]">
             <div className="container mx-auto px-4">
               <div className="max-w-3xl mx-auto text-center">
                 <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">
-                  Asesoramiento Personalizado
+                  Reserva Tu Pieza Exclusiva
                 </h2>
                 <p className="text-gray-600 mb-8 font-light font-poppins">
-                  Nuestros expertos en joyería te guiarán en la elección del collar perfecto que refleje tu estilo único
+                  Asegura tu pieza única de nuestra colección limitada antes de que se agote
                 </p>
                 <Link
                   href="/consulta"
                   className="inline-block bg-[#C6A55C] text-white px-8 py-3 text-sm font-poppins tracking-wider hover:bg-black transition-colors duration-300"
                 >
-                  SOLICITAR CITA
+                  RESERVAR AHORA
                 </Link>
               </div>
             </div>
           </section>
         </main>
 
-        {/* Footer - adding mt-16 class */}
+        {/* Footer Section */}
         <footer className="bg-black text-white py-12 mt-16 border-t border-gold/20">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div>
-                <h3 className="text-xl font-bold mb-4">Shop</h3>
+                <h3 className="text-xl font-bold mb-4 font-poppins">Shop</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Men
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Women
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Accessories
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       New Arrivals
                     </Link>
                   </li>
                 </ul>
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-4">About</h3>
+                <h3 className="text-xl font-bold mb-4 font-poppins">About</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Our Story
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Careers
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Press
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Sustainability
                     </Link>
                   </li>
                 </ul>
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-4">Customer Care</h3>
+                <h3 className="text-xl font-bold mb-4 font-poppins">Customer Care</h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Contact Us
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Shipping & Returns
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       Size Guide
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
+                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
                       FAQ
                     </Link>
                   </li>
                 </ul>
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-4">Connect</h3>
+                <h3 className="text-xl font-bold mb-4 font-poppins">Connect</h3>
                 <div className="flex space-x-4">
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
+                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
                     <span className="sr-only">Facebook</span>
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path
@@ -598,7 +556,7 @@ export default function CollaresPage() {
                       />
                     </svg>
                   </Link>
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
+                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
                     <span className="sr-only">Instagram</span>
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path
@@ -608,7 +566,7 @@ export default function CollaresPage() {
                       />
                     </svg>
                   </Link>
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
+                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
                     <span className="sr-only">Twitter</span>
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
@@ -618,12 +576,12 @@ export default function CollaresPage() {
               </div>
             </div>
             <div className="mt-12 border-t border-gray-800 pt-8 flex justify-between items-center">
-              <p className="text-sm">&copy; 2023 Berlin Jewels. All rights reserved.</p>
+              <p className="text-sm font-poppins">&copy; 2023 Berlin Jewels. All rights reserved.</p>
               <div className="flex space-x-6">
-                <Link href="#" className="text-sm hover:text-gold transition-colors">
+                <Link href="#" className="text-sm hover:text-gold transition-colors font-poppins">
                   Privacy Policy
                 </Link>
-                <Link href="#" className="text-sm hover:text-gold transition-colors">
+                <Link href="#" className="text-sm hover:text-gold transition-colors font-poppins">
                   Terms of Service
                 </Link>
               </div>

@@ -32,9 +32,9 @@ export default function AnillosPage() {
       name: "OCASIONES",
       items: [
         { name: "Bodas", href: "/bodas" },
-        { name: "Compromiso", href: "#" },
-        { name: "Regalos", href: "#" },
-        { name: "Edición Limitada", href: "#" }
+        { name: "Compromiso", href: "/compromiso" },
+        { name: "Regalos", href: "/regalos" },
+        { name: "Edición Limitada", href: "/edicion-limitada"}
       ],
     },
     {
