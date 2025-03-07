@@ -9,6 +9,14 @@ import MainLayout from "./components/MainLayout"
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 
+// Image Enhancement Styles
+const imageEffects = {
+  gold: "sepia(50%) hue-rotate(5deg) saturate(150%)",
+  platinum: "brightness(110%) contrast(110%)",
+  diamond: "brightness(120%) contrast(90%)",
+  vintage: "sepia(20%) contrast(105%)"
+}
+
 export default function Home() {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -23,38 +31,126 @@ export default function Home() {
   const categories = [
     {
       name: "COLECCIONES",
+      description: "Descubre nuestra exclusiva selección de joyas",
+      featured: { name: "Nueva Colección Primavera", href: "/nueva-coleccion" },
       items: [
-        { name: "Anillos", href: "/anillos" },
-        { name: "Collares", href: "/collares" },
-        { name: "Pulseras", href: "/pulseras" },
-        { name: "Pendientes", href: "/pendientes" }
+        { 
+          name: "Anillos", 
+          href: "/anillos",
+          description: "Anillos de compromiso y alta joyería",
+          image: "/cap1.jpg" 
+        },
+        { 
+          name: "Collares", 
+          href: "/collares",
+          description: "Elegantes collares y gargantillas",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Pulseras", 
+          href: "/pulseras",
+          description: "Pulseras artesanales exclusivas",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Pendientes", 
+          href: "/pendientes",
+          description: "Pendientes para cada ocasión",
+          image: "/cap4.jpg"
+        }
       ],
     },
     {
       name: "OCASIONES",
+      description: "El regalo perfecto para cada momento",
+      featured: { name: "Colección Bodas 2024", href: "/bodas" },
       items: [
-        { name: "Bodas", href: "/bodas" },
-        { name: "Compromiso", href: "/compromiso" },
-        { name: "Regalos", href: "/regalos" },
-        { name: "Edición Limitada", href: "/edicion-limitada"}
+        { 
+          name: "Bodas", 
+          href: "/bodas",
+          description: "Joyas para el día más especial",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Compromiso", 
+          href: "/compromiso",
+          description: "Anillos de compromiso únicos",
+          image: "/cap1.jpg"
+        },
+        { 
+          name: "Regalos", 
+          href: "/regalos",
+          description: "Detalles inolvidables",
+          image: "/cap4.jpg"
+        },
+        { 
+          name: "Edición Limitada", 
+          href: "/edicion-limitada",
+          description: "Piezas exclusivas numeradas",
+          image: "/cap3.jpg"
+        }
       ],
     },
     {
       name: "MATERIALES",
+      description: "La más alta calidad en cada material",
+      featured: { name: "Colección Diamantes Rare", href: "/diamantes" },
       items: [
-        { name: "Oro 18k", href: "#" },
-        { name: "Platino", href: "#" },
-        { name: "Diamantes", href: "#" },
-        { name: "Piedras Preciosas", href: "#" }
+        { 
+          name: "Oro 18k", 
+          href: "/oro-18k",
+          description: "Pureza y elegancia en oro",
+          image: "/cap1.jpg"
+        },
+        { 
+          name: "Platino", 
+          href: "/platino",
+          description: "El metal más noble y duradero",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Diamantes", 
+          href: "/diamantes",
+          description: "Diamantes certificados GIA",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Piedras Preciosas", 
+          href: "/piedras-preciosas",
+          description: "Gemas de excepcional calidad",
+          image: "/cap4.jpg"
+        }
       ],
     },
     {
       name: "SERVICIOS",
+      description: "Experiencia personalizada de lujo",
+      featured: { name: "Diseño a Medida", href: "/personalizacion" },
       items: [
-        { name: "Personalización", href: "#" },
-        { name: "Grabado", href: "#" },
-        { name: "Mantenimiento", href: "#" },
-        { name: "Tasación", href: "#" }
+        { 
+          name: "Personalización", 
+          href: "/personalizacion",
+          description: "Diseños únicos a tu medida",
+          image: "/cap4.jpg"
+        },
+        { 
+          name: "Grabado", 
+          href: "/grabado",
+          description: "Mensajes eternos en tus joyas",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Mantenimiento", 
+          href: "/mantenimiento",
+          description: "Cuidado experto de tus joyas",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Tasación", 
+          href: "/tasacion",
+          description: "Valoración profesional certificada",
+          image: "/cap1.jpg"
+        }
       ],
     },
   ]
@@ -180,7 +276,7 @@ export default function Home() {
                   </Link>
                   <div
                     className={`
-                      absolute left-0 mt-2 w-48 rounded-md shadow-lg 
+                      absolute left-0 mt-2 w-[480px] rounded-lg shadow-2xl 
                       bg-white ring-1 ring-black ring-opacity-5 
                       transition-all duration-300 ease-in-out
                       transform origin-top
@@ -189,17 +285,54 @@ export default function Home() {
                         : "opacity-0 scale-95 -translate-y-2 invisible"}
                     `}
                   >
-                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                      {category.items.map((item, itemIndex) => (
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
+                        <p className="text-sm text-gray-500">{category.description}</p>
+                      </div>
+                      
+                      {category.featured && (
                         <Link
-                          key={itemIndex}
-                          href={item.href}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
-                          role="menuitem"
+                          href={category.featured.href}
+                          className="block mb-6 p-4 bg-gradient-to-r from-[#C6A55C]/10 to-transparent rounded-lg hover:from-[#C6A55C]/20 transition-all duration-300"
                         >
-                          {item.name}
+                          <span className="text-xs font-medium text-[#C6A55C] uppercase tracking-wide">Destacado</span>
+                          <p className="text-sm font-medium text-gray-900 mt-1">{category.featured.name}</p>
                         </Link>
-                      ))}
+                      )}
+
+                      <div className="grid grid-cols-2 gap-6">
+                        {category.items.map((item, itemIndex) => (
+                          <Link
+                            key={itemIndex}
+                            href={item.href}
+                            className="group flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                          >
+                            <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-br from-[#C6A55C]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                className="object-cover transition-all duration-300 group-hover:scale-105"
+                                style={{
+                                  filter: 
+                                    item.name.toLowerCase().includes('oro') ? imageEffects.gold :
+                                    item.name.toLowerCase().includes('platino') ? imageEffects.platinum :
+                                    item.name.toLowerCase().includes('diamante') ? imageEffects.diamond :
+                                    imageEffects.vintage
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 group-hover:text-[#C6A55C] transition-colors duration-200">
+                                {item.name}
+                              </h4>
+                              <p className="text-xs text-gray-500">{item.description}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -273,7 +406,7 @@ export default function Home() {
             {/* Dark overlay */}
             <div 
               className={`
-                absolute inset-0 bg-black/50 
+                absolute inset-0 bg-black/50 backdrop-blur-sm
                 transition-opacity duration-300
                 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}
               `}
@@ -282,36 +415,68 @@ export default function Home() {
             
             {/* Menu panel */}
             <div className={`
-              absolute right-0 top-0 h-full w-[80%] max-w-sm
+              absolute right-0 top-0 h-full w-[90%] max-w-md
               bg-white shadow-xl
-              transform transition-transform duration-300
+              transform transition-transform duration-500 ease-out
               ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
             `}>
-              {/* Close button */}
-              <button 
-                className="absolute top-4 right-4 p-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <X className="h-6 w-6" />
-              </button>
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                  <img 
+                    src="/DEU_Berlin_COA.svg.png" 
+                    alt="Berlin Jewelry Logo" 
+                    className="h-8 w-auto" 
+                  />
+                </Link>
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
 
-              {/* Mobile menu content */}
-              <div className="pt-16 pb-6 px-4 divide-y divide-gray-100">
+              {/* Search bar */}
+              <div className="p-4 border-b">
+                <form onSubmit={handleSearch} className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar joyas..."
+                    className="
+                      w-full h-10 pl-10 pr-4
+                      bg-gray-100 rounded-lg
+                      text-sm text-gray-900
+                      placeholder-gray-500
+                      focus:outline-none focus:ring-2 focus:ring-[#C6A55C]
+                    "
+                  />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </form>
+              </div>
+
+              {/* Menu content with smooth transitions */}
+              <div className="overflow-y-auto h-[calc(100%-8rem)]">
                 {categories.map((category, index) => (
-                  <div key={index} className="py-4">
+                  <div key={index} className="border-b border-gray-100">
                     <button 
                       className="
-                        flex justify-between items-center w-full
-                        text-black text-sm font-bold
-                        transition-colors duration-200
-                        hover:text-[#C6A55C]
+                        flex justify-between items-center w-full p-4
+                        text-left text-gray-900 
+                        hover:bg-gray-50 transition-colors duration-200
                       "
                       onClick={() => setActiveDropdown(activeDropdown === index ? null : index)}
                     >
-                      {category.name}
+                      <div>
+                        <span className="text-sm font-medium">{category.name}</span>
+                        <p className="text-xs text-gray-500 mt-0.5">{category.description}</p>
+                      </div>
                       <svg
                         className={`
-                          w-4 h-4 transition-transform duration-300
+                          w-5 h-5 text-gray-400
+                          transition-transform duration-300
                           ${activeDropdown === index ? 'rotate-180' : ''}
                         `}
                         fill="none"
@@ -321,27 +486,73 @@ export default function Home() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
+
                     <div 
                       className={`
-                        overflow-hidden transition-all duration-300
-                        ${activeDropdown === index ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}
+                        overflow-hidden transition-all duration-300 ease-in-out
+                        ${activeDropdown === index ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'}
                       `}
                     >
-                      {category.items.map((item, itemIndex) => (
+                      {/* Featured item */}
+                      {category.featured && (
                         <Link
-                          key={itemIndex}
-                          href={item.href}
-                          className="
-                            block py-2 pl-4 text-sm text-gray-600
-                            hover:text-[#C6A55C] transition-colors duration-200
-                          "
+                          href={category.featured.href}
+                          className="block mx-4 mb-4 p-3 bg-gradient-to-r from-[#C6A55C]/10 to-transparent rounded-lg"
+                          onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          {item.name}
+                          <span className="text-xs font-medium text-[#C6A55C] uppercase tracking-wide">Destacado</span>
+                          <p className="text-sm font-medium text-gray-900 mt-1">{category.featured.name}</p>
                         </Link>
-                      ))}
+                      )}
+
+                      {/* Category items */}
+                      <div className="px-4 pb-4 space-y-2">
+                        {category.items.map((item, itemIndex) => (
+                          <Link
+                            key={itemIndex}
+                            href={item.href}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
+                              <p className="text-xs text-gray-500">{item.description}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Bottom actions */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
+                <div className="flex justify-between items-center">
+                  <Link
+                    href="/cuenta"
+                    className="text-sm text-gray-600 hover:text-[#C6A55C] transition-colors duration-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Mi Cuenta
+                  </Link>
+                  <Link
+                    href="/carrito"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#C6A55C] transition-colors duration-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    <span>Carrito (0)</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -353,7 +564,36 @@ export default function Home() {
               <div className="relative aspect-[21/9] w-full overflow-hidden rounded-lg">
                 {/* Carousel */}
                 <div className="absolute inset-0">
-                  {[1, 2, 3, 4].map((_, index) => (
+                  {[
+                    {
+                      image: "/cap1.jpg",
+                      title: "Colección Primavera",
+                      subtitle: "Elegancia Atemporal",
+                      description: "Piezas únicas hechas a mano con los materiales más finos",
+                      cta: { text: "Descubrir Colección", href: "/primavera" }
+                    },
+                    {
+                      image: "/cap2.jpg",
+                      title: "Anillos de Compromiso",
+                      subtitle: "Momentos Eternos",
+                      description: "Diseños exclusivos para ocasiones inolvidables",
+                      cta: { text: "Ver Colección", href: "/compromiso" }
+                    },
+                    {
+                      image: "/cap3.jpg",
+                      title: "Edición Limitada",
+                      subtitle: "Joyas Únicas",
+                      description: "Colección numerada de piezas irrepetibles",
+                      cta: { text: "Descubrir Ahora", href: "/edicion-limitada" }
+                    },
+                    {
+                      image: "/cap4.jpg",
+                      title: "Diamantes Certificados",
+                      subtitle: "Pureza Garantizada",
+                      description: "La más alta calidad en piedras preciosas",
+                      cta: { text: "Explorar Colección", href: "/diamantes" }
+                    }
+                  ].map((slide, index) => (
                     <div
                       key={index}
                       className={`
@@ -365,109 +605,183 @@ export default function Home() {
                       `}
                     >
                       <Image
-                        src={`/cap${index + 1}.jpg`}
-                        alt={`Slide ${index + 1}`}
+                        src={slide.image}
+                        alt={slide.title}
                         fill
+                        sizes="100vw"
+                        quality={90}
+                        priority={index === 0}
                         className={`
                           object-cover rounded-lg
                           transition-transform duration-[5000ms] ease-out
                           ${activeSlide === index ? 'scale-110' : 'scale-100'}
                         `}
-                        priority={index === 0}
+                        style={{
+                          filter: index % 4 === 0 ? imageEffects.gold :
+                                 index % 4 === 1 ? imageEffects.platinum :
+                                 index % 4 === 2 ? imageEffects.diamond :
+                                 imageEffects.vintage
+                        }}
                       />
+
+                      {/* Enhanced Gradient Overlay */}
+                      <div className="
+                        absolute inset-0 
+                        bg-gradient-to-r from-black/90 via-black/70 to-transparent 
+                        rounded-lg backdrop-blur-[2px] 
+                        transition-all duration-500 
+                        hover:backdrop-blur-sm group
+                      ">
+                        {/* Gold gradient overlay */}
+                        <div className="
+                          absolute inset-0 
+                          bg-gradient-to-r from-[#C6A55C]/20 via-[#C6A55C]/10 to-transparent 
+                          rounded-lg opacity-0 
+                          group-hover:opacity-100 
+                          transition-opacity duration-1000
+                        "></div>
+                        
+                        {/* Rotating Diamond icon */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="
+                            relative transform 
+                            transition-transform duration-700 
+                            group-hover:rotate-180
+                          ">
+                            <svg 
+                              className="
+                                w-24 h-24 md:w-32 md:h-32 
+                                text-[#C6A55C] opacity-10
+                                transition-all duration-700
+                                group-hover:opacity-20
+                                group-hover:scale-110
+                              " 
+                              viewBox="0 0 24 24" 
+                              fill="currentColor"
+                            >
+                              <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="h-full w-full flex items-center justify-center relative z-10">
+                          <div className="
+                            text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] 
+                            space-y-2 md:space-y-4 
+                            transform transition-all duration-500 
+                            hover:scale-105
+                          ">
+                            <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
+                              EDICIÓN LIMITADA
+                            </div>
+                            <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
+                              <span className="block text-white font-extralight">{slide.title}</span>
+                              <span className="block font-medium">{slide.subtitle}</span>
+                            </h1>
+                            <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
+                              {slide.description}
+                            </p>
+                            <div className="pt-1 md:pt-4 space-x-4">
+                              <Link
+                                href={slide.cta.href}
+                                className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
+                              >
+                                <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
+                                  {slide.cta.text}
+                                </span>
+                                <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
+                              </Link>
+                              <button
+                                className="group/btn relative overflow-hidden bg-transparent border border-white text-white px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
+                              >
+                                <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-black font-light">
+                                  AGENDAR CITA
+                                </span>
+                                <div className="absolute inset-0 bg-white transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Enhanced Gradient Overlay */}
-                <div className="
-                  absolute inset-0 
-                  bg-gradient-to-r from-black/90 via-black/70 to-transparent 
-                  rounded-lg backdrop-blur-[2px] 
-                  transition-all duration-500 
-                  hover:backdrop-blur-sm group
-                ">
-                  {/* Gold gradient overlay */}
-                  <div className="
-                    absolute inset-0 
-                    bg-gradient-to-r from-[#C6A55C]/20 via-[#C6A55C]/10 to-transparent 
-                    rounded-lg opacity-0 
-                    group-hover:opacity-100 
-                    transition-opacity duration-1000
-                  "></div>
-                  
-                  {/* Rotating Diamond icon */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="
-                      relative transform 
-                      transition-transform duration-700 
-                      group-hover:rotate-180
-                    ">
-                      <svg 
-                        className="
-                          w-24 h-24 md:w-32 md:h-32 
-                          text-[#C6A55C] opacity-10
-                          transition-all duration-700
-                          group-hover:opacity-20
-                          group-hover:scale-110
-                        " 
-                        viewBox="0 0 24 24" 
-                        fill="currentColor"
-                      >
-                        <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
-                      </svg>
-                    </div>
-                  </div>
+                {/* Enhanced Navigation Controls */}
+                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+                  {/* Previous Button */}
+                  <button 
+                    onClick={() => {
+                      setSlideDirection('prev')
+                      setActiveSlide((current) => (current === 0 ? 3 : current - 1))
+                    }}
+                    className="
+                      hidden md:flex items-center justify-center
+                      w-10 h-10 rounded-full
+                      bg-black/30 backdrop-blur-sm
+                      text-white
+                      hover:bg-white hover:text-black
+                      transition-all duration-300
+                      group
+                    "
+                  >
+                    <svg 
+                      className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-300" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
 
                   {/* Slide indicators */}
-                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  <div className="flex space-x-2">
                     {[0, 1, 2, 3].map((index) => (
                       <button
                         key={index}
-                        onClick={() => setActiveSlide(index)}
+                        onClick={() => {
+                          setSlideDirection(index > activeSlide ? 'next' : 'prev')
+                          setActiveSlide(index)
+                        }}
                         className={`
-                          w-2 h-2 rounded-full 
+                          h-2 rounded-full 
                           transition-all duration-300
                           ${activeSlide === index 
-                            ? 'bg-white w-6' 
-                            : 'bg-white/50 hover:bg-white/70'}
+                            ? 'bg-white w-8' 
+                            : 'bg-white/50 w-2 hover:bg-white/70'}
                         `}
                         aria-label={`Go to slide ${index + 1}`}
                       />
                     ))}
                   </div>
 
-                  {/* Content */}
-                  <div className="h-full w-full flex items-center justify-center relative z-10">
-                    <div className="
-                      text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] 
-                      space-y-1 md:space-y-3 
-                      transform transition-all duration-500 
-                      hover:scale-105
-                    ">
-                      <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
-                        EDICIÓN LIMITADA
-                      </div>
-                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
-                        <span className="block text-white font-extralight">Colección</span>
-                        <span className="block font-medium">Elegancia Atemporal</span>
-                      </h1>
-                      <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
-                        Piezas únicas hechas a mano
-                      </p>
-                      <div className="pt-1 md:pt-4">
-                        <Link
-                          href="#"
-                          className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
-                        >
-                          <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
-                            DESCUBRIR COLECCIÓN
-                          </span>
-                          <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Next Button */}
+                  <button 
+                    onClick={() => {
+                      setSlideDirection('next')
+                      setActiveSlide((current) => (current === 3 ? 0 : current + 1))
+                    }}
+                    className="
+                      hidden md:flex items-center justify-center
+                      w-10 h-10 rounded-full
+                      bg-black/30 backdrop-blur-sm
+                      text-white
+                      hover:bg-white hover:text-black
+                      transition-all duration-300
+                      group
+                    "
+                  >
+                    <svg 
+                      className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-300" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -475,10 +789,26 @@ export default function Home() {
 
           <section className="py-16 bg-white">
             <div className="container mx-auto px-4">
-              <h2 className="text-3xl font-sans text-center mb-4">Joyas Destacadas</h2>
-              <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto text-sm">
-                Descubre nuestra colección de piezas exclusivas, donde cada joya cuenta una historia única de artesanía y elegancia atemporal.
-              </p>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
+                <div className="max-w-2xl">
+                  <h2 className="text-3xl font-light mb-4">
+                    Joyas <span className="font-medium">Destacadas</span>
+                  </h2>
+                  <p className="text-gray-600 text-sm">
+                    Descubre nuestra colección de piezas exclusivas, donde cada joya cuenta una historia única de artesanía y elegancia atemporal.
+                  </p>
+                </div>
+                <div className="flex gap-4 mt-6 md:mt-0">
+                  <button className="px-6 py-2 border border-[#C6A55C] text-[#C6A55C] hover:bg-[#C6A55C] hover:text-white transition-colors duration-300 text-sm rounded-full">
+                    Filtrar
+                  </button>
+                  <button className="px-6 py-2 border border-[#C6A55C] text-[#C6A55C] hover:bg-[#C6A55C] hover:text-white transition-colors duration-300 text-sm rounded-full">
+                    Ordenar
+                  </button>
+                </div>
+              </div>
+
+              {/* Featured Products Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
                 {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
                   <FadeInOnScroll key={item} delay={item * 100}>
@@ -492,21 +822,26 @@ export default function Home() {
                       ">
                         {/* Product Image */}
                         <Image
-                          src="/placeholder.svg"
+                          src={`/cap${(item % 4) + 1}.jpg`}
                           alt={`Anillo Diamante "Eternidad"`}
                           fill
-                          className="
-                            object-cover
-                            transition-transform duration-700
-                            group-hover:scale-110
-                          "
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          quality={90}
+                          loading="eager"
+                          className="object-cover transition-all duration-700 group-hover:scale-110"
+                          style={{
+                            filter: item % 4 === 0 ? imageEffects.gold :
+                                   item % 4 === 1 ? imageEffects.platinum :
+                                   item % 4 === 2 ? imageEffects.diamond :
+                                   imageEffects.vintage
+                          }}
                         />
                         
                         {/* Quick View Overlay */}
                         <div className="
                           absolute inset-0 
                           bg-black/40 
-                          flex items-center justify-center
+                          flex flex-col items-center justify-center gap-4
                           opacity-0 transition-opacity duration-300
                           group-hover:opacity-100
                         ">
@@ -526,17 +861,49 @@ export default function Home() {
                             <Eye className="w-4 h-4" />
                             <span className="text-sm font-light">Vista Rápida</span>
                           </button>
+                          <button 
+                            className="
+                              bg-[#C6A55C] text-white
+                              px-6 py-2
+                              rounded-full
+                              flex items-center gap-2
+                              transform translate-y-4
+                              transition-all duration-300
+                              group-hover:translate-y-0
+                              hover:bg-black
+                            "
+                            aria-label="Añadir al carrito"
+                          >
+                            <ShoppingBag className="w-4 h-4" />
+                            <span className="text-sm font-light">Añadir al Carrito</span>
+                          </button>
                         </div>
+
+                        {/* Sale Badge */}
+                        {item % 3 === 0 && (
+                          <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-medium rounded-full">
+                            -20%
+                          </div>
+                        )}
+
+                        {/* New Badge */}
+                        {item % 4 === 0 && (
+                          <div className="absolute top-4 right-4 bg-[#C6A55C] text-white px-3 py-1 text-xs font-medium rounded-full">
+                            Nuevo
+                          </div>
+                        )}
                       </div>
 
                       {/* Product Info */}
                       <div className="mt-4 space-y-1">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="text-sm font-medium text-gray-900 group-hover:text-[#C6A55C] transition-colors duration-300">
-                              Anillo Diamante "Eternidad"
-                            </h3>
-                            <p className="text-xs text-gray-500">Colección Royal</p>
+                            <Link href="#" className="group/title">
+                              <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#C6A55C] transition-colors duration-300">
+                                Anillo Diamante "Eternidad"
+                              </h3>
+                              <p className="text-xs text-gray-500">Colección Royal</p>
+                            </Link>
                           </div>
                           <button 
                             className="
@@ -544,16 +911,32 @@ export default function Home() {
                               text-gray-400 
                               hover:text-[#C6A55C] 
                               transition-colors duration-300
+                              relative
                             "
-                            aria-label="Añadir al carrito"
+                            aria-label="Añadir a favoritos"
                           >
-                            <ShoppingBag className="w-4 h-4" />
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
                           </button>
                         </div>
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium text-gray-900">
-                            4.999 €
-                          </p>
+                          <div className="flex items-baseline gap-2">
+                            {item % 3 === 0 ? (
+                              <>
+                                <p className="text-sm font-medium text-gray-900">
+                                  3.999 €
+                                </p>
+                                <p className="text-xs text-gray-500 line-through">
+                                  4.999 €
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-sm font-medium text-gray-900">
+                                4.999 €
+                              </p>
+                            )}
+                          </div>
                           <div className="flex items-center">
                             <div className="flex text-[#C6A55C]">
                               {[...Array(5)].map((_, i) => (
@@ -565,10 +948,50 @@ export default function Home() {
                             <span className="ml-1 text-xs text-gray-500">(24)</span>
                           </div>
                         </div>
+
+                        {/* Stock Status */}
+                        {item % 5 === 0 ? (
+                          <p className="text-xs text-red-500">Solo quedan 2 unidades</p>
+                        ) : (
+                          <p className="text-xs text-green-600">En stock</p>
+                        )}
                       </div>
+
+                      {/* Quick Add Button - Mobile Only */}
+                      <button 
+                        className="
+                          md:hidden
+                          absolute bottom-4 right-4
+                          w-10 h-10
+                          bg-[#C6A55C] text-white
+                          rounded-full
+                          flex items-center justify-center
+                          shadow-lg
+                          transform translate-y-12 opacity-0
+                          group-hover:translate-y-0 group-hover:opacity-100
+                          transition-all duration-300
+                        "
+                      >
+                        <ShoppingBag className="w-5 h-5" />
+                      </button>
                     </div>
                   </FadeInOnScroll>
                 ))}
+              </div>
+
+              {/* Load More Button */}
+              <div className="text-center mt-12">
+                <button className="
+                  px-8 py-3
+                  border-2 border-[#C6A55C]
+                  text-[#C6A55C] hover:text-white
+                  hover:bg-[#C6A55C]
+                  transition-all duration-300
+                  rounded-full
+                  text-sm font-medium
+                ">
+                  Cargar Más Productos
+                </button>
               </div>
             </div>
           </section>
@@ -824,7 +1247,7 @@ export default function Home() {
                     aria-label="Pinterest"
                   >
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z"/>
+                      <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.552-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z"/>
                     </svg>
                   </Link>
                 </div>

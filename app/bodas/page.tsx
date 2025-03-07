@@ -469,6 +469,74 @@ export default function Bodas() {
             </div>
           </div>
 
+          <section className="py-16 bg-white">
+            <div className="container mx-auto px-4">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
+                <div className="max-w-2xl">
+                  <h2 className="text-3xl font-light mb-4">
+                    Joyas para <span className="font-medium">Bodas</span>
+                  </h2>
+                  <p className="text-gray-600 text-sm">
+                    Descubre nuestra exclusiva colección de joyas para bodas, donde cada pieza está diseñada para hacer de tu día especial un momento inolvidable.
+                  </p>
+                </div>
+                <div className="flex gap-4 mt-6 md:mt-0">
+                  <button className="px-6 py-2 border border-[#C6A55C] text-[#C6A55C] hover:bg-[#C6A55C] hover:text-white transition-colors duration-300 text-sm rounded-full">
+                    Filtrar
+                  </button>
+                  <button className="px-6 py-2 border border-[#C6A55C] text-[#C6A55C] hover:bg-[#C6A55C] hover:text-white transition-colors duration-300 text-sm rounded-full">
+                    Ordenar
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+                {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
+                  <FadeInOnScroll key={item} delay={item * 100}>
+                    <div className="bg-white group flex flex-col h-full hover:shadow-xl transition-all duration-500 rounded-sm overflow-hidden">
+                      <div className="relative aspect-square">
+                        <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
+                          <svg 
+                            className="w-5 h-5 text-black transition-colors" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={1.5} 
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                            />
+                          </svg>
+                        </button>
+                        
+                        <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
+                          <Image
+                            src="/cap1.jpg"
+                            alt={`Joya Nupcial ${item}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
+                        </div>
+                      </div>
+
+                      <div className="p-6 flex flex-col items-center text-center">
+                        <p className="text-xs tracking-wider text-[#C6A55C] font-poppins mb-2">COLECCIÓN NUPCIAL</p>
+                        <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#C6A55C] transition-colors duration-300">
+                          Alianza de Boda "Eternidad"
+                        </h3>
+                        <p className="text-xs text-gray-500">Colección Nupcial</p>
+                      </div>
+                    </div>
+                  </FadeInOnScroll>
+                ))}
+              </div>
+            </div>
+          </section>
+
           <section className="py-16 bg-[#FDF9F3]">
             <div className="container mx-auto px-4">
               <div className="max-w-3xl mx-auto text-center">

@@ -8,6 +8,14 @@ import PageTransition from "../components/PageTransition"
 import FadeInOnScroll from '../components/FadeInOnScroll'
 import MainLayout from "../components/MainLayout"
 
+// Image Enhancement Styles
+const imageEffects = {
+  gold: "sepia(50%) hue-rotate(5deg) saturate(150%)",
+  platinum: "brightness(110%) contrast(110%)",
+  diamond: "brightness(120%) contrast(90%)",
+  vintage: "sepia(20%) contrast(105%)"
+}
+
 export default function AnillosPage() {
   // Reuse the same state and handlers from main page
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
@@ -250,58 +258,140 @@ export default function AnillosPage() {
             </div>
           </div>
 
-          {/* Mobile Menu */}
+          {/* Mobile Menu Panel */}
           <div className={`
-            md:hidden
-            ${isMobileMenuOpen ? 'block' : 'hidden'}
-            absolute top-full left-0 right-0
-            bg-white
-            shadow-lg
-            z-10
+            fixed inset-0 z-50 md:hidden
+            ${isMobileMenuOpen ? 'visible' : 'invisible'}
           `}>
-            <div className="divide-y divide-gray-100">
-              {categories.map((category, index) => (
-                <div key={index} className="px-4">
-                  <button 
+            {/* Dark overlay */}
+            <div 
+              className={`
+                absolute inset-0 bg-black/50 backdrop-blur-sm
+                transition-opacity duration-300
+                ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'}
+              `}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            
+            {/* Menu panel */}
+            <div className={`
+              absolute right-0 top-0 h-full w-[90%] max-w-md
+              bg-white shadow-xl
+              transform transition-transform duration-500 ease-out
+              ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
+            `}>
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                  <img 
+                    src="/DEU_Berlin_COA.svg.png" 
+                    alt="Berlin Jewelry Logo" 
+                    className="h-8 w-auto" 
+                  />
+                </Link>
+                <button 
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Search bar */}
+              <div className="p-4 border-b">
+                <form onSubmit={handleSearch} className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar joyas..."
                     className="
-                      flex justify-between items-center
-                      w-full py-4
-                      text-black text-sm font-bold
-                      transition-colors duration-200
-                      hover:text-blue-600
+                      w-full h-10 pl-10 pr-4
+                      bg-gray-100 rounded-lg
+                      text-sm text-gray-900
+                      placeholder-gray-500
+                      focus:outline-none focus:ring-2 focus:ring-[#C6A55C]
                     "
-                    onClick={() => setActiveDropdown(activeDropdown === index ? null : index)}
-                  >
-                    {category.name}
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${
-                        activeDropdown === index ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </form>
+              </div>
+
+              {/* Menu content with smooth transitions */}
+              <div className="overflow-y-auto h-[calc(100%-8rem)]">
+                {categories.map((category, index) => (
+                  <div key={index} className="border-b border-gray-100">
+                    <button 
+                      className="
+                        flex justify-between items-center w-full p-4
+                        text-left text-gray-900 
+                        hover:bg-gray-50 transition-colors duration-200
+                      "
+                      onClick={() => setActiveDropdown(activeDropdown === index ? null : index)}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  <div 
-                    className={`
-                      overflow-hidden transition-all duration-300 ease-in-out
-                      ${activeDropdown === index ? 'max-h-64 pb-4' : 'max-h-0'}
-                    `}
-                  >
-                    {category.items.map((item, itemIndex) => (
-                      <Link
-                        key={itemIndex}
-                        href={item.href}
-                        className="block py-2 pl-4 text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
+                      <div>
+                        <span className="text-sm font-medium">{category.name}</span>
+                      </div>
+                      <svg
+                        className={`
+                          w-5 h-5 text-gray-400
+                          transition-transform duration-300
+                          ${activeDropdown === index ? 'rotate-180' : ''}
+                        `}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        {item.name}
-                      </Link>
-                    ))}
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    <div 
+                      className={`
+                        overflow-hidden transition-all duration-300 ease-in-out
+                        ${activeDropdown === index ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'}
+                      `}
+                    >
+                      {/* Category items */}
+                      <div className="px-4 pb-4 space-y-2">
+                        {category.items.map((item, itemIndex) => (
+                          <Link
+                            key={itemIndex}
+                            href={item.href}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+
+              {/* Bottom actions */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
+                <div className="flex justify-between items-center">
+                  <Link
+                    href="/cuenta"
+                    className="text-sm text-gray-600 hover:text-[#C6A55C] transition-colors duration-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Mi Cuenta
+                  </Link>
+                  <Link
+                    href="/carrito"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#C6A55C] transition-colors duration-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    <span>Carrito (0)</span>
+                  </Link>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </header>
@@ -450,21 +540,26 @@ export default function AnillosPage() {
                     ">
                       {/* Product Image */}
                       <Image
-                        src="/placeholder.svg"
+                        src={`/cap${(item % 4) + 1}.jpg`}
                         alt={`Anillo Diamante "Eternidad"`}
                         fill
-                        className="
-                          object-cover
-                          transition-transform duration-700
-                          group-hover:scale-110
-                        "
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        quality={90}
+                        loading="eager"
+                        className="object-cover transition-all duration-700 group-hover:scale-110"
+                        style={{
+                          filter: item % 4 === 0 ? imageEffects.gold :
+                                 item % 4 === 1 ? imageEffects.platinum :
+                                 item % 4 === 2 ? imageEffects.diamond :
+                                 imageEffects.vintage
+                        }}
                       />
                       
                       {/* Quick View Overlay */}
                       <div className="
                         absolute inset-0 
                         bg-black/40 
-                        flex items-center justify-center
+                        flex flex-col items-center justify-center gap-4
                         opacity-0 transition-opacity duration-300
                         group-hover:opacity-100
                       ">
@@ -484,17 +579,49 @@ export default function AnillosPage() {
                           <Eye className="w-4 h-4" />
                           <span className="text-sm font-light">Vista Rápida</span>
                         </button>
+                        <button 
+                          className="
+                            bg-[#C6A55C] text-white
+                            px-6 py-2
+                            rounded-full
+                            flex items-center gap-2
+                            transform translate-y-4
+                            transition-all duration-300
+                            group-hover:translate-y-0
+                            hover:bg-black
+                          "
+                          aria-label="Añadir al carrito"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                          <span className="text-sm font-light">Añadir al Carrito</span>
+                        </button>
                       </div>
+
+                      {/* Sale Badge */}
+                      {item % 3 === 0 && (
+                        <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-medium rounded-full">
+                          -20%
+                        </div>
+                      )}
+
+                      {/* New Badge */}
+                      {item % 4 === 0 && (
+                        <div className="absolute top-4 right-4 bg-[#C6A55C] text-white px-3 py-1 text-xs font-medium rounded-full">
+                          Nuevo
+                        </div>
+                      )}
                     </div>
 
                     {/* Product Info */}
                     <div className="mt-4 space-y-1">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="text-sm font-medium text-gray-900 group-hover:text-[#C6A55C] transition-colors duration-300">
-                            Anillo Diamante "Eternidad"
-                          </h3>
-                          <p className="text-xs text-gray-500">Colección Royal</p>
+                          <Link href="#" className="group/title">
+                            <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#C6A55C] transition-colors duration-300">
+                              Anillo Diamante "Eternidad"
+                            </h3>
+                            <p className="text-xs text-gray-500">Colección Royal</p>
+                          </Link>
                         </div>
                         <button 
                           className="
@@ -502,16 +629,32 @@ export default function AnillosPage() {
                             text-gray-400 
                             hover:text-[#C6A55C] 
                             transition-colors duration-300
+                            relative
                           "
-                          aria-label="Añadir al carrito"
+                          aria-label="Añadir a favoritos"
                         >
-                          <ShoppingBag className="w-4 h-4" />
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
                         </button>
                       </div>
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900">
-                          4.999 €
-                        </p>
+                        <div className="flex items-baseline gap-2">
+                          {item % 3 === 0 ? (
+                            <>
+                              <p className="text-sm font-medium text-gray-900">
+                                3.999 €
+                              </p>
+                              <p className="text-xs text-gray-500 line-through">
+                                4.999 €
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-sm font-medium text-gray-900">
+                              4.999 €
+                            </p>
+                          )}
+                        </div>
                         <div className="flex items-center">
                           <div className="flex text-[#C6A55C]">
                             {[...Array(5)].map((_, i) => (
@@ -523,6 +666,13 @@ export default function AnillosPage() {
                           <span className="ml-1 text-xs text-gray-500">(24)</span>
                         </div>
                       </div>
+
+                      {/* Stock Status */}
+                      {item % 5 === 0 ? (
+                        <p className="text-xs text-red-500">Solo quedan 2 unidades</p>
+                      ) : (
+                        <p className="text-xs text-green-600">En stock</p>
+                      )}
                     </div>
                   </div>
                 </FadeInOnScroll>
