@@ -6,10 +6,11 @@ export function useScrollAnimation() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight
-      const progress = (window.scrollY / totalHeight) * 100
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight
+      const currentScroll = window.scrollY
+      const progress = (currentScroll / totalScroll) * 100
       setScrollProgress(progress)
-      setShowScrollTop(window.scrollY > 500)
+      setShowScrollTop(currentScroll > 400)
     }
 
     window.addEventListener('scroll', handleScroll)
@@ -23,5 +24,9 @@ export function useScrollAnimation() {
     })
   }
 
-  return { scrollProgress, showScrollTop, scrollToTop }
+  return {
+    scrollProgress,
+    showScrollTop,
+    scrollToTop
+  }
 } 

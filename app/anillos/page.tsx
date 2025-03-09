@@ -1,12 +1,43 @@
 "use client"
 
-import Image from "next/image"
-import Link from "next/link"
-import { ShoppingBag, Search, Menu, X, Eye } from "lucide-react"
-import { useState, useRef, useEffect } from "react"
-import PageTransition from "../components/PageTransition"
+import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { Dialog, Transition } from '@headlessui/react'
+import { Fragment } from 'react'
+import { Heart, X, Search, ShoppingBag, Menu, Eye } from 'lucide-react'
 import FadeInOnScroll from '../components/FadeInOnScroll'
 import MainLayout from "../components/MainLayout"
+import { useScrollAnimation } from "../hooks/useScrollAnimation"
+import { classNames } from "../utils/classNames"
+import ProductCard from '../components/ProductCard'
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  image: string;
+}
+
+// Sample products data
+const sampleProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Anillo Solitario Diamante "Eterno Amor"',
+    price: 2999,
+    category: 'Colección Premium',
+    image: '/rings/ring1.jpg',
+  },
+  {
+    id: '2',
+    name: 'Anillo de Compromiso "Infinity"',
+    price: 3499,
+    category: 'Colección Royal',
+    image: '/rings/ring2.jpg',
+  },
+  // Add more products as needed
+];
 
 // Image Enhancement Styles
 const imageEffects = {
@@ -17,55 +48,171 @@ const imageEffects = {
 }
 
 export default function AnillosPage() {
-  // Reuse the same state and handlers from main page
-  const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const { scrollProgress, showScrollTop, scrollToTop } = useScrollAnimation()
+  const [products] = useState<Product[]>(sampleProducts)
+  const [wishlist, setWishlist] = useState<string[]>([])
+  const [showQuickView, setShowQuickView] = useState<string | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [activeSlide, setActiveSlide] = useState(0)
+  const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
+  const [selectedSize, setSelectedSize] = useState<string>("")
+  const [showSizeGuide, setShowSizeGuide] = useState(false)
+  const [showVideo, setShowVideo] = useState<string | null>(null)
+  const [activeAngle, setActiveAngle] = useState(0)
+  const [isZoomed, setIsZoomed] = useState(false)
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 })
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const handleWishlist = (id: string) => {
+    setWishlist(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    )
+  }
+
+  const handleAddToCart = (product: Product) => {
+    // Implementation of adding to cart
+    console.log('Adding to cart:', product)
+  }
+
+  const handleQuickView = (product: Product) => {
+    setShowQuickView(product.id)
+  }
 
   const categories = [
     {
       name: "COLECCIONES",
+      description: "Descubre nuestra exclusiva selección de joyas",
+      featured: { name: "Nueva Colección Primavera", href: "/nueva-coleccion" },
       items: [
-        { name: "Anillos", href: "/anillos" },
-        { name: "Collares", href: "/collares" },
-        { name: "Pulseras", href: "/pulseras" },
-        { name: "Pendientes", href: "/pendientes" }
+        { 
+          name: "Anillos", 
+          href: "/anillos",
+          description: "Anillos de compromiso y alta joyería",
+          image: "/cap1.jpg" 
+        },
+        { 
+          name: "Collares", 
+          href: "/collares",
+          description: "Elegantes collares y gargantillas",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Pulseras", 
+          href: "/pulseras",
+          description: "Pulseras artesanales exclusivas",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Pendientes", 
+          href: "/pendientes",
+          description: "Pendientes para cada ocasión",
+          image: "/cap4.jpg"
+        }
       ],
     },
     {
       name: "OCASIONES",
+      description: "El regalo perfecto para cada momento",
+      featured: { name: "Colección Bodas 2024", href: "/bodas" },
       items: [
-        { name: "Bodas", href: "/bodas" },
-        { name: "Compromiso", href: "/compromiso" },
-        { name: "Regalos", href: "/regalos" },
-        { name: "Edición Limitada", href: "/edicion-limitada"}
+        { 
+          name: "Bodas", 
+          href: "/bodas",
+          description: "Joyas para el día más especial",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Compromiso", 
+          href: "/compromiso",
+          description: "Anillos de compromiso únicos",
+          image: "/cap1.jpg"
+        },
+        { 
+          name: "Regalos", 
+          href: "/regalos",
+          description: "Detalles inolvidables",
+          image: "/cap4.jpg"
+        },
+        { 
+          name: "Edición Limitada", 
+          href: "/edicion-limitada",
+          description: "Piezas exclusivas numeradas",
+          image: "/cap3.jpg"
+        }
       ],
     },
     {
       name: "MATERIALES",
+      description: "La más alta calidad en cada material",
+      featured: { name: "Colección Diamantes Rare", href: "/diamantes" },
       items: [
-        { name: "Oro 18k", href: "#" },
-        { name: "Platino", href: "#" },
-        { name: "Diamantes", href: "#" },
-        { name: "Piedras Preciosas", href: "#" }
+        { 
+          name: "Oro 18k", 
+          href: "/oro-18k",
+          description: "Pureza y elegancia en oro",
+          image: "/cap1.jpg"
+        },
+        { 
+          name: "Platino", 
+          href: "/platino",
+          description: "El metal más noble y duradero",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Diamantes", 
+          href: "/diamantes",
+          description: "Diamantes certificados GIA",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Piedras Preciosas", 
+          href: "/piedras-preciosas",
+          description: "Gemas de excepcional calidad",
+          image: "/cap4.jpg"
+        }
       ],
     },
     {
       name: "SERVICIOS",
+      description: "Experiencia personalizada de lujo",
+      featured: { name: "Diseño a Medida", href: "/personalizacion" },
       items: [
-        { name: "Personalización", href: "#" },
-        { name: "Grabado", href: "#" },
-        { name: "Mantenimiento", href: "#" },
-        { name: "Tasación", href: "#" }
+        { 
+          name: "Personalización", 
+          href: "/personalizacion",
+          description: "Diseños únicos a tu medida",
+          image: "/cap4.jpg"
+        },
+        { 
+          name: "Grabado", 
+          href: "/grabado",
+          description: "Mensajes eternos en tus joyas",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Mantenimiento", 
+          href: "/mantenimiento",
+          description: "Cuidado experto de tus joyas",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Tasación", 
+          href: "/tasacion",
+          description: "Valoración profesional certificada",
+          image: "/cap1.jpg"
+        }
       ],
     },
   ]
 
-  // Reuse the same handlers from main page
   const handleMouseEnter = (index: number) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
@@ -94,16 +241,31 @@ export default function AnillosPage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveSlide((current) => (current === 3 ? 0 : current + 1));
-    }, 5000); // Change slide every 5 seconds
+      setActiveSlide((current: number) => (current === 3 ? 0 : current + 1))
+    }, 5000)
 
-    return () => clearInterval(timer);
-  }, []);
+    return () => clearInterval(timer)
+  }, [])
+
+  // Add mouse zoom effect handler
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isZoomed) return
+    
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    
+    setZoomPosition({ x, y })
+  }
 
   return (
     <MainLayout>
       <div className="min-h-screen bg-white">
-        <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gray-200">
+        <header className={`
+          fixed w-full bg-white z-50 
+          transition-all duration-300 ease-in-out
+          hover:bg-black group border-b border-gray-200
+        `}>
           {/* Mobile Search Bar - Full Width when open */}
           <div className={`
             md:hidden
@@ -155,7 +317,6 @@ export default function AnillosPage() {
                 alt="Berlin Jewelry Logo" 
                 className="h-11 w-auto transition-all duration-300 ease-in-out group-hover:[filter:brightness(0)_invert(1)]" 
               />
-              
             </Link>
 
             {/* Desktop Navigation */}
@@ -174,23 +335,64 @@ export default function AnillosPage() {
                     {category.name}
                   </Link>
                   <div
-                    className={`absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 transition-all duration-300 ease-in-out ${
-                      activeDropdown === index
-                        ? "opacity-100 translate-y-0 visible"
-                        : "opacity-0 -translate-y-2 invisible"
-                    }`}
+                    className={`
+                      absolute left-0 mt-2 w-[480px] rounded-lg shadow-2xl 
+                      bg-white ring-1 ring-black ring-opacity-5 
+                      transition-all duration-300 ease-in-out
+                      transform origin-top
+                      ${activeDropdown === index 
+                        ? "opacity-100 scale-100 translate-y-0 visible" 
+                        : "opacity-0 scale-95 -translate-y-2 invisible"}
+                    `}
                   >
-                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                      {category.items.map((item, itemIndex) => (
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
+                        <p className="text-sm text-gray-500">{category.description}</p>
+                      </div>
+                      
+                      {category.featured && (
                         <Link
-                          key={itemIndex}
-                          href={item.href}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
-                          role="menuitem"
+                          href={category.featured.href}
+                          className="block mb-6 p-4 bg-gradient-to-r from-[#C6A55C]/10 to-transparent rounded-lg hover:from-[#C6A55C]/20 transition-all duration-300"
                         >
-                          {item.name}
+                          <span className="text-xs font-medium text-[#C6A55C] uppercase tracking-wide">Destacado</span>
+                          <p className="text-sm font-medium text-gray-900 mt-1">{category.featured.name}</p>
                         </Link>
-                      ))}
+                      )}
+
+                      <div className="grid grid-cols-2 gap-6">
+                        {category.items.map((item, itemIndex) => (
+                          <Link
+                            key={itemIndex}
+                            href={item.href}
+                            className="group flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                          >
+                            <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-br from-[#C6A55C]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                className="object-cover transition-all duration-300 group-hover:scale-105"
+                                style={{
+                                  filter: 
+                                    item.name.toLowerCase().includes('oro') ? imageEffects.gold :
+                                    item.name.toLowerCase().includes('platino') ? imageEffects.platinum :
+                                    item.name.toLowerCase().includes('diamante') ? imageEffects.diamond :
+                                    imageEffects.vintage
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 group-hover:text-[#C6A55C] transition-colors duration-200">
+                                {item.name}
+                              </h4>
+                              <p className="text-xs text-gray-500">{item.description}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -331,6 +533,7 @@ export default function AnillosPage() {
                     >
                       <div>
                         <span className="text-sm font-medium">{category.name}</span>
+                        <p className="text-xs text-gray-500 mt-0.5">{category.description}</p>
                       </div>
                       <svg
                         className={`
@@ -352,6 +555,18 @@ export default function AnillosPage() {
                         ${activeDropdown === index ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'}
                       `}
                     >
+                      {/* Featured item */}
+                      {category.featured && (
+                        <Link
+                          href={category.featured.href}
+                          className="block mx-4 mb-4 p-3 bg-gradient-to-r from-[#C6A55C]/10 to-transparent rounded-lg"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          <span className="text-xs font-medium text-[#C6A55C] uppercase tracking-wide">Destacado</span>
+                          <p className="text-sm font-medium text-gray-900 mt-1">{category.featured.name}</p>
+                        </Link>
+                      )}
+
                       {/* Category items */}
                       <div className="px-4 pb-4 space-y-2">
                         {category.items.map((item, itemIndex) => (
@@ -361,8 +576,17 @@ export default function AnillosPage() {
                             className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                             onClick={() => setIsMobileMenuOpen(false)}
                           >
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
                             <div>
                               <h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
+                              <p className="text-xs text-gray-500">{item.description}</p>
                             </div>
                           </Link>
                         ))}
@@ -528,153 +752,9 @@ export default function AnillosPage() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-              {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
-                <FadeInOnScroll key={item} delay={item * 100}>
-                  <div className="group relative">
-                    {/* Product Image Container */}
-                    <div className="
-                      relative aspect-square 
-                      overflow-hidden 
-                      rounded-lg 
-                      bg-gray-100
-                    ">
-                      {/* Product Image */}
-                      <Image
-                        src={`/cap${(item % 4) + 1}.jpg`}
-                        alt={`Anillo Diamante "Eternidad"`}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        quality={90}
-                        loading="eager"
-                        className="object-cover transition-all duration-700 group-hover:scale-110"
-                        style={{
-                          filter: item % 4 === 0 ? imageEffects.gold :
-                                 item % 4 === 1 ? imageEffects.platinum :
-                                 item % 4 === 2 ? imageEffects.diamond :
-                                 imageEffects.vintage
-                        }}
-                      />
-                      
-                      {/* Quick View Overlay */}
-                      <div className="
-                        absolute inset-0 
-                        bg-black/40 
-                        flex flex-col items-center justify-center gap-4
-                        opacity-0 transition-opacity duration-300
-                        group-hover:opacity-100
-                      ">
-                        <button 
-                          className="
-                            bg-white text-black
-                            px-6 py-2
-                            rounded-full
-                            flex items-center gap-2
-                            transform translate-y-4
-                            transition-all duration-300
-                            group-hover:translate-y-0
-                            hover:bg-[#C6A55C] hover:text-white
-                          "
-                          aria-label="Vista rápida"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span className="text-sm font-light">Vista Rápida</span>
-                        </button>
-                        <button 
-                          className="
-                            bg-[#C6A55C] text-white
-                            px-6 py-2
-                            rounded-full
-                            flex items-center gap-2
-                            transform translate-y-4
-                            transition-all duration-300
-                            group-hover:translate-y-0
-                            hover:bg-black
-                          "
-                          aria-label="Añadir al carrito"
-                        >
-                          <ShoppingBag className="w-4 h-4" />
-                          <span className="text-sm font-light">Añadir al Carrito</span>
-                        </button>
-                      </div>
-
-                      {/* Sale Badge */}
-                      {item % 3 === 0 && (
-                        <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-medium rounded-full">
-                          -20%
-                        </div>
-                      )}
-
-                      {/* New Badge */}
-                      {item % 4 === 0 && (
-                        <div className="absolute top-4 right-4 bg-[#C6A55C] text-white px-3 py-1 text-xs font-medium rounded-full">
-                          Nuevo
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Product Info */}
-                    <div className="mt-4 space-y-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <Link href="#" className="group/title">
-                            <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#C6A55C] transition-colors duration-300">
-                              Anillo Diamante "Eternidad"
-                            </h3>
-                            <p className="text-xs text-gray-500">Colección Royal</p>
-                          </Link>
-                        </div>
-                        <button 
-                          className="
-                            p-2 rounded-full 
-                            text-gray-400 
-                            hover:text-[#C6A55C] 
-                            transition-colors duration-300
-                            relative
-                          "
-                          aria-label="Añadir a favoritos"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-baseline gap-2">
-                          {item % 3 === 0 ? (
-                            <>
-                              <p className="text-sm font-medium text-gray-900">
-                                3.999 €
-                              </p>
-                              <p className="text-xs text-gray-500 line-through">
-                                4.999 €
-                              </p>
-                            </>
-                          ) : (
-                            <p className="text-sm font-medium text-gray-900">
-                              4.999 €
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center">
-                          <div className="flex text-[#C6A55C]">
-                            {[...Array(5)].map((_, i) => (
-                              <svg key={i} className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                              </svg>
-                            ))}
-                          </div>
-                          <span className="ml-1 text-xs text-gray-500">(24)</span>
-                        </div>
-                      </div>
-
-                      {/* Stock Status */}
-                      {item % 5 === 0 ? (
-                        <p className="text-xs text-red-500">Solo quedan 2 unidades</p>
-                      ) : (
-                        <p className="text-xs text-green-600">En stock</p>
-                      )}
-                    </div>
-                  </div>
+              {products.map((product, index) => (
+                <FadeInOnScroll key={product.id} delay={index * 100}>
+                  <ProductCard product={product} />
                 </FadeInOnScroll>
               ))}
             </div>
@@ -894,6 +974,57 @@ export default function AnillosPage() {
             </div>
           </div>
         </footer>
+
+        {/* Video Modal */}
+        <Transition show={!!showVideo} as={Fragment}>
+          <Dialog onClose={() => setShowVideo(null)} className="relative z-50">
+            <Transition.Child
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-black/80" />
+            </Transition.Child>
+
+            <div className="fixed inset-0 flex items-center justify-center p-4">
+              <Transition.Child
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="relative bg-black rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setShowVideo(null)}
+                    className="absolute top-4 right-4 text-white/80 hover:text-white"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                  <video
+                    src={showVideo || ''}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="max-w-4xl w-full aspect-video"
+                  />
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </Dialog>
+        </Transition>
+
+        {/* Size Guide Modal */}
+        <Transition show={showSizeGuide} as={Fragment}>
+          <Dialog onClose={() => setShowSizeGuide(false)} className="relative z-50">
+            {/* ... Size guide modal content ... */}
+          </Dialog>
+        </Transition>
       </div>
     </MainLayout>
   )
