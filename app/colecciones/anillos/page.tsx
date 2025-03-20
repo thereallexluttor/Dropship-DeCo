@@ -751,12 +751,190 @@ export default function AnillosPage() {
               </button>
             </div>
 
+            {/* Featured Products Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-              {products.map((product, index) => (
-                <FadeInOnScroll key={product.id} delay={index * 100}>
-                  <ProductCard product={product} />
+              {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
+                <FadeInOnScroll key={item} delay={item * 100}>
+                  <div className="group relative">
+                    {/* Product Image Container */}
+                    <div className="
+                      relative aspect-square 
+                      overflow-hidden 
+                      rounded-lg 
+                      bg-gray-100
+                    ">
+                      {/* Product Image */}
+                      <Image
+                        src={`/cap${(item % 4) + 1}.jpg`}
+                        alt={`Anillo Diamante "Eternidad"`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        quality={90}
+                        loading="eager"
+                        className="object-cover transition-all duration-700 group-hover:scale-110"
+                        style={{
+                          filter: item % 4 === 0 ? imageEffects.gold :
+                                 item % 4 === 1 ? imageEffects.platinum :
+                                 item % 4 === 2 ? imageEffects.diamond :
+                                 imageEffects.vintage
+                        }}
+                      />
+                      
+                      {/* Quick View Overlay */}
+                      <div className="
+                        absolute inset-0 
+                        bg-black/40 
+                        flex flex-col items-center justify-center gap-4
+                        opacity-0 transition-opacity duration-300
+                        group-hover:opacity-100
+                      ">
+                        <button 
+                          className="
+                            bg-white text-black
+                            px-6 py-2
+                            rounded-full
+                            flex items-center gap-2
+                            transform translate-y-4
+                            transition-all duration-300
+                            group-hover:translate-y-0
+                            hover:bg-[#C6A55C] hover:text-white
+                          "
+                          aria-label="Vista rápida"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span className="text-sm font-light">Vista Rápida</span>
+                        </button>
+                        <button 
+                          className="
+                            bg-[#C6A55C] text-white
+                            px-6 py-2
+                            rounded-full
+                            flex items-center gap-2
+                            transform translate-y-4
+                            transition-all duration-300
+                            group-hover:translate-y-0
+                            hover:bg-black
+                          "
+                          aria-label="Añadir al carrito"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                          <span className="text-sm font-light">Añadir al Carrito</span>
+                        </button>
+                      </div>
+
+                      {/* Sale Badge */}
+                      {item % 3 === 0 && (
+                        <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-medium rounded-full">
+                          -20%
+                        </div>
+                      )}
+
+                      {/* New Badge */}
+                      {item % 4 === 0 && (
+                        <div className="absolute top-4 right-4 bg-[#C6A55C] text-white px-3 py-1 text-xs font-medium rounded-full">
+                          Nuevo
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="mt-4 space-y-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <Link href="#" className="group/title">
+                            <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#C6A55C] transition-colors duration-300">
+                              Anillo Diamante "Eternidad"
+                            </h3>
+                            <p className="text-xs text-gray-500">Colección Royal</p>
+                          </Link>
+                        </div>
+                        <button 
+                          className="
+                            p-2 rounded-full 
+                            text-gray-400 
+                            hover:text-[#C6A55C] 
+                            transition-colors duration-300
+                            relative
+                          "
+                          aria-label="Añadir a favoritos"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-2">
+                          {item % 3 === 0 ? (
+                            <>
+                              <p className="text-sm font-medium text-gray-900">
+                                3.999 €
+                              </p>
+                              <p className="text-xs text-gray-500 line-through">
+                                4.999 €
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-sm font-medium text-gray-900">
+                              4.999 €
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center">
+                          <div className="flex text-[#C6A55C]">
+                            {[...Array(5)].map((_, i) => (
+                              <svg key={i} className="w-3 h-3 fill-current" viewBox="0 0 20 20">
+                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                              </svg>
+                            ))}
+                          </div>
+                          <span className="ml-1 text-xs text-gray-500">(24)</span>
+                        </div>
+                      </div>
+
+                      {/* Stock Status */}
+                      {item % 5 === 0 ? (
+                        <p className="text-xs text-red-500">Solo quedan 2 unidades</p>
+                      ) : (
+                        <p className="text-xs text-green-600">En stock</p>
+                      )}
+                    </div>
+
+                    {/* Quick Add Button - Mobile Only */}
+                    <button 
+                      className="
+                        md:hidden
+                        absolute bottom-4 right-4
+                        w-10 h-10
+                        bg-[#C6A55C] text-white
+                        rounded-full
+                        flex items-center justify-center
+                        shadow-lg
+                        transform translate-y-12 opacity-0
+                        group-hover:translate-y-0 group-hover:opacity-100
+                        transition-all duration-300
+                      "
+                    >
+                      <ShoppingBag className="w-5 h-5" />
+                    </button>
+                  </div>
                 </FadeInOnScroll>
               ))}
+            </div>
+
+            {/* Load More Button */}
+            <div className="text-center mt-12">
+              <button className="
+                px-8 py-3
+                border-2 border-[#C6A55C]
+                text-[#C6A55C] hover:text-white
+                hover:bg-[#C6A55C]
+                transition-all duration-300
+                rounded-full
+                text-sm font-medium
+              ">
+                Cargar Más Productos
+              </button>
             </div>
           </div>
         </main>

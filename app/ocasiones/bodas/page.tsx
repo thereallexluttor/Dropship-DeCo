@@ -2,10 +2,9 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { ShoppingBag, Search, Menu, X } from "lucide-react"
+import { ShoppingBag, Search, Menu, X, Eye } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
-import PageTransition from "../../components/PageTransition"
-import MainLayout from "../../components/MainLayout"
+import MainLayout from "@/components/MainLayout"
 import ProductCard from "../../components/ProductCard"
 import FadeInOnScroll from '../../components/FadeInOnScroll'
 
@@ -21,38 +20,126 @@ export default function Bodas() {
   const categories = [
     {
       name: "COLECCIONES",
+      description: "Descubre nuestra exclusiva selección de joyas",
+      featured: { name: "Nueva Colección Primavera", href: "/nueva-coleccion" },
       items: [
-        { name: "Anillos", href: "/anillos" },
-        { name: "Collares", href: "/collares" },
-        { name: "Pulseras", href: "/pulseras" },
-        { name: "Pendientes", href: "/pendientes" }
+        { 
+          name: "Anillos", 
+          href: "/anillos",
+          description: "Anillos de compromiso y alta joyería",
+          image: "/cap1.jpg" 
+        },
+        { 
+          name: "Collares", 
+          href: "/collares",
+          description: "Elegantes collares y gargantillas",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Pulseras", 
+          href: "/pulseras",
+          description: "Pulseras artesanales exclusivas",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Pendientes", 
+          href: "/pendientes",
+          description: "Pendientes para cada ocasión",
+          image: "/cap4.jpg"
+        }
       ],
     },
     {
       name: "OCASIONES",
+      description: "El regalo perfecto para cada momento",
+      featured: { name: "Colección Bodas 2024", href: "/bodas" },
       items: [
-        { name: "Bodas", href: "/bodas" },
-        { name: "Compromiso", href: "/compromiso" },
-        { name: "Regalos", href: "/regalos" },
-        { name: "Edición Limitada", href: "edicion-limitada" }
+        { 
+          name: "Bodas", 
+          href: "/bodas",
+          description: "Joyas para el día más especial",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Compromiso", 
+          href: "/compromiso",
+          description: "Anillos de compromiso únicos",
+          image: "/cap1.jpg"
+        },
+        { 
+          name: "Regalos", 
+          href: "/regalos",
+          description: "Detalles inolvidables",
+          image: "/cap4.jpg"
+        },
+        { 
+          name: "Edición Limitada", 
+          href: "/edicion-limitada",
+          description: "Piezas exclusivas numeradas",
+          image: "/cap3.jpg"
+        }
       ],
     },
     {
       name: "MATERIALES",
+      description: "La más alta calidad en cada material",
+      featured: { name: "Colección Diamantes Rare", href: "/diamantes" },
       items: [
-        { name: "Oro 18k", href: "#" },
-        { name: "Platino", href: "#" },
-        { name: "Diamantes", href: "#" },
-        { name: "Piedras Preciosas", href: "#" }
+        { 
+          name: "Oro 18k", 
+          href: "/oro-18k",
+          description: "Pureza y elegancia en oro",
+          image: "/cap1.jpg"
+        },
+        { 
+          name: "Platino", 
+          href: "/platino",
+          description: "El metal más noble y duradero",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Diamantes", 
+          href: "/diamantes",
+          description: "Diamantes certificados GIA",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Piedras Preciosas", 
+          href: "/piedras-preciosas",
+          description: "Gemas de excepcional calidad",
+          image: "/cap4.jpg"
+        }
       ],
     },
     {
       name: "SERVICIOS",
+      description: "Experiencia personalizada de lujo",
+      featured: { name: "Diseño a Medida", href: "/personalizacion" },
       items: [
-        { name: "Personalización", href: "#" },
-        { name: "Grabado", href: "#" },
-        { name: "Mantenimiento", href: "#" },
-        { name: "Tasación", href: "#" }
+        { 
+          name: "Personalización", 
+          href: "/personalizacion",
+          description: "Diseños únicos a tu medida",
+          image: "/cap4.jpg"
+        },
+        { 
+          name: "Grabado", 
+          href: "/grabado",
+          description: "Mensajes eternos en tus joyas",
+          image: "/cap3.jpg"
+        },
+        { 
+          name: "Mantenimiento", 
+          href: "/mantenimiento",
+          description: "Cuidado experto de tus joyas",
+          image: "/cap2.jpg"
+        },
+        { 
+          name: "Tasación", 
+          href: "/tasacion",
+          description: "Valoración profesional certificada",
+          image: "/cap1.jpg"
+        }
       ],
     },
   ]
@@ -90,6 +177,14 @@ export default function Bodas() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Add image enhancement styles
+  const imageEffects = {
+    gold: "sepia(50%) hue-rotate(5deg) saturate(150%)",
+    platinum: "brightness(110%) contrast(110%)",
+    diamond: "brightness(120%) contrast(90%)",
+    vintage: "sepia(20%) contrast(105%)"
+  }
 
   return (
     <MainLayout>
@@ -165,23 +260,64 @@ export default function Bodas() {
                     {category.name}
                   </Link>
                   <div
-                    className={`absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 transition-all duration-300 ease-in-out ${
-                      activeDropdown === index
-                        ? "opacity-100 translate-y-0 visible"
-                        : "opacity-0 -translate-y-2 invisible"
-                    }`}
+                    className={`
+                      absolute left-0 mt-2 w-[480px] rounded-lg shadow-2xl 
+                      bg-white ring-1 ring-black ring-opacity-5 
+                      transition-all duration-300 ease-in-out
+                      transform origin-top
+                      ${activeDropdown === index 
+                        ? "opacity-100 scale-100 translate-y-0 visible" 
+                        : "opacity-0 scale-95 -translate-y-2 invisible"}
+                    `}
                   >
-                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                      {category.items.map((item, itemIndex) => (
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
+                        <p className="text-sm text-gray-500">{category.description}</p>
+                      </div>
+                      
+                      {category.featured && (
                         <Link
-                          key={itemIndex}
-                          href={item.href}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
-                          role="menuitem"
+                          href={category.featured.href}
+                          className="block mb-6 p-4 bg-gradient-to-r from-[#C6A55C]/10 to-transparent rounded-lg hover:from-[#C6A55C]/20 transition-all duration-300"
                         >
-                          {item.name}
+                          <span className="text-xs font-medium text-[#C6A55C] uppercase tracking-wide">Destacado</span>
+                          <p className="text-sm font-medium text-gray-900 mt-1">{category.featured.name}</p>
                         </Link>
-                      ))}
+                      )}
+
+                      <div className="grid grid-cols-2 gap-6">
+                        {category.items.map((item, itemIndex) => (
+                          <Link
+                            key={itemIndex}
+                            href={item.href}
+                            className="group flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                          >
+                            <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-br from-[#C6A55C]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                className="object-cover transition-all duration-300 group-hover:scale-105"
+                                style={{
+                                  filter: 
+                                    item.name.toLowerCase().includes('oro') ? imageEffects.gold :
+                                    item.name.toLowerCase().includes('platino') ? imageEffects.platinum :
+                                    item.name.toLowerCase().includes('diamante') ? imageEffects.diamond :
+                                    imageEffects.vintage
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 group-hover:text-[#C6A55C] transition-colors duration-200">
+                                {item.name}
+                              </h4>
+                              <p className="text-xs text-gray-500">{item.description}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -421,121 +557,173 @@ export default function Bodas() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
                 <FadeInOnScroll key={item} delay={item * 100}>
-                  <div className="bg-white group flex flex-col h-full hover:shadow-xl transition-all duration-500 rounded-sm overflow-hidden">
-                    <div className="relative aspect-square">
-                      <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <svg 
-                          className="w-5 h-5 text-black transition-colors" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={1.5} 
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                          />
-                        </svg>
-                      </button>
+                  <div className="group relative">
+                    {/* Product Image Container */}
+                    <div className="
+                      relative aspect-square 
+                      overflow-hidden 
+                      rounded-lg 
+                      bg-gray-100
+                    ">
+                      {/* Product Image */}
+                      <Image
+                        src={`/cap${(item % 4) + 1}.jpg`}
+                        alt={`Joyas para Bodas "Eternidad"`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        quality={90}
+                        loading="eager"
+                        className="object-cover transition-all duration-700 group-hover:scale-110"
+                        style={{
+                          filter: item % 4 === 0 ? imageEffects.gold :
+                                 item % 4 === 1 ? imageEffects.platinum :
+                                 item % 4 === 2 ? imageEffects.diamond :
+                                 imageEffects.vintage
+                        }}
+                      />
                       
-                      <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
-                        <Image
-                          src="/cap1.jpg"
-                          alt={`Joya Nupcial ${item}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
+                      {/* Quick View Overlay */}
+                      <div className="
+                        absolute inset-0 
+                        bg-black/40 
+                        flex flex-col items-center justify-center gap-4
+                        opacity-0 transition-opacity duration-300
+                        group-hover:opacity-100
+                      ">
+                        <button 
+                          className="
+                            bg-white text-black
+                            px-6 py-2
+                            rounded-full
+                            flex items-center gap-2
+                            transform translate-y-4
+                            transition-all duration-300
+                            group-hover:translate-y-0
+                            hover:bg-[#C6A55C] hover:text-white
+                          "
+                          aria-label="Vista rápida"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span className="text-sm font-light">Vista Rápida</span>
+                        </button>
+                        <button 
+                          className="
+                            bg-[#C6A55C] text-white
+                            px-6 py-2
+                            rounded-full
+                            flex items-center gap-2
+                            transform translate-y-4
+                            transition-all duration-300
+                            group-hover:translate-y-0
+                            hover:bg-black
+                          "
+                          aria-label="Añadir al carrito"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                          <span className="text-sm font-light">Añadir al Carrito</span>
+                        </button>
                       </div>
+
+                      {/* Sale Badge */}
+                      {item % 3 === 0 && (
+                        <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-medium rounded-full">
+                          -20%
+                        </div>
+                      )}
+
+                      {/* New Badge */}
+                      {item % 4 === 0 && (
+                        <div className="absolute top-4 right-4 bg-[#C6A55C] text-white px-3 py-1 text-xs font-medium rounded-full">
+                          Nuevo
+                        </div>
+                      )}
                     </div>
 
-                    <div className="p-6 flex flex-col items-center text-center">
-                      <p className="text-xs tracking-wider text-[#C6A55C] font-poppins mb-2">COLECCIÓN NUPCIAL</p>
-                      <h3 className="text-sm font-medium text-black mb-2 font-poppins">Anillo de Compromiso Diana</h3>
-                      <p className="text-sm font-light text-black mb-4 font-poppins">2.999 €</p>
-                      
-                      <Link
-                        href="#"
-                        className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-[#C6A55C] hover:text-[#C6A55C] transition-all duration-300 font-poppins"
-                      >
-                        Descubrir
-                      </Link>
+                    {/* Product Info */}
+                    <div className="mt-4 space-y-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <Link href="#" className="group/title">
+                            <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#C6A55C] transition-colors duration-300">
+                              Joyas para Bodas "Eternidad"
+                            </h3>
+                            <p className="text-xs text-gray-500">Colección Royal</p>
+                          </Link>
+                        </div>
+                        <button 
+                          className="
+                            p-2 rounded-full 
+                            text-gray-400 
+                            hover:text-[#C6A55C] 
+                            transition-colors duration-300
+                            relative
+                          "
+                          aria-label="Añadir a favoritos"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-2">
+                          {item % 3 === 0 ? (
+                            <>
+                              <p className="text-sm font-medium text-gray-900">
+                                3.999 €
+                              </p>
+                              <p className="text-xs text-gray-500 line-through">
+                                4.999 €
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-sm font-medium text-gray-900">
+                              4.999 €
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center">
+                          <div className="flex text-[#C6A55C]">
+                            {[...Array(5)].map((_, i) => (
+                              <svg key={i} className="w-3 h-3 fill-current" viewBox="0 0 20 20">
+                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                              </svg>
+                            ))}
+                          </div>
+                          <span className="ml-1 text-xs text-gray-500">(24)</span>
+                        </div>
+                      </div>
+
+                      {/* Stock Status */}
+                      {item % 5 === 0 ? (
+                        <p className="text-xs text-red-500">Solo quedan 2 unidades</p>
+                      ) : (
+                        <p className="text-xs text-green-600">En stock</p>
+                      )}
                     </div>
+
+                    {/* Quick Add Button - Mobile Only */}
+                    <button 
+                      className="
+                        md:hidden
+                        absolute bottom-4 right-4
+                        w-10 h-10
+                        bg-[#C6A55C] text-white
+                        rounded-full
+                        flex items-center justify-center
+                        shadow-lg
+                        transform translate-y-12 opacity-0
+                        group-hover:translate-y-0 group-hover:opacity-100
+                        transition-all duration-300
+                      "
+                    >
+                      <ShoppingBag className="w-5 h-5" />
+                    </button>
                   </div>
                 </FadeInOnScroll>
               ))}
             </div>
           </div>
-
-          <section className="py-16 bg-white">
-            <div className="container mx-auto px-4">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
-                <div className="max-w-2xl">
-                  <h2 className="text-3xl font-light mb-4">
-                    Joyas para <span className="font-medium">Bodas</span>
-                  </h2>
-                  <p className="text-gray-600 text-sm">
-                    Descubre nuestra exclusiva colección de joyas para bodas, donde cada pieza está diseñada para hacer de tu día especial un momento inolvidable.
-                  </p>
-                </div>
-                <div className="flex gap-4 mt-6 md:mt-0">
-                  <button className="px-6 py-2 border border-[#C6A55C] text-[#C6A55C] hover:bg-[#C6A55C] hover:text-white transition-colors duration-300 text-sm rounded-full">
-                    Filtrar
-                  </button>
-                  <button className="px-6 py-2 border border-[#C6A55C] text-[#C6A55C] hover:bg-[#C6A55C] hover:text-white transition-colors duration-300 text-sm rounded-full">
-                    Ordenar
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-                {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
-                  <FadeInOnScroll key={item} delay={item * 100}>
-                    <div className="bg-white group flex flex-col h-full hover:shadow-xl transition-all duration-500 rounded-sm overflow-hidden">
-                      <div className="relative aspect-square">
-                        <button className="absolute top-3 right-3 z-[5] bg-white/80 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300">
-                          <svg 
-                            className="w-5 h-5 text-black transition-colors" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth={1.5} 
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                            />
-                          </svg>
-                        </button>
-                        
-                        <div className="relative aspect-square group-hover:scale-105 transition-transform duration-700">
-                          <Image
-                            src="/cap1.jpg"
-                            alt={`Joya Nupcial ${item}`}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
-                        </div>
-                      </div>
-
-                      <div className="p-6 flex flex-col items-center text-center">
-                        <p className="text-xs tracking-wider text-[#C6A55C] font-poppins mb-2">COLECCIÓN NUPCIAL</p>
-                        <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#C6A55C] transition-colors duration-300">
-                          Alianza de Boda "Eternidad"
-                        </h3>
-                        <p className="text-xs text-gray-500">Colección Nupcial</p>
-                      </div>
-                    </div>
-                  </FadeInOnScroll>
-                ))}
-              </div>
-            </div>
-          </section>
 
           <section className="py-16 bg-[#FDF9F3]">
             <div className="container mx-auto px-4">
@@ -557,125 +745,141 @@ export default function Bodas() {
           </section>
         </main>
 
-        {/* Footer Section - Adding the footer here */}
-        <footer className="bg-black text-white py-12 mt-16 border-t border-gold/20">
+        {/* Footer Section */}
+        <footer className="bg-black text-white py-16 mt-16 border-t border-[#C6A55C]/20">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div>
-                <h3 className="text-xl font-bold mb-4 font-poppins">Shop</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Men
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Women
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Accessories
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      New Arrivals
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-4 font-poppins">About</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Our Story
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Careers
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Press
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Sustainability
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-4 font-poppins">Customer Care</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Contact Us
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Shipping & Returns
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      Size Guide
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors font-poppins">
-                      FAQ
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-4 font-poppins">Connect</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+              {/* Logo and Description */}
+              <div className="md:col-span-1">
+                <Link href="/" className="inline-block mb-6">
+                  <img 
+                    src="/DEU_Berlin_COA.svg.png" 
+                    alt="Berlin Jewelry Logo" 
+                    className="h-12 w-auto brightness-0 invert" 
+                  />
+                </Link>
+                <p className="text-sm text-gray-400 leading-relaxed mb-6">
+                  Creando joyas excepcionales desde 1920. Cada pieza refleja nuestra pasión por la artesanía y la excelencia.
+                </p>
                 <div className="flex space-x-4">
-                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
-                    <span className="sr-only">Facebook</span>
-                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        fillRule="evenodd"
-                        d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
-                        clipRule="evenodd"
-                      />
+                  <Link 
+                    href="#" 
+                    className="text-gray-400 hover:text-[#C6A55C] transition-colors duration-300"
+                    aria-label="Instagram"
+                  >
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
                     </svg>
                   </Link>
-                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
-                    <span className="sr-only">Instagram</span>
-                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        fillRule="evenodd"
-                        d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"
-                        clipRule="evenodd"
-                      />
+                  <Link 
+                    href="#" 
+                    className="text-gray-400 hover:text-[#C6A55C] transition-colors duration-300"
+                    aria-label="Facebook"
+                  >
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
                     </svg>
                   </Link>
-                  <Link href="#" className="text-white hover:text-gold transition-colors font-poppins">
-                    <span className="sr-only">Twitter</span>
-                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                  <Link 
+                    href="#" 
+                    className="text-gray-400 hover:text-[#C6A55C] transition-colors duration-300"
+                    aria-label="Pinterest"
+                  >
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 2.567-2.911 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z"/>
                     </svg>
                   </Link>
                 </div>
               </div>
+
+              {/* Navigation Links */}
+              <div>
+                <h3 className="text-lg font-medium mb-6">Colecciones</h3>
+                <ul className="space-y-4">
+                  <li>
+                    <Link href="/anillos" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                      Anillos
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/collares" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                      Collares
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/pulseras" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                      Pulseras
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/pendientes" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                      Pendientes
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-6">Servicios</h3>
+                <ul className="space-y-4">
+                  <li>
+                    <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                      Personalización
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                      Mantenimiento
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                      Tasación
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                      Seguros
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Newsletter Signup */}
+              <div>
+                <h3 className="text-lg font-medium mb-6">Newsletter</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Suscríbete para recibir las últimas novedades y ofertas exclusivas.
+                </p>
+                <form className="space-y-4">
+                  <div className="relative">
+                    <input
+                      type="email"
+                      placeholder="Tu email"
+                      className="w-full bg-white/5 border border-gray-800 rounded-sm px-4 py-2.5 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-[#C6A55C] transition-colors"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-[#C6A55C] text-white px-6 py-2.5 text-sm font-medium hover:bg-[#B69451] transition-colors duration-300"
+                  >
+                    Suscribirse
+                  </button>
+                </form>
+              </div>
             </div>
-            <div className="mt-12 border-t border-gray-800 pt-8 flex justify-between items-center">
-              <p className="text-sm font-poppins">&copy; 2023 Berlin Jewels. All rights reserved.</p>
+
+            {/* Bottom Bar */}
+            <div className="mt-16 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <p className="text-sm text-gray-400">
+                &copy; {new Date().getFullYear()} Berlin Jewels. Todos los derechos reservados.
+              </p>
               <div className="flex space-x-6">
-                <Link href="#" className="text-sm hover:text-gold transition-colors font-poppins">
-                  Privacy Policy
+                <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                  Política de Privacidad
                 </Link>
-                <Link href="#" className="text-sm hover:text-gold transition-colors font-poppins">
-                  Terms of Service
+                <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                  Términos y Condiciones
                 </Link>
               </div>
             </div>

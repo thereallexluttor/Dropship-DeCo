@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from 'react'
 
 export function useScrollAnimation() {
@@ -6,11 +8,12 @@ export function useScrollAnimation() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight
-      const currentScroll = window.scrollY
-      const progress = (currentScroll / totalScroll) * 100
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight - windowHeight
+      const scrolled = window.scrollY
+      const progress = (scrolled / documentHeight) * 100
       setScrollProgress(progress)
-      setShowScrollTop(currentScroll > 400)
+      setShowScrollTop(scrolled > windowHeight / 2)
     }
 
     window.addEventListener('scroll', handleScroll)
