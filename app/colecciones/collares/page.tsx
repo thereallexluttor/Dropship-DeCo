@@ -39,10 +39,10 @@ const sampleProducts: Product[] = [
 
 // Image Enhancement Styles
 const imageEffects = {
-  gold: "sepia(50%) hue-rotate(5deg) saturate(150%)",
-  platinum: "brightness(110%) contrast(110%)",
-  diamond: "brightness(120%) contrast(90%)",
-  vintage: "sepia(20%) contrast(105%)"
+  gold: "sepia(45%) hue-rotate(15deg) saturate(140%)",
+  platinum: "brightness(108%) contrast(105%)",
+  diamond: "brightness(115%) contrast(100%)",
+  vintage: "sepia(35%) contrast(105%) brightness(95%)"
 }
 
 export default function CollaresPage() {
@@ -604,38 +604,38 @@ export default function CollaresPage() {
                         src={`/cap${index + 1}.jpg`}
                         alt={`Luxury Necklace Collection ${index + 1}`}
                         fill
-                        className="object-cover rounded-lg"
+                        className="object-cover rounded-[2rem]"
                         priority={index === 0}
                       />
                     </div>
                   ))}
                 </div>
 
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/30 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent rounded-[2rem] backdrop-blur-[1px] transition-all duration-500 hover:backdrop-blur-sm group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#8B5A2B]/20 to-transparent rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                   
-                  <div className="h-full w-full flex items-center justify-center relative z-10">
-                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-2 md:space-y-4">
-                      <div className="bg-white/90 text-black px-4 py-1.5 md:px-5 md:py-2 inline-block rounded-sm text-[8px] md:text-sm font-light tracking-[0.3em] font-poppins">
+                  <div className="h-full w-full flex items-center justify-start relative z-10">
+                    <div className="pl-8 md:pl-16 max-w-[95%] md:max-w-[70%] lg:max-w-[50%] space-y-3 md:space-y-5">
+                      <div className="bg-white/95 text-black px-4 py-1.5 md:px-5 md:py-2 inline-block rounded-full text-[8px] md:text-sm font-light tracking-[0.3em] font-poppins">
                         COLECCIÓN DE COLLARES
                       </div>
                       <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl">
-                        <span className="block text-[#C6A55C] font-light italic">Diseños Únicos</span>
-                        <span className="block font-medium mt-2">Elegancia en Cada Detalle</span>
+                        <span className="block text-[#8B5A2B] font-light italic">Elegancia Natural</span>
+                        <span className="block font-medium mt-2">Obras de Arte para Admirar</span>
                       </h1>
-                      <p className="text-[8px] md:text-base lg:text-lg text-white/90 font-light tracking-[0.2em] uppercase font-poppins max-w-2xl mx-auto">
-                        Cada collar cuenta una historia única
+                      <p className="text-[9px] md:text-base lg:text-lg text-white/95 font-light tracking-[0.2em] uppercase font-poppins max-w-2xl">
+                        Diseños orgánicos inspirados en la naturaleza
                       </p>
-                      <div className="pt-2 md:pt-6 space-x-4">
+                      <div className="pt-3 md:pt-7 space-x-4">
                         <Link
                           href="#collection"
-                          className="group/btn relative overflow-hidden bg-white/90 text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-[#C6A55C] hover:text-white"
+                          className="group/btn relative overflow-hidden bg-gradient-to-r from-[#8B5A2B] to-[#D7B377] text-white px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:from-[#D7B377] hover:to-[#8B5A2B] rounded-full shadow-lg hover:shadow-xl"
                         >
                           EXPLORAR COLECCIÓN
                         </Link>
                         <Link
                           href="#appointment"
-                          className="group/btn relative overflow-hidden border border-white/80 text-white px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-white hover:text-black"
+                          className="group/btn relative overflow-hidden border border-white/90 text-white px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-sm font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-white hover:text-[#8B5A2B] rounded-full shadow-lg hover:shadow-xl"
                         >
                           RESERVAR CITA
                         </Link>
@@ -647,93 +647,142 @@ export default function CollaresPage() {
             </div>
           </section>
 
-          <section className="py-16 bg-gradient-to-b from-white to-[#FDF9F3]">
+          <section className="py-16 bg-[url('/pattern-organic.png')] bg-fixed bg-opacity-5">
             <div className="container mx-auto px-4">
-              <div className="text-center max-w-4xl mx-auto">
-                <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-6">Artesanía y Excelencia</h2>
-                <p className="text-gray-600 leading-relaxed mb-12 font-light font-poppins">
-                  Cada collar es una obra maestra única, creada con los materiales más preciosos y elaborada con dedicación artesanal.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-                  <FadeInOnScroll delay={100}>
-                    <div className="group">
-                      <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <img src="/icons/diamond.png" alt="Calidad" className="w-12 h-12 opacity-80" />
+              <div className="max-w-5xl mx-auto bg-white/90 backdrop-blur-sm p-8 md:p-12 rounded-3xl shadow-sm">
+                <div className="flex flex-col md:flex-row items-center gap-12">
+                  <div className="md:w-2/5">
+                    <div className="relative h-[300px] md:h-[400px] w-full overflow-hidden rounded-3xl">
+                      <Image 
+                        src="/cap2.jpg" 
+                        alt="Colección de Collares" 
+                        fill 
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                      <div className="absolute bottom-6 left-6 right-6">
+                        <h3 className="text-white text-xl md:text-2xl font-light italic">Inspirados en la Naturaleza</h3>
                       </div>
-                      <h3 className="text-lg font-medium mb-3">Diamantes Certificados</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        Seleccionamos cuidadosamente cada diamante para garantizar la máxima pureza y calidad.
-                      </p>
                     </div>
-                  </FadeInOnScroll>
-
-                  <FadeInOnScroll delay={200}>
-                    <div className="group">
-                      <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <img src="/icons/exclusive.png" alt="Artesanía" className="w-12 h-12 opacity-80" />
+                  </div>
+                  <div className="md:w-3/5">
+                    <h2 className="text-2xl md:text-3xl font-poppins text-[#1A1A1A] mb-4 relative inline-block">
+                      <span className="relative z-10">Diseño Orgánico</span>
+                      <span className="absolute -bottom-2 left-0 h-[2px] w-24 bg-gradient-to-r from-[#8B5A2B] to-[#D7B377]"></span>
+                    </h2>
+                    <p className="text-gray-600 leading-relaxed my-6 font-light font-poppins">
+                      Nuestros collares se inspiran en las formas y patrones de la naturaleza. Cada pieza captura la belleza orgánica y la fluidez de elementos naturales, transformados en joyas que celebran la elegancia intemporal.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center bg-[#F9F5F0] rounded-full p-2 mt-1">
+                          <img src="/icons/diamond.png" alt="Calidad" className="w-6 h-6 opacity-90" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-medium mb-1 text-[#1A1A1A]">Piedras Seleccionadas</h3>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            Gemas cuidadosamente elegidas por su color y pureza.
+                          </p>
+                        </div>
                       </div>
-                      <h3 className="text-lg font-medium mb-3">Artesanía Exclusiva</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        Cada pieza es creada a mano por nuestros maestros artesanos con técnicas tradicionales.
-                      </p>
-                    </div>
-                  </FadeInOnScroll>
-
-                  <FadeInOnScroll delay={300}>
-                    <div className="group">
-                      <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <img src="/icons/warranty.png" alt="Garantía" className="w-12 h-12 opacity-80" />
+                      
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center bg-[#F9F5F0] rounded-full p-2 mt-1">
+                          <img src="/icons/exclusive.png" alt="Artesanía" className="w-6 h-6 opacity-90" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-medium mb-1 text-[#1A1A1A]">Creación Artesanal</h3>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            Elaborados a mano por artesanos con décadas de experiencia.
+                          </p>
+                        </div>
                       </div>
-                      <h3 className="text-lg font-medium mb-3">Garantía de por Vida</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        Respaldamos la calidad de nuestras joyas con una garantía vitalicia.
-                      </p>
+                      
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center bg-[#F9F5F0] rounded-full p-2 mt-1">
+                          <img src="/icons/warranty.png" alt="Garantía" className="w-6 h-6 opacity-90" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-medium mb-1 text-[#1A1A1A]">Diseño Ergonómico</h3>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            Piezas cómodas y ligeras diseñadas para el uso diario.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center bg-[#F9F5F0] rounded-full p-2 mt-1">
+                          <img src="/icons/diamond.png" alt="Calidad" className="w-6 h-6 opacity-90" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-medium mb-1 text-[#1A1A1A]">Sostenibilidad</h3>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            Compromiso con prácticas éticas y materiales sostenibles.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </FadeInOnScroll>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
           <div className="container mx-auto px-4 py-16">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4">Nuestra Colección de Collares</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto font-light font-poppins">
-                Descubre piezas únicas que celebran la elegancia y el diseño atemporal
+            <div className="text-center mb-16">
+              <span className="inline-block mb-2 text-xs tracking-widest uppercase text-[#8B5A2B] font-medium">Descubre</span>
+              <h2 className="text-3xl font-poppins text-[#1A1A1A] mb-4 relative inline-block">
+                <span className="relative z-10">Nuestra Colección</span>
+                <span className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-[3px] w-16 bg-gradient-to-r from-[#8B5A2B] to-[#D7B377]"></span>
+              </h2>
+              <p className="text-gray-600 max-w-2xl mx-auto font-light font-poppins mt-8">
+                Piezas únicas que reflejan la belleza de la naturaleza y el arte de la joyería fina
               </p>
             </div>
 
             <div className="mb-12 flex flex-wrap gap-4 justify-center">
-              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
+              <button className="px-6 py-2.5 rounded-full text-sm border-none text-white bg-gradient-to-r from-[#8B5A2B] to-[#D7B377] hover:from-[#D7B377] hover:to-[#8B5A2B] transition-all duration-300 font-poppins shadow-sm">
                 Todos los Collares
               </button>
-              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
-                Gargantillas
+              <button className="px-6 py-2.5 rounded-full text-sm border border-[#D7B377] text-[#8B5A2B] hover:bg-[#F9F5F0] transition-all duration-300 font-poppins">
+                Oro
               </button>
-              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
-                Colgantes
+              <button className="px-6 py-2.5 rounded-full text-sm border border-[#D7B377] text-[#8B5A2B] hover:bg-[#F9F5F0] transition-all duration-300 font-poppins">
+                Plata
               </button>
-              <button className="px-8 py-2.5 border border-[#C6A55C] rounded-sm text-sm hover:bg-[#C6A55C] hover:text-white transition-all duration-300 font-poppins">
-                Diamantes
+              <button className="px-6 py-2.5 rounded-full text-sm border border-[#D7B377] text-[#8B5A2B] hover:bg-[#F9F5F0] transition-all duration-300 font-poppins">
+                Piedras
               </button>
             </div>
 
+            {/* Featured Products Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
               {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
-                <FadeInOnScroll key={item} delay={item * 100}>
+                <FadeInOnScroll key={item} delay={item * 50}>
                   <div className="group relative">
                     {/* Product Image Container */}
                     <div className="
                       relative aspect-square 
                       overflow-hidden 
-                      rounded-lg 
+                      rounded-3xl 
                       bg-gray-100
+                      before:content-[''] 
+                      before:absolute 
+                      before:inset-0 
+                      before:bg-gradient-to-t 
+                      before:from-black/20 
+                      before:to-transparent
+                      before:opacity-0
+                      before:group-hover:opacity-100
+                      before:transition-opacity
+                      before:duration-300
+                      before:z-10
                     ">
                       {/* Product Image */}
                       <Image
                         src={`/cap${(item % 4) + 1}.jpg`}
-                        alt={`Collar Diamante "Eternidad"`}
+                        alt={`Collar "${item % 2 === 0 ? 'Naturaleza Viva' : 'Aurora Dorada'}"`}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         quality={90}
@@ -750,10 +799,12 @@ export default function CollaresPage() {
                       {/* Quick View Overlay */}
                       <div className="
                         absolute inset-0 
-                        bg-black/40 
-                        flex flex-col items-center justify-center gap-4
+                        bg-gradient-to-t from-black/60 to-black/10 
+                        flex flex-col items-center justify-end gap-4
                         opacity-0 transition-opacity duration-300
                         group-hover:opacity-100
+                        z-20
+                        pb-8
                       ">
                         <button 
                           className="
@@ -764,7 +815,8 @@ export default function CollaresPage() {
                             transform translate-y-4
                             transition-all duration-300
                             group-hover:translate-y-0
-                            hover:bg-[#C6A55C] hover:text-white
+                            hover:bg-[#8B5A2B] hover:text-white
+                            shadow-md
                           "
                           aria-label="Vista rápida"
                         >
@@ -773,14 +825,15 @@ export default function CollaresPage() {
                         </button>
                         <button 
                           className="
-                            bg-[#C6A55C] text-white
+                            bg-gradient-to-r from-[#8B5A2B] to-[#D7B377] text-white
                             px-6 py-2
                             rounded-full
                             flex items-center gap-2
                             transform translate-y-4
                             transition-all duration-300
                             group-hover:translate-y-0
-                            hover:bg-black
+                            hover:from-[#D7B377] hover:to-[#8B5A2B]
+                            shadow-md
                           "
                           aria-label="Añadir al carrito"
                         >
@@ -791,14 +844,14 @@ export default function CollaresPage() {
 
                       {/* Sale Badge */}
                       {item % 3 === 0 && (
-                        <div className="absolute top-4 left-4 bg-black text-white px-3 py-1 text-xs font-medium rounded-full">
+                        <div className="absolute top-4 left-4 bg-[#8B5A2B] text-white px-3 py-1 text-xs font-medium rounded-full z-20 shadow-md">
                           -20%
                         </div>
                       )}
 
                       {/* New Badge */}
                       {item % 4 === 0 && (
-                        <div className="absolute top-4 right-4 bg-[#C6A55C] text-white px-3 py-1 text-xs font-medium rounded-full">
+                        <div className="absolute top-4 right-4 bg-gradient-to-r from-[#8B5A2B] to-[#D7B377] text-white px-3 py-1 text-xs font-medium rounded-full z-20 shadow-md">
                           Nuevo
                         </div>
                       )}
@@ -809,17 +862,17 @@ export default function CollaresPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <Link href="#" className="group/title">
-                            <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#C6A55C] transition-colors duration-300">
-                              Collar Diamante "Eternidad"
+                            <h3 className="text-sm font-medium text-gray-900 group-hover/title:text-[#8B5A2B] transition-colors duration-300">
+                              Collar "{item % 2 === 0 ? 'Naturaleza Viva' : 'Aurora Dorada'}"
                             </h3>
-                            <p className="text-xs text-gray-500">Colección Royal</p>
+                            <p className="text-xs text-gray-500">Colección {item % 3 === 0 ? 'Orgánica' : 'Botánica'}</p>
                           </Link>
                         </div>
                         <button 
                           className="
                             p-2 rounded-full 
                             text-gray-400 
-                            hover:text-[#C6A55C] 
+                            hover:text-[#8B5A2B] 
                             transition-colors duration-300
                             relative
                           "
@@ -848,7 +901,7 @@ export default function CollaresPage() {
                           )}
                         </div>
                         <div className="flex items-center">
-                          <div className="flex text-[#C6A55C]">
+                          <div className="flex text-[#8B5A2B]">
                             {[...Array(5)].map((_, i) => (
                               <svg key={i} className="w-3 h-3 fill-current" viewBox="0 0 20 20">
                                 <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
@@ -873,7 +926,7 @@ export default function CollaresPage() {
                         md:hidden
                         absolute bottom-4 right-4
                         w-10 h-10
-                        bg-[#C6A55C] text-white
+                        bg-[#8B5A2B] text-white
                         rounded-full
                         flex items-center justify-center
                         shadow-lg
@@ -893,9 +946,9 @@ export default function CollaresPage() {
             <div className="text-center mt-12">
               <button className="
                 px-8 py-3
-                border-2 border-[#C6A55C]
-                text-[#C6A55C] hover:text-white
-                hover:bg-[#C6A55C]
+                border-2 border-[#8B5A2B]
+                text-[#8B5A2B] hover:text-white
+                hover:bg-[#8B5A2B]
                 transition-all duration-300
                 rounded-full
                 text-sm font-medium
@@ -930,7 +983,7 @@ export default function CollaresPage() {
                 
                 <Link
                   href="/consulta"
-                  className="group inline-flex items-center gap-2 bg-[#C6A55C] text-white px-8 py-3 text-sm font-poppins tracking-wider hover:bg-white hover:text-black transition-all duration-300 relative overflow-hidden"
+                  className="group inline-flex items-center gap-2 bg-[#8B5A2B] text-white px-8 py-3 text-sm font-poppins tracking-wider hover:bg-white hover:text-black transition-all duration-300 relative overflow-hidden"
                 >
                   <span>SOLICITAR CITA</span>
                   <svg 
@@ -980,7 +1033,7 @@ export default function CollaresPage() {
         </section>
 
         {/* Footer */}
-        <footer className="bg-black text-white py-16 mt-16 border-t border-[#C6A55C]/20">
+        <footer className="bg-black text-white py-16 mt-16 border-t border-[#8B5A2B]/20">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
               {/* Logo and Description */}
@@ -998,7 +1051,7 @@ export default function CollaresPage() {
                 <div className="flex space-x-4">
                   <Link 
                     href="#" 
-                    className="text-gray-400 hover:text-[#C6A55C] transition-colors duration-300"
+                    className="text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300"
                     aria-label="Instagram"
                   >
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -1007,7 +1060,7 @@ export default function CollaresPage() {
                   </Link>
                   <Link 
                     href="#" 
-                    className="text-gray-400 hover:text-[#C6A55C] transition-colors duration-300"
+                    className="text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300"
                     aria-label="Facebook"
                   >
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -1016,7 +1069,7 @@ export default function CollaresPage() {
                   </Link>
                   <Link 
                     href="#" 
-                    className="text-gray-400 hover:text-[#C6A55C] transition-colors duration-300"
+                    className="text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300"
                     aria-label="Pinterest"
                   >
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -1031,22 +1084,22 @@ export default function CollaresPage() {
                 <h3 className="text-lg font-medium mb-6">Colecciones</h3>
                 <ul className="space-y-4">
                   <li>
-                    <Link href="/anillos" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                    <Link href="/anillos" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                       Anillos
                     </Link>
                   </li>
                   <li>
-                    <Link href="/collares" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                    <Link href="/collares" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                       Collares
                     </Link>
                   </li>
                   <li>
-                    <Link href="/pulseras" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                    <Link href="/pulseras" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                       Pulseras
                     </Link>
                   </li>
                   <li>
-                    <Link href="/pendientes" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                    <Link href="/pendientes" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                       Pendientes
                     </Link>
                   </li>
@@ -1057,22 +1110,22 @@ export default function CollaresPage() {
                 <h3 className="text-lg font-medium mb-6">Servicios</h3>
                 <ul className="space-y-4">
                   <li>
-                    <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                    <Link href="#" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                       Personalización
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                    <Link href="#" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                       Mantenimiento
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                    <Link href="#" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                       Tasación
                     </Link>
                   </li>
                   <li>
-                    <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                    <Link href="#" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                       Seguros
                     </Link>
                   </li>
@@ -1090,12 +1143,12 @@ export default function CollaresPage() {
                     <input
                       type="email"
                       placeholder="Tu email"
-                      className="w-full bg-white/5 border border-gray-800 rounded-sm px-4 py-2.5 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-[#C6A55C] transition-colors"
+                      className="w-full bg-white/5 border border-gray-800 rounded-sm px-4 py-2.5 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-[#8B5A2B] transition-colors"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-[#C6A55C] text-white px-6 py-2.5 text-sm font-medium hover:bg-[#B69451] transition-colors duration-300"
+                    className="w-full bg-[#8B5A2B] text-white px-6 py-2.5 text-sm font-medium hover:bg-[#7A4D22] transition-colors duration-300"
                   >
                     Suscribirse
                   </button>
@@ -1109,10 +1162,10 @@ export default function CollaresPage() {
                 &copy; {new Date().getFullYear()} Berlin Jewels. Todos los derechos reservados.
               </p>
               <div className="flex space-x-6">
-                <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                <Link href="#" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                   Política de Privacidad
                 </Link>
-                <Link href="#" className="text-sm text-gray-400 hover:text-[#C6A55C] transition-colors duration-300">
+                <Link href="#" className="text-sm text-gray-400 hover:text-[#8B5A2B] transition-colors duration-300">
                   Términos y Condiciones
                 </Link>
               </div>
