@@ -56,7 +56,7 @@ export const categories: Category[] = [
         name: "Bodas", 
         href: "ocasiones/bodas",
         description: "Joyas para el día más especial",
-        image: "/cap2.jpg"
+        image: "/ocasiones.jpg"
       },
       { 
         name: "Compromiso", 
@@ -87,7 +87,7 @@ export const categories: Category[] = [
         name: "Oro 18k", 
         href: "materiales/oro-18k",
         description: "Pureza y elegancia en oro",
-        image: "/cap1.jpg"
+        image: "/goldsilver.jpeg"
       },
       { 
         name: "Platino", 
@@ -118,7 +118,7 @@ export const categories: Category[] = [
         name: "Personalización", 
         href: "servicios/personalizacion",
         description: "Diseños únicos a tu medida",
-        image: "/cap4.jpg"
+        image: "/orfebre.jpg"
       },
       { 
         name: "Grabado", 

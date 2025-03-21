@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { ShoppingBag, Search, Menu } from 'lucide-react'
 import MobileMenu from './MobileMenu'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useCart } from '../contexts/CartContext'
 
 interface Category {
   name: string
@@ -28,6 +29,7 @@ export default function Header({ categories }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isScrolled, setIsScrolled] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const { toggleCart, totalItems } = useCart()
 
   // Handle scroll
   useEffect(() => {
@@ -210,16 +212,16 @@ export default function Header({ categories }: HeaderProps) {
             </div>
 
             {/* Cart */}
-            <Link
-              href="/carrito"
+            <button
+              onClick={toggleCart}
               className="relative group"
               aria-label="Ver carrito"
             >
               <ShoppingBag className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer" />
               <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#C6A55C] text-white text-xs flex items-center justify-center">
-                0
+                {totalItems}
               </span>
-            </Link>
+            </button>
 
             {/* Mobile Menu Button */}
             <button

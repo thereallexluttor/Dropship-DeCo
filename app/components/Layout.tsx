@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import Header from './Header'
 import { motion } from 'framer-motion'
+import CartDrawer from './CartDrawer'
 
 interface LayoutProps {
   children: ReactNode
@@ -17,6 +18,7 @@ export default function Layout({ children, categories }: LayoutProps) {
       className="min-h-screen bg-white"
     >
       <Header categories={categories} />
+      <CartDrawer />
       <main className="pt-20">
         {children}
       </main>

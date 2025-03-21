@@ -26,6 +26,75 @@ const gradientKeyframes = `
       background-position: 0% 50%;
     }
   }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .gradient-animate {
+    animation: gradientMove 15s ease infinite;
+    background-size: 200% 200%;
+  }
+
+  .fade-in {
+    animation: fadeIn 1.5s ease-out forwards;
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+  
+  .hero-card {
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    will-change: transform;
+  }
+  
+  .hero-card:hover {
+    transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale3d(1.02, 1.02, 1.02);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4), 0 0 30px 5px rgba(139, 90, 43, 0.2);
+  }
+  
+  .hero-card-content {
+    transform: translateZ(50px);
+    transition: transform 0.5s ease;
+  }
+  
+  .hero-card:hover .hero-card-content {
+    transform: translateZ(70px);
+  }
+  
+  .hero-glow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(215, 179, 119, 0.15), transparent 40%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
+  }
+  
+  .hero-card:hover .hero-glow {
+    opacity: 1;
+  }
+  
+  @media (max-width: 768px) {
+    .hero-card:hover {
+      transform: none;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .hero-card:hover .hero-card-content {
+      transform: none;
+    }
+    
+    .hero-card:hover .hero-glow {
+      opacity: 0;
+    }
+  }
 `;
 
 const slides = [
@@ -64,6 +133,42 @@ export default function Hero() {
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next')
   const [isAutoplayPaused, setIsAutoplayPaused] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const heroCardRef = useCallback((node: HTMLDivElement | null) => {
+    if (node !== null) {
+      const handleMouseMove = (e: MouseEvent) => {
+        if (window.innerWidth < 768) return;
+        
+        const rect = node.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const xPercent = x / rect.width;
+        const yPercent = y / rect.height;
+        
+        const rotateX = 4 * (0.5 - yPercent);
+        const rotateY = 4 * (xPercent - 0.5);
+        
+        // Update CSS variables for glow effect
+        node.style.setProperty('--mouse-x', `${xPercent * 100}%`);
+        node.style.setProperty('--mouse-y', `${yPercent * 100}%`);
+        
+        node.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      };
+      
+      const handleMouseLeave = () => {
+        node.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+      };
+      
+      node.addEventListener('mousemove', handleMouseMove as EventListener);
+      node.addEventListener('mouseleave', handleMouseLeave);
+      
+      return () => {
+        node.removeEventListener('mousemove', handleMouseMove as EventListener);
+        node.removeEventListener('mouseleave', handleMouseLeave);
+      };
+    }
+  }, []);
 
   // Responsive handler
   useEffect(() => {
@@ -99,6 +204,16 @@ export default function Hero() {
     trackTouch: true,
     trackMouse: true
   })
+
+  // Combine refs for swipe and 3D effect
+  const combineRefs = (el: HTMLDivElement | null) => {
+    // Apply heroCardRef functionality
+    heroCardRef(el);
+    // Apply swipe handlers ref if it exists
+    if (swipeHandlers.ref) {
+      swipeHandlers.ref(el);
+    }
+  };
 
   // Autoplay functionality
   useEffect(() => {
@@ -144,9 +259,12 @@ export default function Hero() {
       >
         <div className="container mx-auto px-2 sm:px-4">
           <div 
-            {...swipeHandlers}
-            className="relative aspect-[3/4] xs:aspect-[4/5] sm:aspect-[16/9] md:aspect-[18/9] lg:aspect-[21/9] w-full rounded-lg md:rounded-2xl overflow-hidden shadow-xl"
+            ref={combineRefs}
+            className="relative aspect-[3/4] xs:aspect-[4/5] sm:aspect-[16/9] md:aspect-[18/9] lg:aspect-[21/9] w-full rounded-lg md:rounded-2xl overflow-hidden shadow-xl hero-card"
           >
+            {/* Glow effect */}
+            <div className="hero-glow rounded-lg md:rounded-2xl"></div>
+            
             {/* Carousel */}
             <div className="absolute inset-0 rounded-lg md:rounded-2xl overflow-hidden">
               {slides.map((slide, index) => (
@@ -181,60 +299,42 @@ export default function Hero() {
                     }}
                   />
 
-                  {/* Animated Gradient Overlay - Gold and Purple */}
-                  <div 
-                    className="absolute inset-0 rounded-lg md:rounded-2xl backdrop-blur-[0px] transition-all duration-500 hover:backdrop-blur-[1px]"
-                    style={{
-                      background: "linear-gradient(120deg, rgba(139,90,43,0.15), rgba(106,13,173,0.10), rgba(0,0,0,0))",
-                      backgroundSize: "200% 200%",
-                      animation: "gradientMove 15s ease-in-out infinite"
-                    }}
-                  >
-                    {/* Extra darker gradient for mobile only - improves text visibility */}
-                    <div 
-                      className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent opacity-75 md:opacity-0"
-                    ></div>
-                    
-                    <div 
-                      className="absolute inset-0 opacity-20 md:opacity-15 md:group-hover:opacity-25 transition-opacity duration-1000"
-                      style={{
-                        background: "linear-gradient(135deg, rgba(212,175,55,0.10), rgba(128,0,128,0.05))",
-                        backgroundSize: "200% 200%",
-                        animation: "gradientMove 12s ease-in-out infinite reverse"
-                      }}
-                    ></div>
-                    
-                    <div className="h-full w-full flex flex-col justify-end md:justify-center md:items-start relative z-10">
-                      <div className="px-5 pb-8 md:pb-0 md:pl-16 md:pr-0 md:max-w-[70%] lg:max-w-[50%] space-y-2 md:space-y-5 w-full">
-                        <div className="bg-white/95 text-black px-3 py-1 md:px-5 md:py-2 inline-block rounded-full text-[10px] xs:text-xs md:text-sm font-bold tracking-[0.3em] font-poppins">
-                          BERLIN JEWELS
-                        </div>
-                        <h2 className="text-base xs:text-xl sm:text-2xl md:text-4xl lg:text-5xl font-poppins text-white leading-[1.3] md:leading-[1.5] tracking-wide drop-shadow-md md:drop-shadow-2xl font-bold">
-                          <span className="block text-[#D7B377] font-bold italic">{slide.subtitle}</span>
-                          <span className="block font-bold mt-1 md:mt-2">{slide.title}</span>
-                        </h2>
-                        <p className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg text-white/95 font-bold tracking-wide md:tracking-[0.2em] uppercase font-poppins max-w-2xl">
-                          {slide.description}
-                        </p>
-                        <div className="pt-3 md:pt-7 flex flex-row flex-wrap gap-2 md:gap-4">
-                          <Link
-                            href={slide.cta.href}
-                            className="group/btn relative overflow-hidden bg-gradient-to-r from-[#8B5A2B] to-[#D7B377] text-white px-4 py-2 xs:px-5 xs:py-2.5 md:px-8 md:py-3 text-[10px] xs:text-xs md:text-sm font-bold font-poppins tracking-widest transition-all duration-300 inline-block hover:from-[#D7B377] hover:to-[#8B5A2B] rounded-full shadow-lg hover:shadow-xl"
-                            aria-label={slide.cta.text}
-                            tabIndex={activeSlide === index ? 0 : -1}
-                          >
-                            {slide.cta.text}
-                            <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover/btn:opacity-100 transform translate-x-full group-hover/btn:translate-x-0 transition-all duration-700"></span>
-                          </Link>
-                          <Link
-                            href="/contacto"
-                            className="group/btn relative overflow-hidden bg-white text-black border border-transparent px-4 py-2 xs:px-5 xs:py-2.5 md:px-8 md:py-3 text-[10px] xs:text-xs md:text-sm font-bold font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-transparent hover:text-white hover:border-white rounded-full shadow-lg hover:shadow-xl"
-                            aria-label="Contactar"
-                            tabIndex={activeSlide === index ? 0 : -1}
-                          >
-                            CONTACTAR
-                          </Link>
-                        </div>
+                  {/* Dark overlay for text visibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent md:bg-gradient-to-r md:from-black/80 md:via-black/40 md:to-transparent rounded-lg md:rounded-2xl overflow-hidden fade-in"></div>
+                  
+                  {/* Additional gradient for better text readability on desktop */}
+                  <div className="absolute inset-0 hidden md:block bg-gradient-to-tr from-black/40 via-transparent to-black/20 rounded-lg md:rounded-2xl overflow-hidden gradient-animate"></div>
+                  
+                  <div className="h-full w-full flex flex-col justify-end md:justify-center md:items-start relative z-10 hero-card-content">
+                    <div className="px-5 pb-8 md:p-8 md:pl-16 md:max-w-[70%] lg:max-w-[55%] space-y-2 md:space-y-5 w-full">
+                      <div className="bg-white/95 text-black px-3 py-1 md:px-5 md:py-2 inline-block rounded-lg text-[10px] xs:text-xs md:text-sm font-bold tracking-[0.3em] font-poppins">
+                        BERLIN JEWELS
+                      </div>
+                      <h2 className="text-base xs:text-xl sm:text-2xl md:text-4xl lg:text-5xl font-poppins text-white leading-[1.3] md:leading-[1.5] tracking-wide drop-shadow-md md:drop-shadow-2xl font-bold text-shadow-lg">
+                        <span className="block text-[#8B5A2B] font-bold italic drop-shadow-xl">{slide.subtitle}</span>
+                        <span className="block font-bold mt-1 md:mt-2 drop-shadow-xl">{slide.title}</span>
+                      </h2>
+                      <p className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg text-white font-bold tracking-wide md:tracking-[0.2em] uppercase font-poppins max-w-2xl drop-shadow-md">
+                        {slide.description}
+                      </p>
+                      <div className="pt-3 md:pt-7 flex flex-row flex-wrap gap-2 md:gap-4">
+                        <Link
+                          href={slide.cta.href}
+                          className="group/btn relative overflow-hidden bg-gradient-to-r from-[#8B5A2B] to-[#D7B377] text-white px-4 py-2 xs:px-5 xs:py-2.5 md:px-8 md:py-3 text-[10px] xs:text-xs md:text-sm font-bold font-poppins tracking-widest transition-all duration-300 inline-block hover:from-[#D7B377] hover:to-[#8B5A2B] rounded-lg shadow-lg hover:shadow-xl"
+                          aria-label={slide.cta.text}
+                          tabIndex={activeSlide === index ? 0 : -1}
+                        >
+                          {slide.cta.text}
+                          <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover/btn:opacity-100 transform translate-x-full group-hover/btn:translate-x-0 transition-all duration-700"></span>
+                        </Link>
+                        <Link
+                          href="/contacto"
+                          className="group/btn relative overflow-hidden bg-white text-black border border-transparent px-4 py-2 xs:px-5 xs:py-2.5 md:px-8 md:py-3 text-[10px] xs:text-xs md:text-sm font-bold font-poppins tracking-widest transition-all duration-300 inline-block hover:bg-transparent hover:text-white hover:border-white rounded-lg shadow-lg hover:shadow-xl"
+                          aria-label="Contactar"
+                          tabIndex={activeSlide === index ? 0 : -1}
+                        >
+                          CONTACTAR
+                        </Link>
                       </div>
                     </div>
                   </div>

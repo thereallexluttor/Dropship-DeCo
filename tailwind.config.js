@@ -56,7 +56,7 @@ module.exports = {
       fontFamily: {
         'serif': ['Cormorant Garamond', 'serif'],
         'sans': ['Poppins', 'sans-serif'],
-        poppins: ['var(--font-poppins)', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
       },
       screens: {
         'xs': '475px',
@@ -77,6 +77,9 @@ module.exports = {
       backgroundImage: {
         'gold-gradient': 'linear-gradient(45deg, #b8860b 0%, #FFD700 35%, #dfc05a 50%, #FFD700 65%, #b8860b 100%)',
         'gold-radial': 'radial-gradient(circle, #FFD700 0%, #b8860b 100%)',
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic':
+          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
     },
   },

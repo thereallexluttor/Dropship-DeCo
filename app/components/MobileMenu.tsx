@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { X, Search, ShoppingBag } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useCart } from '../contexts/CartContext'
 
 interface Category {
   name: string
@@ -33,6 +34,7 @@ export default function MobileMenu({
 }: MobileMenuProps) {
   const [expandedCategory, setExpandedCategory] = useState<number | null>(null)
   const [searchVisible, setSearchVisible] = useState(true)
+  const { toggleCart, totalItems } = useCart()
 
   // Close expanded category when menu closes
   useEffect(() => {
@@ -236,14 +238,16 @@ export default function MobileMenu({
                 >
                   Mi Cuenta
                 </Link>
-                <Link
-                  href="/carrito"
+                <button
                   className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#C6A55C] transition-colors duration-200"
-                  onClick={onClose}
+                  onClick={() => {
+                    onClose()
+                    toggleCart()
+                  }}
                 >
                   <ShoppingBag className="h-4 w-4" />
-                  <span>Carrito (0)</span>
-                </Link>
+                  <span>Carrito ({totalItems})</span>
+                </button>
               </div>
             </div>
           </motion.div>
