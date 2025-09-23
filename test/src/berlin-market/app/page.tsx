@@ -2,80 +2,16 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { ShoppingBag, Search, Menu, X } from "lucide-react"
-import { useState, useRef, useEffect } from "react"
+import { ShoppingBag, Search, Home as HomeIcon, User, ShoppingCart } from "lucide-react"
+import { useState, useEffect } from "react"
 import PageTransition from "./components/PageTransition"
 import MainLayout from "./components/MainLayout"
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 
 export default function Home() {
-  const [activeDropdown, setActiveDropdown] = useState<number | null>(null)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [activeSlide, setActiveSlide] = useState(0)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
-
-  const categories = [
-    {
-      name: "COLECCIONES",
-      items: [
-        { name: "Anillos", href: "/anillos" },
-        { name: "Collares", href: "/collares" },
-        { name: "Pulseras", href: "/pulseras" },
-        { name: "Pendientes", href: "/pendientes" }
-      ],
-    },
-    {
-      name: "OCASIONES",
-      items: [
-        { name: "Bodas", href: "/bodas" },
-        { name: "Compromiso", href: "/compromiso" },
-        { name: "Regalos", href: "/regalos" },
-        { name: "Edición Limitada", href: "/edicion-limitada"}
-      ],
-    },
-    {
-      name: "MATERIALES",
-      items: [
-        { name: "Oro 18k", href: "#" },
-        { name: "Platino", href: "#" },
-        { name: "Diamantes", href: "#" },
-        { name: "Piedras Preciosas", href: "#" }
-      ],
-    },
-    {
-      name: "SERVICIOS",
-      items: [
-        { name: "Personalización", href: "#" },
-        { name: "Grabado", href: "#" },
-        { name: "Mantenimiento", href: "#" },
-        { name: "Tasación", href: "#" }
-      ],
-    },
-  ]
-
-  const handleMouseEnter = (index: number) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-    setActiveDropdown(index)
-  }
-
-  const handleMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => {
-      setActiveDropdown(null)
-    }, 200) // 300ms delay before closing
-  }
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -93,215 +29,121 @@ export default function Home() {
   return (
     <MainLayout>
       <div className="min-h-screen bg-white">
-        <header className="fixed w-full bg-white z-50 transition-colors duration-300 ease-in-out hover:bg-black group border-b border-gray-200">
-          {/* Mobile Search Bar - Full Width when open */}
-          <div className={`
-            md:hidden
-            ${isMobileSearchOpen ? 'block' : 'hidden'}
-            absolute top-0 left-0 right-0 bg-white z-20 px-4 py-3
-            shadow-lg
-          `}>
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="
-                  flex-1
-                  h-10
-                  px-4
-                  rounded-full
-                  bg-gray-100
-                  text-black
-                  placeholder-gray-500
-                  focus:outline-none
-                  focus:ring-2
-                  focus:ring-blue-500
-                  text-sm
-                "
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileSearchOpen(false)
-                  setSearchQuery("")
-                }}
-                className="p-2"
-              >
-                <X className="h-6 w-6 text-gray-500" />
-              </button>
-            </form>
+        {/* Promotional Banner */}
+        <div className="bg-green-500 text-white py-2 overflow-hidden">
+          <div className="animate-scroll whitespace-nowrap text-sm font-medium">
+            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
           </div>
+        </div>
 
-          <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+        <header className="fixed w-full bg-white z-50 border-b border-gray-200">
+
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            {/* Logo Section */}
             <Link
               href="/"
-              className="flex items-center gap-2 text-2xl font-sans text-black transition-colors duration-300 ease-in-out group-hover:text-white"
+              className="flex items-center gap-3"
             >
-              <img 
-                src="/DEU_Berlin_COA.svg.png" 
-                alt="Berlin Jewelry Logo" 
-                className="h-11 w-auto transition-all duration-300 ease-in-out group-hover:[filter:brightness(0)_invert(1)]" 
-              />
-              
-            </Link>
-            <nav className="hidden md:flex space-x-6">
-              {categories.map((category, index) => (
-                <div
-                  key={index}
-                  className="relative group/item"
-                  onMouseEnter={() => handleMouseEnter(index)}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <Link 
-                    href="#"
-                    className="text-black text-sm font-bold transition-colors duration-300 ease-in-out group-hover:text-white"
-                  >
-                    {category.name}
-                  </Link>
-                  <div
-                    className={`absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 transition-all duration-300 ease-in-out ${
-                      activeDropdown === index
-                        ? "opacity-100 translate-y-0 visible"
-                        : "opacity-0 -translate-y-2 invisible"
-                    }`}
-                  >
-                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                      {category.items.map((item, itemIndex) => (
-                        <Link
-                          key={itemIndex}
-                          href={item.href}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
-                          role="menuitem"
-                        >
-                          {item.name}
-                        </Link>
-                      ))}
-                    </div>
+              <div className="relative">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <div className="w-4 h-4 bg-green-500 rounded-sm"></div>
                   </div>
                 </div>
-              ))}
-            </nav>
-            <div className="flex items-center space-x-4">
-              {/* Desktop Search */}
-              <div className="relative hidden md:block">
-                <form onSubmit={handleSearch} className="flex items-center">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search products..."
-                    className={`
-                      ${isSearchOpen ? 'w-48 md:w-64 px-4 opacity-100' : 'w-0 opacity-0'}
-                      transition-all duration-300 ease-in-out
-                      h-9 rounded-full
-                      bg-gray-100 group-hover:bg-gray-800
-                      text-black group-hover:text-white
-                      placeholder-gray-500 group-hover:placeholder-gray-400
-                      focus:outline-none focus:ring-2 focus:ring-blue-500
-                      text-sm
-                    `}
-                  />
-                  {isSearchOpen ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSearchOpen(false)
-                        setSearchQuery("")
-                      }}
-                      className="absolute right-2 text-gray-500 hover:text-gray-700 group-hover:text-gray-400"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsSearchOpen(true)}
-                      className="text-black transition-colors duration-300 ease-in-out group-hover:text-white"
-                    >
-                      <Search className="h-6 w-6" />
-                    </button>
-                  )}
-                </form>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-orange-400 rounded-full"></div>
               </div>
+              <div className="text-left">
+                <div className="text-lg font-bold text-black">UNISANTANDER S.A.S</div>
+                <div className="text-xs text-gray-600">Una gran empresa a su servicio</div>
+              </div>
+            </Link>
 
-              {/* Mobile Search Icon */}
-              <button
-                type="button"
-                onClick={() => setIsMobileSearchOpen(true)}
-                className="md:hidden text-black transition-colors duration-300 ease-in-out group-hover:text-white"
-              >
-                <Search className="h-6 w-6" />
-              </button>
-
-              <ShoppingBag className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer" />
-              <Menu 
-                className="h-6 w-6 text-black transition-colors duration-300 ease-in-out group-hover:text-white cursor-pointer md:hidden"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              />
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md mx-8">
+              <form onSubmit={handleSearch} className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Busca el producto o categoria de tu preferencia..."
+                  className="
+                    w-full
+                    h-10
+                    px-4
+                    pr-10
+                    rounded-lg
+                    bg-gray-100
+                    text-black
+                    placeholder-gray-500
+                    focus:outline-none
+                    focus:ring-2
+                    focus:ring-green-500
+                    text-sm
+                  "
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+              </form>
             </div>
-          </div>
 
-          {/* Updated Mobile Menu */}
-          <div className={`
-            md:hidden
-            ${isMobileMenuOpen ? 'block' : 'hidden'}
-            absolute top-full left-0 right-0
-            bg-white
-            shadow-lg
-            z-10
-          `}>
-            <div className="divide-y divide-gray-100">
-              {categories.map((category, index) => (
-                <div key={index} className="px-4">
-                  <button 
-                    className="
-                      flex justify-between items-center
-                      w-full py-4
-                      text-black text-sm font-bold
-                      transition-colors duration-200
-                      hover:text-blue-600
-                    "
-                    onClick={() => setActiveDropdown(activeDropdown === index ? null : index)}
-                  >
-                    {category.name}
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${
-                        activeDropdown === index ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  <div 
-                    className={`
-                      overflow-hidden transition-all duration-300 ease-in-out
-                      ${activeDropdown === index ? 'max-h-64 pb-4' : 'max-h-0'}
-                    `}
-                  >
-                    {category.items.map((item, itemIndex) => (
-                      <Link
-                        key={itemIndex}
-                        href={item.href}
-                        className="block py-2 pl-4 text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200"
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </div>
+            {/* User Navigation Icons */}
+            <div className="flex items-center space-x-6">
+              <div className="flex flex-col items-center">
+                <div className="h-6 w-6 text-black">
+                  <HomeIcon className="h-6 w-6" />
                 </div>
-              ))}
+                <span className="text-xs text-black mt-1">Inicio</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="h-6 w-6 text-black">
+                  <ShoppingBag className="h-6 w-6" />
+                </div>
+                <span className="text-xs text-black mt-1">Tienda</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="h-6 w-6 text-black">
+                  <ShoppingCart className="h-6 w-6" />
+                </div>
+                <span className="text-xs text-black mt-1">Carrito</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="h-6 w-6 text-black">
+                  <User className="h-6 w-6" />
+                </div>
+                <span className="text-xs text-black mt-1">Tu Cuenta</span>
+              </div>
             </div>
           </div>
+
+          {/* Category Navigation */}
+          <div className="border-t border-gray-200 bg-white">
+            <div className="container mx-auto px-4">
+              <nav className="flex space-x-8 py-3 overflow-x-auto">
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Perro</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Gato</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Animales pequeños</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Aves</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Bovinos</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Equinos</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Peces</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Salud animal</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Ofertas</Link>
+                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Novedades</Link>
+              </nav>
+            </div>
+          </div>
+
         </header>
 
         <main>
-          <section className="relative w-full pt-20">
+          <section className="relative w-full pt-32">
             <div className="container mx-auto px-4">
               <div className="relative aspect-[21/9] w-full">
                 {/* Carousel */}
@@ -537,4 +379,3 @@ export default function Home() {
     </MainLayout>
   )
 }
-

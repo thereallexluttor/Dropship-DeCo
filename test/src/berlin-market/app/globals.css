@@ -104,3 +104,16 @@ body {
   opacity: 1 !important;
   transform: translateY(0) !important;
 }
+
+@keyframes scroll {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 20s linear infinite;
+}
