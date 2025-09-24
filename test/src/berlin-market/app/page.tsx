@@ -77,7 +77,7 @@ export default function Home() {
     <MainLayout>
       <div className="min-h-screen bg-white">
         {/* Promotional Banner */}
-        <div className="bg-green-500 text-white py-1 overflow-hidden">
+        <div className="bg-[#196428] text-white py-1 overflow-hidden">
           <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
             <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
             <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
@@ -91,37 +91,37 @@ export default function Home() {
           <div className="md:hidden">
             <div className="container mx-auto px-4 py-3">
               <div className="flex items-center justify-between gap-2">
-                {/* Logo */}
                 <Link href="/" className="flex items-center flex-shrink-0">
                   <Image
                     src="/unisantander.png"
                     alt="Logo Unisantander"
-                    width={120}
-                    height={30}
-                    className="w-auto h-7"
+                    width={100}
+                    height={25}
+                    className="w-auto h-6 sm:h-7"
                   />
                 </Link>
 
-                {/* Search Bar */}
-                <div className="flex-1 w-full max-w-xs mx-2">
+                <div className="flex-1 w-full max-w-xs">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Buscar..."
-                      className="w-full h-9 px-4 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                      className="w-full h-9 px-3 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
-                    <button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
                       <Search className="h-4 w-4" />
                     </button>
                   </form>
                 </div>
 
-                {/* Hamburger Menu */}
                 <Sheet>
                   <SheetTrigger asChild>
-                    <button className="p-1 flex-shrink-0">
+                    <button className="p-2 -mr-2">
                       <Menu className="h-6 w-6 text-gray-700" />
                     </button>
                   </SheetTrigger>
@@ -180,7 +180,7 @@ export default function Home() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Buscar productos..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
                     <button
                       type="submit"
@@ -194,44 +194,44 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <div className="flex items-center space-x-1">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Inicio</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Tienda</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingCart className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Carrito</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <User className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Cuenta</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
                     </div>
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-1">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Info</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Tiendas</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
                     </div>
                   </div>
                 </div>
@@ -262,7 +262,7 @@ export default function Home() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Buscar productos..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
                     <button
                       type="submit"
@@ -276,44 +276,44 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-3 flex-shrink-0">
                   <div className="flex items-center space-x-2">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Inicio</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Tienda</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingCart className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Carrito</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <User className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Cuenta</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
                     </div>
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-2">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Info</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Tiendas</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
                     </div>
                   </div>
                 </div>
@@ -326,7 +326,7 @@ export default function Home() {
             <div className="container mx-auto px-4 py-3">
               <div className="flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0">
+                <Link href="/" className="flex items-center flex-shrink-0 ml-[150px] xl:ml-[150px] 2xl:ml-[180px]">
                   <Image
                     src="/unisantander.png"
                     alt="Logo Unisantander"
@@ -337,14 +337,14 @@ export default function Home() {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-lg mx-8">
+                <div className="flex-1 max-w-lg mx-8 ml-[70px]">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Busca el producto o categoria de tu preferencia..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
                     <button
                       type="submit"
@@ -358,44 +358,44 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-4 flex-shrink-0">
                   <div className="flex items-center space-x-3">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Inicio</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Tienda</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingCart className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Carrito</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <User className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Tu Cuenta</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tu Cuenta</span>
                     </div>
                   </div>
                   <div className="w-[1.5px] h-5 bg-gray-200"></div>
                   <div className="flex items-center space-x-3">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Sobre Nosotros</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500">
+                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">Nuestras Tiendas</span>
+                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Nuestras Tiendas</span>
                     </div>
                   </div>
                 </div>
@@ -408,7 +408,7 @@ export default function Home() {
             <div className="container mx-auto px-4 hidden md:block">
               <nav className="flex justify-center space-x-4 md:space-x-2 lg:space-x-8 py-3 overflow-x-auto scrollbar-hide">
                 {categories.map((category) => (
-                  <Link key={category.name} href={category.href} className="text-[11px] lg:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">{category.name}</Link>
+                  <Link key={category.name} href={category.href} className="text-[11px] lg:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-[#196428] transition-colors">{category.name}</Link>
                 ))}
               </nav>
             </div>
