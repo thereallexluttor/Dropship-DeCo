@@ -1,8 +1,8 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
-import { ShoppingBag, Search, Home as HomeIcon, User, ShoppingCart } from "lucide-react"
+import Link from "next/link" 
+import { ShoppingBag, Search, Home as HomeIcon, User, ShoppingCart, Info, MapPin } from "lucide-react"
 import { useState, useEffect } from "react"
 import PageTransition from "./components/PageTransition"
 import MainLayout from "./components/MainLayout"
@@ -30,8 +30,8 @@ export default function Home() {
     <MainLayout>
       <div className="min-h-screen bg-white">
         {/* Promotional Banner */}
-        <div className="bg-green-500 text-white py-2 overflow-hidden">
-          <div className="animate-scroll whitespace-nowrap text-sm font-medium">
+        <div className="bg-green-500 text-white py-1 overflow-hidden">
+          <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
             <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
             <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
             <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
@@ -39,85 +39,300 @@ export default function Home() {
           </div>
         </div>
 
-        <header className="fixed w-full bg-white z-50 border-b border-gray-200">
-
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            {/* Logo Section */}
-            <Link
-              href="/"
-              className="flex items-center gap-3"
-            >
-              <div className="relative">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-4 h-4 bg-green-500 rounded-sm"></div>
+        <header className="w-full bg-white border-b border-gray-200">
+          {/* Mobile Header (< 640px) */}
+          <div className="md:hidden">
+            <div className="container mx-auto px-4 py-3">
+              {/* Top Row: Logo and Essential Actions */}
+              <div className="flex items-center justify-between mb-3">
+                <Link href="/" className="flex items-center">
+                  <Image
+                    src="/unisantander.png"
+                    alt="Logo Unisantander"
+                    width={120}
+                    height={30}
+                    className="w-auto h-6 sm:h-7"
+                  />
+                </Link>
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="h-5 w-5 text-gray-500">
+                      <ShoppingCart className="h-full w-full" />
+                    </div>
+                    <span className="text-xs text-gray-500 mt-1">Carrito</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="h-5 w-5 text-gray-500">
+                      <User className="h-full w-full" />
+                    </div>
+                    <span className="text-xs text-gray-500 mt-1">Cuenta</span>
                   </div>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-orange-400 rounded-full"></div>
               </div>
-              <div className="text-left">
-                <div className="text-lg font-bold text-black">UNISANTANDER S.A.S</div>
-                <div className="text-xs text-gray-600">Una gran empresa a su servicio</div>
+              
+              {/* Search Bar */}
+              <div className="w-full">
+                <form onSubmit={handleSearch} className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar productos..."
+                    className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                  />
+                  <button
+                    type="submit"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  >
+                    <Search className="h-5 w-5" />
+                  </button>
+                </form>
               </div>
-            </Link>
-
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md mx-8">
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Busca el producto o categoria de tu preferencia..."
-                  className="
-                    w-full
-                    h-10
-                    px-4
-                    pr-10
-                    rounded-lg
-                    bg-gray-100
-                    text-black
-                    placeholder-gray-500
-                    focus:outline-none
-                    focus:ring-2
-                    focus:ring-green-500
-                    text-sm
-                  "
-                />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-              </form>
             </div>
+          </div>
 
-            {/* User Navigation Icons */}
-            <div className="flex items-center space-x-6">
-              <div className="flex flex-col items-center">
-                <div className="h-6 w-6 text-black">
-                  <HomeIcon className="h-6 w-6" />
+          {/* Tablet Header (640px - 1023px) */}
+          <div className="hidden md:block lg:hidden">
+            <div className="container mx-auto px-4 py-3">
+              <div className="flex items-center justify-between">
+                {/* Logo */}
+                <Link href="/" className="flex items-center flex-shrink-0">
+                  <Image
+                    src="/unisantander.png"
+                    alt="Logo Unisantander"
+                    width={150}
+                    height={38}
+                    className="w-auto h-8"
+                  />
+                </Link>
+
+                {/* Search Bar */}
+                <div className="flex-1 max-w-sm mx-4">
+                  <form onSubmit={handleSearch} className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar productos..."
+                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      <Search className="h-5 w-5" />
+                    </button>
+                  </form>
                 </div>
-                <span className="text-xs text-black mt-1">Inicio</span>
+
+                {/* Navigation Icons */}
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <div className="flex items-center space-x-1">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <HomeIcon className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Inicio</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <ShoppingBag className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Tienda</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <ShoppingCart className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Carrito</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <User className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Cuenta</span>
+                    </div>
+                  </div>
+                  <div className="w-[1px] h-6 bg-gray-200"></div>
+                  <div className="flex items-center space-x-1">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <Info className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Info</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <MapPin className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Tiendas</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="h-6 w-6 text-black">
-                  <ShoppingBag className="h-6 w-6" />
+            </div>
+          </div>
+
+          {/* Large Tablet Header (1024px - 1279px) */}
+          <div className="hidden lg:block xl:hidden">
+            <div className="container mx-auto px-4 py-3">
+              <div className="flex items-center justify-between">
+                {/* Logo */}
+                <Link href="/" className="flex items-center flex-shrink-0">
+                  <Image
+                    src="/unisantander.png"
+                    alt="Logo Unisantander"
+                    width={170}
+                    height={43}
+                    className="w-auto h-9"
+                  />
+                </Link>
+
+                {/* Search Bar */}
+                <div className="flex-1 max-w-md mx-6">
+                  <form onSubmit={handleSearch} className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar productos..."
+                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      <Search className="h-5 w-5" />
+                    </button>
+                  </form>
                 </div>
-                <span className="text-xs text-black mt-1">Tienda</span>
+
+                {/* Navigation Icons */}
+                <div className="flex items-center space-x-3 flex-shrink-0">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <HomeIcon className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Inicio</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <ShoppingBag className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Tienda</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <ShoppingCart className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Carrito</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <User className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Cuenta</span>
+                    </div>
+                  </div>
+                  <div className="w-[1px] h-6 bg-gray-200"></div>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <Info className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Info</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <MapPin className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Tiendas</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="h-6 w-6 text-black">
-                  <ShoppingCart className="h-6 w-6" />
+            </div>
+          </div>
+
+          {/* Desktop Header (≥ 1280px) */}
+          <div className="hidden xl:block">
+            <div className="container mx-auto px-4 py-3">
+              <div className="flex items-center justify-between">
+                {/* Logo */}
+                <Link href="/" className="flex items-center flex-shrink-0">
+                  <Image
+                    src="/unisantander.png"
+                    alt="Logo Unisantander"
+                    width={200}
+                    height={50}
+                    className="w-auto h-12"
+                  />
+                </Link>
+
+                {/* Search Bar */}
+                <div className="flex-1 max-w-lg mx-8">
+                  <form onSubmit={handleSearch} className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Busca el producto o categoria de tu preferencia..."
+                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      <Search className="h-5 w-5" />
+                    </button>
+                  </form>
                 </div>
-                <span className="text-xs text-black mt-1">Carrito</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="h-6 w-6 text-black">
-                  <User className="h-6 w-6" />
+
+                {/* Navigation Icons */}
+                <div className="flex items-center space-x-4 flex-shrink-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <HomeIcon className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Inicio</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <ShoppingBag className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Tienda</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <ShoppingCart className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Carrito</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <User className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Tu Cuenta</span>
+                    </div>
+                  </div>
+                  <div className="w-[1.5px] h-5 bg-gray-200"></div>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <Info className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Sobre Nosotros</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-4 w-4 text-gray-500">
+                        <MapPin className="h-full w-full" />
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">Nuestras Tiendas</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs text-black mt-1">Tu Cuenta</span>
               </div>
             </div>
           </div>
@@ -125,17 +340,17 @@ export default function Home() {
           {/* Category Navigation */}
           <div className="border-t border-gray-200 bg-white">
             <div className="container mx-auto px-4">
-              <nav className="flex space-x-8 py-3 overflow-x-auto">
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Perro</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Gato</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Animales pequeños</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Aves</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Bovinos</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Equinos</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Peces</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Salud animal</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Ofertas</Link>
-                <Link href="#" className="text-sm text-gray-700 whitespace-nowrap">Novedades</Link>
+              <nav className="flex justify-center space-x-4 sm:space-x-6 lg:space-x-8 py-3 overflow-x-auto scrollbar-hide">
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Perro</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Gato</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Animales pequeños</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Aves</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Bovinos</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Equinos</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Peces</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Salud animal</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Ofertas</Link>
+                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Novedades</Link>
               </nav>
             </div>
           </div>
@@ -143,7 +358,7 @@ export default function Home() {
         </header>
 
         <main>
-          <section className="relative w-full pt-32">
+          <section className="relative w-full pt-8">
             <div className="container mx-auto px-4">
               <div className="relative aspect-[21/9] w-full">
                 {/* Carousel */}
