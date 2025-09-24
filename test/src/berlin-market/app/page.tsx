@@ -2,12 +2,36 @@
 
 import Image from "next/image"
 import Link from "next/link" 
-import { ShoppingBag, Search, Home as HomeIcon, User, ShoppingCart, Info, MapPin } from "lucide-react"
+import { 
+  ShoppingBag, 
+  Search, 
+  Home as HomeIcon, 
+  User, 
+  ShoppingCart, 
+  Info, 
+  MapPin,
+  Menu,
+  Dog,
+  Cat,
+  Rabbit,
+  Bird,
+  Beef,
+  Fish,
+  HeartPulse,
+  Tag,
+  Sparkles
+} from "lucide-react"
 import { useState, useEffect } from "react"
-import PageTransition from "./components/PageTransition"
-import MainLayout from "./components/MainLayout"
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import MainLayout from "./components/MainLayout"
 
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
@@ -26,6 +50,29 @@ export default function Home() {
     console.log("Searching for:", searchQuery)
   }
 
+  const categories = [
+    { name: "Perro", icon: Dog, href: "#" },
+    { name: "Gato", icon: Cat, href: "#" },
+    { name: "Animales pequeños", icon: Rabbit, href: "#" },
+    { name: "Aves", icon: Bird, href: "#" },
+    { name: "Bovinos", icon: Beef, href: "#" },
+  
+    { name: "Peces", icon: Fish, href: "#" },
+    { name: "Salud animal", icon: HeartPulse, href: "#" },
+    { name: "Ofertas", icon: Tag, href: "#" },
+    { name: "Novedades", icon: Sparkles, href: "#" },
+  ];
+
+  const navLinks = [
+    { name: "Inicio", icon: HomeIcon, href: "#" },
+    { name: "Tienda", icon: ShoppingBag, href: "#" },
+    { name: "Carrito", icon: ShoppingCart, href: "#" },
+    { name: "Cuenta", icon: User, href: "#" },
+    { name: "Info", icon: Info, href: "#" },
+    { name: "Tiendas", icon: MapPin, href: "#" },
+  ];
+
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-white">
@@ -43,50 +90,69 @@ export default function Home() {
           {/* Mobile Header (< 640px) */}
           <div className="md:hidden">
             <div className="container mx-auto px-4 py-3">
-              {/* Top Row: Logo and Essential Actions */}
-              <div className="flex items-center justify-between mb-3">
-                <Link href="/" className="flex items-center">
+              <div className="flex items-center justify-between gap-2">
+                {/* Logo */}
+                <Link href="/" className="flex items-center flex-shrink-0">
                   <Image
                     src="/unisantander.png"
                     alt="Logo Unisantander"
                     width={120}
                     height={30}
-                    className="w-auto h-6 sm:h-7"
+                    className="w-auto h-7"
                   />
                 </Link>
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="h-5 w-5 text-gray-500">
-                      <ShoppingCart className="h-full w-full" />
-                    </div>
-                    <span className="text-xs text-gray-500 mt-1">Carrito</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="h-5 w-5 text-gray-500">
-                      <User className="h-full w-full" />
-                    </div>
-                    <span className="text-xs text-gray-500 mt-1">Cuenta</span>
-                  </div>
+
+                {/* Search Bar */}
+                <div className="flex-1 w-full max-w-xs mx-2">
+                  <form onSubmit={handleSearch} className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar..."
+                      className="w-full h-9 px-4 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
+                    />
+                    <button type="submit" className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      <Search className="h-4 w-4" />
+                    </button>
+                  </form>
                 </div>
-              </div>
-              
-              {/* Search Bar */}
-              <div className="w-full">
-                <form onSubmit={handleSearch} className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar productos..."
-                    className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm border-2 border-gray-200"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                  >
-                    <Search className="h-5 w-5" />
-                  </button>
-                </form>
+
+                {/* Hamburger Menu */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <button className="p-1 flex-shrink-0">
+                      <Menu className="h-6 w-6 text-gray-700" />
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[80%] max-w-[300px] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle className="text-lg font-bold">Menú</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-8 flex flex-col gap-6">
+                      <div>
+                        <h3 className="mb-2 text-sm font-semibold text-gray-500 px-2">Categorías</h3>
+                        <nav className="flex flex-col gap-1">
+                          {categories.map((category) => (
+                            <Link key={category.name} href={category.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors">
+                              <category.icon className="h-5 w-5 text-gray-600" />
+                              <span className="text-sm font-medium text-gray-800">{category.name}</span>
+                            </Link>
+                          ))}
+                        </nav>
+                      </div>
+                      <div className="border-t border-gray-200 -mx-6"></div>
+                      <nav className="flex flex-col gap-1">
+                        {navLinks.map((link) => (
+                          <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors">
+                            <link.icon className="h-5 w-5 text-gray-600" />
+                            <span className="text-sm font-medium text-gray-800">{link.name}</span>
+                          </Link>
+                        ))}
+                      </nav>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
           </div>
@@ -339,18 +405,11 @@ export default function Home() {
 
           {/* Category Navigation */}
           <div className="border-t border-gray-200 bg-white">
-            <div className="container mx-auto px-4">
-              <nav className="flex justify-center space-x-4 sm:space-x-6 lg:space-x-8 py-3 overflow-x-auto scrollbar-hide">
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Perro</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Gato</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Animales pequeños</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Aves</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Bovinos</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Equinos</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Peces</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Salud animal</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Ofertas</Link>
-                <Link href="#" className="text-xs sm:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">Novedades</Link>
+            <div className="container mx-auto px-4 hidden md:block">
+              <nav className="flex justify-center space-x-4 md:space-x-2 lg:space-x-8 py-3 overflow-x-auto scrollbar-hide">
+                {categories.map((category) => (
+                  <Link key={category.name} href={category.href} className="text-[11px] lg:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-green-600 transition-colors">{category.name}</Link>
+                ))}
               </nav>
             </div>
           </div>
