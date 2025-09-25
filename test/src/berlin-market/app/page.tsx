@@ -21,21 +21,26 @@ import {
   Tag,
   Sparkles
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
+import CategoryMenu from './components/CategoryMenu'
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetOverlay,
 } from "@/components/ui/sheet"
 import MainLayout from "./components/MainLayout"
+import CategoryDropdown from "./components/CategoryDropdown"
 
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
+  const [openCategory, setOpenCategory] = useState<string | null>(null)
+  const categoriesContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -51,16 +56,311 @@ export default function Home() {
   }
 
   const categories = [
-    { name: "Perro", icon: Dog, href: "#" },
-    { name: "Gato", icon: Cat, href: "#" },
-    { name: "Animales pequeños", icon: Rabbit, href: "#" },
-    { name: "Aves", icon: Bird, href: "#" },
-    { name: "Bovinos", icon: Beef, href: "#" },
-  
-    { name: "Peces", icon: Fish, href: "#" },
-    { name: "Salud animal", icon: HeartPulse, href: "#" },
-    { name: "Ofertas", icon: Tag, href: "#" },
-    { name: "Novedades", icon: Sparkles, href: "#" },
+    { 
+      name: "Perro",
+      href: "#",
+      subcategories: [
+        { name: "Cachorros", href: "#" },
+        { name: "Comida para Perros", href: "#" },
+        { name: "Snacks y Premios", href: "#" },
+        { name: "Paseos al Perro", href: "#" },
+        { name: "Cuidado e Higiene", href: "#" },
+        { name: "Juguetes para Perro", href: "#" },
+      ],
+      promotions: [
+        {
+          type: "offer" as const,
+          title: "Ofertas Especiales",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        },
+        {
+          type: "new" as const,
+          title: "Novedades",
+          href: "#",
+          icon: "/icons/diamond.png"
+        }
+      ],
+      brands: [
+        {
+          name: "Royal Canin",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Purina",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Pedigree",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        }
+      ],
+      bannerImage: {
+        src: "/dog.png",
+        alt: "Productos para Perros",
+        href: "#"
+      }
+    },
+    { 
+      name: "Gato",
+      href: "#",
+      subcategories: [
+        { name: "Gatitos", href: "#" },
+        { name: "Comida para Gatos", href: "#" },
+        { name: "Arena para Gatos", href: "#" },
+        { name: "Cuidado e Higiene", href: "#" },
+        { name: "Juguetes para Gatos", href: "#" },
+      ],
+      promotions: [
+        {
+          type: "offer" as const,
+          title: "Ofertas Felinas",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        },
+        {
+          type: "new" as const,
+          title: "Nuevos Productos",
+          href: "#",
+          icon: "/icons/warranty.png"
+        }
+      ],
+      brands: [
+        {
+          name: "Whiskas",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Felix",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Cat Chow",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        }
+      ],
+      bannerImage: {
+        src: "/cap2.jpg",
+        alt: "Productos para Gatos",
+        href: "#"
+      }
+    },
+    { 
+      name: "Roedores",
+      href: "#",
+      subcategories: [
+        { name: "Conejos", href: "#" },
+        { name: "Hamsters", href: "#" },
+        { name: "Comida", href: "#" },
+        { name: "Accesorios", href: "#" },
+      ],
+      promotions: [
+        {
+          type: "offer" as const,
+          title: "Ofertas Especiales",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        },
+        {
+          type: "new" as const,
+          title: "Nuevos Productos",
+          href: "#",
+          icon: "/icons/diamond.png"
+        }
+      ],
+      brands: [
+        {
+          name: "Vitakraft",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Cunipic",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Living World",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        }
+      ],
+      bannerImage: {
+        src: "/cap3.jpg",
+        alt: "Productos para Animales Pequeños",
+        href: "#"
+      }
+    },
+    { 
+      name: "Aves",
+      href: "#",
+      subcategories: [
+        { name: "Pájaros", href: "#" },
+        { name: "Comida para Aves", href: "#" },
+        { name: "Jaulas y Accesorios", href: "#" },
+      ],
+      promotions: [
+        {
+          type: "offer" as const,
+          title: "Ofertas Aves",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        },
+        {
+          type: "new" as const,
+          title: "Nuevos Productos",
+          href: "#",
+          icon: "/icons/warranty.png"
+        },
+        {
+          type: "new" as const,
+          title: "Nuevos Productos2",
+          href: "#",
+          icon: "/icons/warranty.png"
+        },
+        {
+          type: "new" as const,
+          title: "Nuevos Productos3",
+          href: "#",
+          icon: "/icons/warranty.png"
+        }
+      ],
+      brands: [
+        {
+          name: "Versele-Laga",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Zupreem",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Kaytee",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Kaytee",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        }
+      ],
+      bannerImage: {
+        src: "/cap4.jpg",
+        alt: "Productos para Aves",
+        href: "#"
+      }
+    },
+    { 
+      name: "Bovinos",
+      href: "#",
+      subcategories: [
+        { name: "Alimentación", href: "#" },
+        { name: "Salud", href: "#" },
+        { name: "Equipamiento", href: "#" },
+      ],
+      promotions: [
+        {
+          type: "offer" as const,
+          title: "Ofertas Especiales",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        },
+        {
+          type: "new" as const,
+          title: "Novedades",
+          href: "#",
+          icon: "/icons/diamond.png"
+        }
+      ],
+      brands: [
+        {
+          name: "Royal Canin",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Purina",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Pedigree",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        }
+      ],
+      bannerImage: {
+        src: "/dog.png",
+        alt: "Productos para Perros",
+        href: "#"
+      }
+    },
+    { 
+      name: "Peces",
+      href: "#",
+      subcategories: [
+        { name: "Peces Tropicales", href: "#" },
+        { name: "Acuarios", href: "#" },
+        { name: "Alimentación", href: "#" },
+        { name: "Accesorios", href: "#" },
+      ],
+      promotions: [
+        {
+          type: "offer" as const,
+          title: "Ofertas Especiales",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        },
+        {
+          type: "new" as const,
+          title: "Novedades",
+          href: "#",
+          icon: "/icons/diamond.png"
+        }
+      ],
+      brands: [
+        {
+          name: "Royal Canin",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Purina",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Pedigree",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        }
+      ],
+      bannerImage: {
+        src: "/dog.png",
+        alt: "Productos para Perros",
+        href: "#"
+      }
+    },
+    { 
+      name: "Salud animal",
+      href: "#",
+      subcategories: [
+        { name: "Medicamentos", href: "#" },
+        { name: "Vitaminas", href: "#" },
+        { name: "Antiparasitarios", href: "#" },
+      ]
+    },
+    { name: "Ofertas", href: "#" },
+    { name: "Novedades", href: "#" },
   ];
 
   const navLinks = [
@@ -86,7 +386,7 @@ export default function Home() {
           </div>
         </div>
 
-        <header className="w-full bg-white border-b border-gray-200">
+        <header className="w-full bg-white border-b border-gray-200 relative z-50">
           {/* Mobile Header (< 640px) */}
           <div className="md:hidden">
             <div className="container mx-auto px-4 py-3">
@@ -125,7 +425,8 @@ export default function Home() {
                       <Menu className="h-6 w-6 text-gray-700" />
                     </button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-[80%] max-w-[300px] overflow-y-auto">
+                  <SheetOverlay className="z-[100] bg-black/40" />
+                  <SheetContent side="right" className="w-[80%] max-w-[300px] overflow-y-auto z-[101]">
                     <SheetHeader>
                       <SheetTitle className="text-lg font-bold">Menú</SheetTitle>
                     </SheetHeader>
@@ -135,8 +436,7 @@ export default function Home() {
                         <nav className="flex flex-col gap-1">
                           {categories.map((category) => (
                             <Link key={category.name} href={category.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors">
-                              <category.icon className="h-5 w-5 text-gray-600" />
-                              <span className="text-sm font-medium text-gray-800">{category.name}</span>
+                              <span className="text-sm font-bold text-gray-800">{category.name}</span>
                             </Link>
                           ))}
                         </nav>
@@ -403,21 +703,21 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Category Navigation */}
-          <div className="border-t border-gray-200 bg-white">
-            <div className="container mx-auto px-4 hidden md:block">
-              <nav className="flex justify-center space-x-4 md:space-x-2 lg:space-x-8 py-3 overflow-x-auto scrollbar-hide">
-                {categories.map((category) => (
-                  <Link key={category.name} href={category.href} className="text-[11px] lg:text-sm font-bold text-gray-600 whitespace-nowrap px-2 py-1 hover:text-[#196428] transition-colors">{category.name}</Link>
-                ))}
-              </nav>
-            </div>
-          </div>
-
         </header>
 
         <main>
-          <section className="relative w-full pt-8">
+          {/* Category Grid */}
+          <div className="hidden md:block container mx-auto px-4 py-6 relative">
+            <div className="flex justify-center">
+              <div className="flex flex-nowrap justify-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2" ref={categoriesContainerRef}>
+                {categories.map((category) => (
+                  <CategoryMenu key={category.name} category={category} containerRef={categoriesContainerRef} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <section className="relative w-full">
             <div className="container mx-auto px-4">
               <div className="relative aspect-[21/9] w-full">
                 {/* Carousel */}

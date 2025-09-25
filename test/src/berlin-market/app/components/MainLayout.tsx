@@ -23,7 +23,7 @@ export default function MainLayout({ children, cartCount = 0, wishlistCount = 0 
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white relative">
         {children}
 
         {/* Scroll to top button */}
