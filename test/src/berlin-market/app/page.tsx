@@ -38,9 +38,19 @@ import CategoryDropdown from "./components/CategoryDropdown"
 
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
+  const [activeCardSlide, setActiveCardSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [openCategory, setOpenCategory] = useState<string | null>(null)
   const categoriesContainerRef = useRef<HTMLDivElement>(null)
+
+  // Efecto para los carruseles de las cards
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveCardSlide(current => (current + 1) % 3);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -761,6 +771,174 @@ export default function Home() {
                   ))}
                 </div>
 
+              </div>
+            </div>
+          </section>
+
+          {/* Ofertas de la semana */}
+          <section className="py-12 bg-white">
+            <div className="container mx-auto px-4">
+              <h2 className="text-3xl font-bold text-black mb-8">Ofertas de la semana</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {/* Hill's */}
+                <div className="bg-white rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                  <div className="relative aspect-square">
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap1.png"
+                        alt="Plan científico Hill"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap1-2.png"
+                        alt="Plan científico Hill"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap1-3.png"
+                        alt="Plan científico Hill"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold mb-2">Plan científico Hill</h3>
+                    <p className="text-sm text-gray-600 mb-3">Descubre comida de alta calidad para tus mascotas</p>
+                    <Link 
+                      href="#" 
+                      className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
+                    >
+                      Ahorra ahora
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Carny */}
+                <div className="bg-white rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                  <div className="relative aspect-square">
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap2.png"
+                        alt="Carny"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap2-2.png"
+                        alt="Carny"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap2-3.png"
+                        alt="Carny"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold mb-2">Carny</h3>
+                    <p className="text-sm text-gray-600 mb-3">Comida única e irresistible</p>
+                    <Link 
+                      href="#" 
+                      className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
+                    >
+                      Ahorra ahora
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Royal Canin */}
+                <div className="bg-white rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                  <div className="relative aspect-square">
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap3.png"
+                        alt="Royal canin"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap3-2.png"
+                        alt="Royal canin"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap3-3.png"
+                        alt="Royal canin"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold mb-2">Royal canin</h3>
+                    <p className="text-sm text-gray-600 mb-3">Para las necesidades especiales de tu gato</p>
+                    <Link 
+                      href="#" 
+                      className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
+                    >
+                      Ahorra ahora
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Felix */}
+                <div className="bg-white rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                  <div className="relative aspect-square">
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap4.png"
+                        alt="Felix"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap4-2.png"
+                        alt="Felix"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
+                      <Image
+                        src="/cap4-3.png"
+                        alt="Felix"
+                        fill
+                        className="object-contain p-4"
+                      />
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold mb-2">Felix</h3>
+                    <p className="text-sm text-gray-600 mb-3">Ahorra en comida irresistible para tu gato</p>
+                    <Link 
+                      href="#" 
+                      className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
+                    >
+                      Ahorra ahora
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
