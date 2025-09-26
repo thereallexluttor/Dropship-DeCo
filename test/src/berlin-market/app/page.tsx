@@ -719,7 +719,7 @@ export default function Home() {
 
           <section className="relative w-full">
             <div className="container mx-auto px-4">
-              <div className="relative aspect-[21/9] w-full">
+                <div className="relative aspect-[311/100] w-full">
                 {/* Carousel */}
                 <div className="absolute inset-0">
                   {[1, 2, 3, 4].map((_, index) => (
@@ -730,59 +730,37 @@ export default function Home() {
                       }`}
                     >
                       <Image
-                        src={`/cap${index + 1}.jpg`}
+                        src="/banner_unisan.png"
                         alt={`Slide ${index + 1}`}
                         fill
-                        className="object-cover rounded-lg"
+                        className="object-contain rounded-lg"
                         priority={index === 0}
                       />
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="container mx-auto px-2 xs:px-3 sm:px-4">
+                          {/* Texto y botón a la izquierda */}
+                          <div className="text-left ml-[3%] xs:ml-[4%] sm:ml-[5%] md:ml-[7%] lg:ml-[8%]">
+                            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-black mb-2 sm:mb-3 md:mb-4 lg:mb-5 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] leading-tight">
+                              Descubre las<br />
+                              mejores ofertas
+                            </h2>
+                            <Link
+                              href="#"
+                              className="inline-block bg-[#4CAF50] hover:bg-[#45a049] text-white 
+                              text-xs sm:text-sm md:text-base lg:text-lg
+                              py-1.5 sm:py-2 md:py-2.5 lg:py-3
+                              px-4 sm:px-5 md:px-6 lg:px-7
+                              rounded-full transition-all duration-300 transform hover:scale-105"
+                            >
+                              click aquí
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent rounded-lg backdrop-blur-[2px] transition-all duration-500 hover:backdrop-blur-sm group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#C6A55C]/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                  
-                  {/* Diamond icon */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="relative">
-                      <svg 
-                        className="w-24 h-24 md:w-32 md:h-32 text-[#C6A55C] opacity-10" 
-                        viewBox="0 0 24 24" 
-                        fill="currentColor"
-                      >
-                        <path d="M12,2L1,12L12,22L23,12L12,2M12,4.3L19.7,12L12,19.7L4.3,12L12,4.3Z"/>
-                      </svg>
-                    </div>
-                  </div>
-
-                  <div className="h-full w-full flex items-center justify-center relative z-10">
-                    <div className="text-center w-full max-w-[95%] md:max-w-[80%] lg:max-w-[60%] space-y-1 md:space-y-3 transform transition-all duration-500 hover:scale-105">
-                      <div className="bg-white/90 text-black px-3 py-1 md:px-4 md:py-1.5 inline-block rounded-sm text-[7px] md:text-xs font-light tracking-[0.2em] font-poppins">
-                        EDICIÓN LIMITADA
-                      </div>
-                      <h1 className="text-base md:text-4xl lg:text-5xl font-poppins text-white leading-[1.4] md:leading-[1.5] tracking-wide drop-shadow-2xl transform transition-all duration-300 hover:scale-110 py-2 my-1">
-                        <span className="block text-white font-extralight">Colección</span>
-                        <span className="block font-medium">Elegancia Atemporal</span>
-                      </h1>
-                      <p className="text-[7px] md:text-base lg:text-lg text-white font-light tracking-[0.3em] uppercase font-poppins">
-                        Piezas únicas hechas a mano
-                      </p>
-                      <div className="pt-1 md:pt-4">
-                        <Link
-                          href="#"
-                          className="group/btn relative overflow-hidden bg-white text-black px-6 py-2 md:px-8 md:py-3 text-[8px] md:text-xs lg:text-sm font-poppins tracking-widest transition-all duration-300 inline-block"
-                        >
-                          <span className="relative z-10 transition-colors duration-300 group-hover/btn:text-white font-light">
-                            DESCUBRIR COLECCIÓN
-                          </span>
-                          <div className="absolute inset-0 bg-black transform translate-y-full transition-transform duration-300 group-hover/btn:translate-y-0"></div>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </section>
