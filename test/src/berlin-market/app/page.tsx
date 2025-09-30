@@ -25,6 +25,7 @@ import { useState, useEffect, useRef } from "react"
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 import CategoryMenu from './components/CategoryMenu'
+import StoreLocator from './components/StoreLocator'
 import {
   Sheet,
   SheetContent,
@@ -40,6 +41,8 @@ export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [activeCardSlide, setActiveCardSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
+  const [activeProductSlide, setActiveProductSlide] = useState(0)
+  const [activeBrandSlide, setActiveBrandSlide] = useState(0)
   const [openCategory, setOpenCategory] = useState<string | null>(null)
   const categoriesContainerRef = useRef<HTMLDivElement>(null)
 
@@ -58,6 +61,14 @@ export default function Home() {
     }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const brandTimer = setInterval(() => {
+      setActiveBrandSlide(current => (current + 1) % 2); // Asumiendo 2 slides de 4 marcas cada uno
+    }, 5000);
+
+    return () => clearInterval(brandTimer);
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -373,6 +384,97 @@ export default function Home() {
     { name: "Novedades", href: "#" },
   ];
 
+  const productImages = [
+    "/cap1.png",
+    "/cap2.png",
+    "/cap3.png",
+    "/cap4.png",
+    "/cap1-2.png",
+    "/cap2-2.png",
+    "/cap3-2.png",
+    "/cap4-2.png",
+    "/cap1-3.png",
+    "/cap2-3.png",
+    "/cap3-3.png",
+    "/cap4-3.png",
+  ];
+
+  const featuredProducts = Array.from({ length: 12 }, (_, i) => ({
+    id: `${i + 1}`,
+    name: `Producto Destacado ${i + 1}`,
+    price: `${(Math.random() * 50 + 10).toFixed(3)}`,
+    image: productImages[i % productImages.length],
+    tag: i % 3 === 0 ? "Exclusivo" : null,
+    tagColor: "bg-[#4CAF50]",
+  }));
+
+  const brands = [
+    { src: "/brands/royal-canin.png", alt: "Royal Canin" },
+    { src: "/brands/real-nature.png", alt: "Real Nature" },
+    { src: "/brands/naturally-good.png", alt: "Naturally Good" },
+    { src: "/brands/select-gold.png", alt: "Select Gold" },
+    { src: "/brands/purina.png", alt: "Purina" },
+    { src: "/brands/hills.png", alt: "Hill's" },
+    { src: "/brands/acana.png", alt: "Acana" },
+    { src: "/brands/orijen.png", alt: "Orijen" },
+    { src: "/brands/eukanuba.png", alt: "Eukanuba" },
+    { src: "/brands/advance.png", alt: "Advance" },
+    { src: "/brands/crave.png", alt: "Crave" },
+    { src: "/brands/ultima.png", alt: "Ultima" },
+  ];
+
+  const brandsPerSlide = 6;
+  const totalBrandSlides = Math.ceil(brands.length / brandsPerSlide);
+
+  const nextBrandSlide = () => {
+    setActiveBrandSlide((current) => (current + 1) % totalBrandSlides);
+  };
+
+  const prevBrandSlide = () => {
+    setActiveBrandSlide((current) => (current - 1 + totalBrandSlides) % totalBrandSlides);
+  };
+
+
+  const totalProductSlides = Math.ceil(featuredProducts.length / 4);
+
+  const nextProductSlide = () => {
+    setActiveProductSlide((current) => (current + 1) % totalProductSlides);
+  };
+
+  const prevProductSlide = () => {
+    setActiveProductSlide((current) => (current - 1 + totalProductSlides) % totalProductSlides);
+  };
+
+  const renderProduct = (product: typeof featuredProducts[0]) => (
+    <div key={product.id} className="bg-white rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+      <div className="relative aspect-square">
+        <div className="relative aspect-square">
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            className="object-contain p-4"
+          />
+        </div>
+        <button className="absolute top-4 right-4 bg-[#4CAF50] hover:bg-[#45a049] text-white p-2 rounded-full shadow-md transition-all duration-300">
+          <ShoppingCart className="h-5 w-5" />
+        </button>
+        {product.tag && (
+          <div className="absolute top-4 left-4">
+            <span className={`${product.tagColor} text-white text-xs px-2 py-1 rounded`}>
+              {product.tag}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+        <p className="text-sm text-gray-600 mb-2">Descripción del producto</p>
+        <p className="text-[#4CAF50] hover:text-[#45a049] font-medium text-sm">$ {product.price}</p>
+      </div>
+    </div>
+  );
+
   const navLinks = [
     { name: "Inicio", icon: HomeIcon, href: "#" },
     { name: "Tienda", icon: ShoppingBag, href: "#" },
@@ -508,25 +610,25 @@ export default function Home() {
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingCart className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <User className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
                     </div>
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
@@ -535,13 +637,13 @@ export default function Home() {
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
                     </div>
                   </div>
                 </div>
@@ -590,25 +692,25 @@ export default function Home() {
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingCart className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <User className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
                     </div>
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
@@ -617,13 +719,13 @@ export default function Home() {
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
                     </div>
                   </div>
                 </div>
@@ -672,25 +774,25 @@ export default function Home() {
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingCart className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <User className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tu Cuenta</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tu Cuenta</span>
                     </div>
                   </div>
                   <div className="w-[1.5px] h-5 bg-gray-200"></div>
@@ -699,13 +801,13 @@ export default function Home() {
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
                     </div>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
-                      <span className="text-xs text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Nuestras Tiendas</span>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Nuestras Tiendas</span>
                     </div>
                   </div>
                 </div>
@@ -717,19 +819,22 @@ export default function Home() {
 
         <main>
           {/* Category Grid */}
-          <div className="hidden md:block container mx-auto px-4 py-6 relative">
-            <div className="flex justify-center">
-              <div className="flex flex-nowrap justify-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2" ref={categoriesContainerRef}>
-                {categories.map((category) => (
-                  <CategoryMenu key={category.name} category={category} containerRef={categoriesContainerRef} />
-                ))}
+          <div className="hidden md:block container mx-auto px-4 py-3 relative">
+            <div className="flex flex-col">
+              <div className="flex justify-center">
+                <div className="flex flex-nowrap justify-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2" ref={categoriesContainerRef}>
+                  {categories.map((category) => (
+                    <CategoryMenu key={category.name} category={category} containerRef={categoriesContainerRef} />
+                  ))}
+                </div>
               </div>
+              <div className="w-full h-[1px] bg-gray-200 mt-3"></div>
             </div>
           </div>
 
           <section className="relative w-full">
             <div className="container mx-auto px-4">
-                <div className="relative aspect-[311/100] w-full">
+                <div className="relative aspect-[16/6] w-full max-w-6xl mx-auto">
                 {/* Carousel */}
                 <div className="absolute inset-0">
                   {[1, 2, 3, 4].map((_, index) => (
@@ -750,7 +855,7 @@ export default function Home() {
                         <div className="container mx-auto px-2 xs:px-3 sm:px-4">
                           {/* Texto y botón a la izquierda */}
                           <div className="text-left ml-[3%] xs:ml-[4%] sm:ml-[5%] md:ml-[7%] lg:ml-[8%]">
-                            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-black mb-2 sm:mb-3 md:mb-4 lg:mb-5 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] leading-tight">
+                            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-heavy text-black mb-2 sm:mb-3 md:mb-4 lg:mb-5 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] leading-tight">
                               Descubre las<br />
                               mejores ofertas
                             </h2>
@@ -776,10 +881,10 @@ export default function Home() {
           </section>
 
           {/* Ofertas de la semana */}
-          <section className="py-12 bg-white">
-            <div className="container mx-auto px-4">
-              <h2 className="text-3xl font-bold text-black mb-8">Ofertas de la semana</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <section className="py-10 bg-white">
+            <div className="container mx-auto px-4 max-w-6xl">
+              <h2 className="text-3xl font-black text-black mb-7">Ofertas de la semana</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                 {/* Hill's */}
                 <div className="bg-white rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
                   <div className="relative aspect-square">
@@ -809,8 +914,8 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold mb-2">Plan científico Hill</h3>
-                    <p className="text-sm text-gray-600 mb-3">Descubre comida de alta calidad para tus mascotas</p>
+                    <h3 className="text-lg font-medium mb-2">Plan científico Hill</h3>
+                    <p className="text-sm text-gray-600 mb-2">Descubre comida de alta calidad para tus mascotas</p>
                     <Link 
                       href="#" 
                       className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
@@ -850,7 +955,7 @@ export default function Home() {
                   </div>
                   <div className="p-4">
                     <h3 className="text-lg font-semibold mb-2">Carny</h3>
-                    <p className="text-sm text-gray-600 mb-3">Comida única e irresistible</p>
+                    <p className="text-sm text-gray-600 mb-2">Comida única e irresistible</p>
                     <Link 
                       href="#" 
                       className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
@@ -890,7 +995,7 @@ export default function Home() {
                   </div>
                   <div className="p-4">
                     <h3 className="text-lg font-semibold mb-2">Royal canin</h3>
-                    <p className="text-sm text-gray-600 mb-3">Para las necesidades especiales de tu gato</p>
+                    <p className="text-sm text-gray-600 mb-2">Para las necesidades especiales de tu gato</p>
                     <Link 
                       href="#" 
                       className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
@@ -930,7 +1035,7 @@ export default function Home() {
                   </div>
                   <div className="p-4">
                     <h3 className="text-lg font-semibold mb-2">Felix</h3>
-                    <p className="text-sm text-gray-600 mb-3">Ahorra en comida irresistible para tu gato</p>
+                    <p className="text-sm text-gray-600 mb-2">Ahorra en comida irresistible para tu gato</p>
                     <Link 
                       href="#" 
                       className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-sm"
@@ -939,6 +1044,98 @@ export default function Home() {
                     </Link>
                   </div>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Productos destacados */}
+          <section className="py-3 bg-white">
+            <div className="container mx-auto px-4 max-w-6xl">
+              <h2 className="text-3xl font-black text-black mb-7">Productos destacados</h2>
+              <div className="flex items-center gap-4">
+                {/* Botón de navegación izquierdo */}
+                <button 
+                  onClick={prevProductSlide}
+                  className="flex-shrink-0 bg-white p-2 rounded-full border-2 border-[#4CAF50] hover:bg-green-50 transition-colors duration-300"
+                >
+                  <svg className="w-5 h-5 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                {/* Contenedor del carrusel */}
+                <div className="flex-grow overflow-hidden">
+                  <div
+                    className="flex transition-transform duration-500 ease-in-out"
+                    style={{ transform: `translateX(-${activeProductSlide * 100}%)` }}
+                  >
+                    {Array.from({ length: totalProductSlides }).map((_, slideIndex) => (
+                      <div key={slideIndex} className="w-full flex-shrink-0">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                          {featuredProducts.slice(slideIndex * 4, slideIndex * 4 + 4).map(renderProduct)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Botón de navegación derecho */}
+                <button 
+                  onClick={nextProductSlide}
+                  className="flex-shrink-0 bg-white p-2 rounded-full border-2 border-[#4CAF50] hover:bg-green-50 transition-colors duration-300"
+                >
+                  <svg className="w-5 h-5 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Nuestras marcas */}
+          <section className="py-12 bg-white">
+            <div className="container mx-auto px-4 max-w-6xl">
+              <h2 className="text-3xl font-black text-black mb-10">Nuestras marcas</h2>
+              <div className="relative">
+                <div className="overflow-hidden">
+                  <div
+                    className="flex transition-transform duration-500 ease-in-out"
+                    style={{ transform: `translateX(-${activeBrandSlide * 100}%)` }}
+                  >
+                    {Array.from({ length: totalBrandSlides }).map((_, slideIndex) => (
+                      <div key={slideIndex} className="w-full flex-shrink-0">
+                        <div className="flex items-center justify-center gap-8 md:gap-16">
+                          {brands.slice(slideIndex * brandsPerSlide, slideIndex * brandsPerSlide + brandsPerSlide).map((brand, brandIndex) => (
+                            <div key={brandIndex} className="w-32 md:w-40">
+                              <Image
+                                src={brand.src}
+                                alt={brand.alt}
+                                width={160}
+                                height={80}
+                                className="object-contain"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-center mt-6 gap-2">
+                  {Array.from({ length: totalBrandSlides }).map((_, index) => (
+                    <button key={index} onClick={() => setActiveBrandSlide(index)} className={`w-2 h-2 rounded-full ${activeBrandSlide === index ? 'bg-[#4CAF50]' : 'bg-gray-300'}`}></button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Encuentra nuestras tiendas */}
+          <section className="py-12 bg-gray-50">
+            <div className="container mx-auto px-4 max-w-6xl">
+              <h2 className="text-3xl font-black text-black mb-10">Encuentra nuestras tiendas</h2>
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <StoreLocator />
               </div>
             </div>
           </section>
