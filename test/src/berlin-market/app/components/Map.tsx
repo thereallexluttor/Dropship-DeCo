@@ -25,9 +25,34 @@ interface MapProps {
 // Crear iconos personalizados
 const hatoIcon = new L.Icon({
   iconUrl: '/leaflet/hato.png',
-  iconSize: [48, 48], // Aumentado de 32x32 a 48x48
-  iconAnchor: [24, 48], // Ajustado al nuevo tamaño (mitad del ancho, altura completa)
-  popupAnchor: [0, -48] // Ajustado al nuevo tamaño
+  iconSize: [35, 57], // Aumentado de 25x41 a 35x57
+  iconAnchor: [17, 57], // Ajustado al nuevo tamaño
+  popupAnchor: [1, -57], // Ajustado al nuevo tamaño
+  shadowSize: [57, 57] // Ajustado al nuevo tamaño
+})
+
+const petsIcon = new L.Icon({
+  iconUrl: '/leaflet/pets.png',
+  iconSize: [35, 57],
+  iconAnchor: [17, 57],
+  popupAnchor: [1, -57],
+  shadowSize: [57, 57]
+})
+
+const servicampoIcon = new L.Icon({
+  iconUrl: '/leaflet/servicampo.png',
+  iconSize: [35, 57],
+  iconAnchor: [17, 57],
+  popupAnchor: [1, -57],
+  shadowSize: [57, 57]
+})
+
+const santanderIcon = new L.Icon({
+  iconUrl: '/leaflet/santander.png',
+  iconSize: [35, 57],
+  iconAnchor: [17, 57],
+  popupAnchor: [1, -57],
+  shadowSize: [57, 57]
 })
 
 const defaultIcon = new L.Icon({
@@ -43,6 +68,21 @@ const defaultIcon = new L.Icon({
 // Función para determinar si una tienda es Veterinaria El Hato
 function isHatoStore(name: string): boolean {
   return name.includes("Veterinaria El Hato")
+}
+
+// Función para determinar si una tienda es Distribuidora PETS
+function isPetsStore(name: string): boolean {
+  return name.includes("Distribuidora PETS")
+}
+
+// Función para determinar si una tienda es Servicampo
+function isServicampoStore(name: string): boolean {
+  return name.includes("Servicampo")
+}
+
+// Función para determinar si una tienda es Veterinaria Santander
+function isSantanderStore(name: string): boolean {
+  return name.includes("Veterinaria Santander")
 }
 
 // Función para calcular el centro de una ciudad
@@ -122,7 +162,11 @@ export default function Map({ stores, selectedStore, onStoreSelect, selectedCity
         <Marker
           key={store.id}
           position={[store.coords.lat, store.coords.lng]}
-          icon={isHatoStore(store.name) ? hatoIcon : defaultIcon}
+          icon={isHatoStore(store.name) ? hatoIcon : 
+                isPetsStore(store.name) ? petsIcon : 
+                isServicampoStore(store.name) ? servicampoIcon :
+                isSantanderStore(store.name) ? santanderIcon :
+                defaultIcon}
           ref={(ref) => {
             if (ref) {
               markerRefs.current[store.id] = ref

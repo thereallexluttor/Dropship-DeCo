@@ -167,7 +167,7 @@ export default function Home() {
         }
       ],
       bannerImage: {
-        src: "/cap2.jpg",
+        src: "/cat.png",
         alt: "Productos para Gatos",
         href: "#"
       }
@@ -213,7 +213,7 @@ export default function Home() {
         }
       ],
       bannerImage: {
-        src: "/cap3.jpg",
+        src: "/roedores.png",
         alt: "Productos para Animales Pequeños",
         href: "#"
       }
@@ -275,7 +275,7 @@ export default function Home() {
         }
       ],
       bannerImage: {
-        src: "/cap4.jpg",
+        src: "/aves.png",
         alt: "Productos para Aves",
         href: "#"
       }
@@ -320,7 +320,7 @@ export default function Home() {
         }
       ],
       bannerImage: {
-        src: "/dog.png",
+        src: "/bovinos.png",
         alt: "Productos para Perros",
         href: "#"
       }
@@ -366,7 +366,7 @@ export default function Home() {
         }
       ],
       bannerImage: {
-        src: "/dog.png",
+        src: "/fish.png",
         alt: "Productos para Perros",
         href: "#"
       }
@@ -378,9 +378,21 @@ export default function Home() {
         { name: "Medicamentos", href: "#" },
         { name: "Vitaminas", href: "#" },
         { name: "Antiparasitarios", href: "#" },
-      ]
+      ],
+      bannerImage: {
+        src: "/veterinario.png",
+        alt: "Productos para Perros",
+        href: "#"
+      }
     },
-    { name: "Ofertas", href: "#" },
+    { name: "Ofertas", href: "#",
+      
+      bannerImage: {
+        src: "/ofertas.png",
+        alt: "Productos para Perros",
+        href: "#"
+      }
+     },
     { name: "Novedades", href: "#" },
   ];
 
@@ -405,7 +417,7 @@ export default function Home() {
     price: `${(Math.random() * 50 + 10).toFixed(3)}`,
     image: productImages[i % productImages.length],
     tag: i % 3 === 0 ? "Exclusivo" : null,
-    tagColor: "bg-[#4CAF50]",
+    tagColor: "bg-[#196428]",
   }));
 
   const brands = [
@@ -456,7 +468,7 @@ export default function Home() {
             className="object-contain p-4"
           />
         </div>
-        <button className="absolute top-4 right-4 bg-[#4CAF50] hover:bg-[#45a049] text-white p-2 rounded-full shadow-md transition-all duration-300">
+        <button className="absolute top-4 right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300">
           <ShoppingCart className="h-5 w-5" />
         </button>
         {product.tag && (
@@ -470,7 +482,7 @@ export default function Home() {
       <div className="p-4">
         <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
         <p className="text-sm text-gray-600 mb-2">Descripción del producto</p>
-        <p className="text-[#4CAF50] hover:text-[#45a049] font-medium text-sm">$ {product.price}</p>
+        <p className="text-[#196428] hover:text-[#196428] font-medium text-sm">$ {product.price}</p>
       </div>
     </div>
   );
@@ -481,7 +493,7 @@ export default function Home() {
     { name: "Carrito", icon: ShoppingCart, href: "#" },
     { name: "Cuenta", icon: User, href: "#" },
     { name: "Info", icon: Info, href: "#" },
-    { name: "Tiendas", icon: MapPin, href: "#" },
+    { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
   ];
 
 
@@ -639,12 +651,12 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
                     </div>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </div>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -721,12 +733,12 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
                     </div>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </div>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -803,12 +815,12 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
                     </div>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Nuestras Tiendas</span>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -861,7 +873,7 @@ export default function Home() {
                             </h2>
                             <Link
                               href="#"
-                              className="inline-block bg-[#4CAF50] hover:bg-[#45a049] text-white 
+                              className="inline-block bg-[#196428] hover:bg-[#196428] text-white 
                               text-xs sm:text-sm md:text-base lg:text-lg
                               py-1.5 sm:py-2 md:py-2.5 lg:py-3
                               px-4 sm:px-5 md:px-6 lg:px-7
@@ -929,7 +941,7 @@ export default function Home() {
                     <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Descubre comida de alta calidad para tus mascotas</p>
                     <Link 
                       href="#" 
-                      className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-xs sm:text-sm"
+                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
                     >
                       Ahorra ahora
                     </Link>
@@ -969,7 +981,7 @@ export default function Home() {
                     <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Comida única e irresistible</p>
                     <Link 
                       href="#" 
-                      className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-xs sm:text-sm"
+                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
                     >
                       Ahorra ahora
                     </Link>
@@ -1009,7 +1021,7 @@ export default function Home() {
                     <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Para las necesidades especiales de tu gato</p>
                     <Link 
                       href="#" 
-                      className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-xs sm:text-sm"
+                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
                     >
                       Ahorra ahora
                     </Link>
@@ -1049,7 +1061,7 @@ export default function Home() {
                     <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Ahorra en comida irresistible para tu gato</p>
                     <Link 
                       href="#" 
-                      className="inline-block text-[#4CAF50] hover:text-[#45a049] font-medium text-xs sm:text-sm"
+                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
                     >
                       Ahorra ahora
                     </Link>
@@ -1076,7 +1088,7 @@ export default function Home() {
                           fill
                           className="object-contain p-2"
                         />
-                        <button className="absolute top-2 right-2 bg-[#4CAF50] hover:bg-[#45a049] text-white p-1.5 rounded-full shadow-md transition-all duration-300">
+                        <button className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300">
                           <ShoppingCart className="h-3 w-3" />
                         </button>
                         {product.tag && (
@@ -1090,7 +1102,7 @@ export default function Home() {
                       <div className="p-2">
                         <h3 className="text-sm font-semibold mb-1">{product.name}</h3>
                         <p className="text-xs text-gray-600 mb-1">Descripción del producto</p>
-                        <p className="text-[#4CAF50] hover:text-[#45a049] font-medium text-xs">$ {product.price}</p>
+                        <p className="text-[#196428] hover:text-[#196428] font-medium text-xs">$ {product.price}</p>
                       </div>
                     </div>
                   ))}
@@ -1102,9 +1114,9 @@ export default function Home() {
                 {/* Botón de navegación izquierdo */}
                 <button 
                   onClick={prevProductSlide}
-                  className="flex-shrink-0 bg-white p-2 rounded-full border border-[#4CAF50] hover:bg-green-50 transition-colors duration-300"
+                  className="flex-shrink-0 bg-white p-2 rounded-full border border-[#196428] hover:bg-green-50 transition-colors duration-300"
                 >
-                  <svg className="w-5 h-5 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#196428]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
@@ -1127,7 +1139,7 @@ export default function Home() {
                                   fill
                                   className="object-contain p-3 md:p-4"
                                 />
-                                <button className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#4CAF50] hover:bg-[#45a049] text-white p-2 rounded-full shadow-md transition-all duration-300">
+                                <button className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300">
                                   <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
                                 </button>
                                 {product.tag && (
@@ -1141,7 +1153,7 @@ export default function Home() {
                               <div className="p-3 md:p-4">
                                 <h3 className="text-base md:text-lg font-semibold mb-2">{product.name}</h3>
                                 <p className="text-sm text-gray-600 mb-2">Descripción del producto</p>
-                                <p className="text-[#4CAF50] hover:text-[#45a049] font-medium text-sm">$ {product.price}</p>
+                                <p className="text-[#196428] hover:text-[#196428] font-medium text-sm">$ {product.price}</p>
                               </div>
                             </div>
                           ))}
@@ -1154,9 +1166,9 @@ export default function Home() {
                 {/* Botón de navegación derecho */}
                 <button 
                   onClick={nextProductSlide}
-                  className="flex-shrink-0 bg-white p-2 rounded-full border border-[#4CAF50] hover:bg-green-50 transition-colors duration-300"
+                  className="flex-shrink-0 bg-white p-2 rounded-full border border-[#196428] hover:bg-green-50 transition-colors duration-300"
                 >
-                  <svg className="w-5 h-5 text-[#4CAF50]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#196428]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -1200,7 +1212,7 @@ export default function Home() {
                       key={index} 
                       onClick={() => setActiveBrandSlide(index)} 
                       className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors duration-300 ${
-                        activeBrandSlide === index ? 'bg-[#4CAF50]' : 'bg-gray-300'
+                        activeBrandSlide === index ? 'bg-[#196428]' : 'bg-gray-300'
                       }`}
                     />
                   ))}
@@ -1210,7 +1222,7 @@ export default function Home() {
           </section>
 
           {/* Encuentra nuestras tiendas */}
-          <section className="py-6 sm:py-8 md:py-10 bg-gray-50">
+          <section id="nuestras-tiendas" className="py-6 sm:py-8 md:py-10 bg-gray-50 scroll-mt-20">
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Encuentra nuestras tiendas</h2>
               <div className="bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] shadow-sm overflow-hidden">
@@ -1219,165 +1231,88 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="py-16 bg-white">
-            <div className="container mx-auto px-4">
-              <h2 className="text-3xl font-sans text-black text-center mb-12">Joyas Destacadas</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-                {[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map((item) => (
-                  <FadeInOnScroll key={item} delay={item * 100}>
-                    <ProductCard product={{ id: item.toString(), name: `Anillo Diamante "Eternidad"`, price: 4.999, category: "Colección Royal", image: "/placeholder.svg" }} />
-                  </FadeInOnScroll>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="py-12 bg-gray-50">
-            <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-              <div className="md:w-1/3 relative aspect-square">
-                <Image
-                  src="/berlin4k.jpg"
-                  alt="About Berlin Jewels"
-                  fill
-                  className="object-cover rounded-lg shadow-lg"
-                />
-              </div>
-              <div className="md:w-2/3 md:pl-10">
-                <h2 className="text-2xl font-sans text-black mb-4">Nuestra Historia</h2>
-                <p className="text-sm text-black/80 mb-6 font-sans leading-relaxed">
-                  Desde 1920, Berlin Jewels ha sido sinónimo de elegancia y artesanía excepcional. Cada pieza que creamos es un testimonio de nuestra dedicación a la excelencia y nuestra pasión por la joyería fina.
-                </p>
-                <Link
-                  href="#"
-                  className="inline-block text-xs tracking-wider py-2 px-6 text-black border-b border-black/40 hover:border-black transition-all duration-300 font-sans"
-                >
-                  Descubrir Más
-                </Link>
-              </div>
-            </div>
-          </section>
         </main>
 
-        <footer className="bg-black text-white py-12 border-t border-gold/20">
+        <footer className="bg-[#196428] text-white py-4">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div>
-                <h3 className="text-xl font-bold mb-4">Shop</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Men
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Women
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Accessories
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      New Arrivals
-                    </Link>
-                  </li>
-                </ul>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="md:col-span-2">
+                <Image
+                  src="/unisantander.png"
+                  alt="Unisantander"
+                  width={220}
+                  height={30}
+                  className="mb-1"
+                />
+                
               </div>
-              <div>
-                <h3 className="text-xl font-bold mb-4">About</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Our Story
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Careers
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Press
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Sustainability
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-4">Customer Care</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Contact Us
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Shipping & Returns
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      Size Guide
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="#" className="hover:text-gold transition-colors">
-                      FAQ
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-4">Connect</h3>
-                <div className="flex space-x-4">
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
-                    <span className="sr-only">Facebook</span>
-                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        fillRule="evenodd"
-                        d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </Link>
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
-                    <span className="sr-only">Instagram</span>
-                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        fillRule="evenodd"
-                        d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </Link>
-                  <Link href="#" className="text-white hover:text-gold transition-colors">
-                    <span className="sr-only">Twitter</span>
-                    <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                    </svg>
-                  </Link>
+              <div className="md:col-span-10 md:pl-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0">
+                  {/* Servicio al cliente */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-1.5">Servicio al cliente</h3>
+                    <ul className="space-y-[2px] text-[11px]">
+                      <li><Link href="#">Ayuda y preguntas frecuentes</Link></li>
+                      <li><Link href="#">Mi cuenta</Link></li>
+                      <li><Link href="#">Solicitar contraseña</Link></li>
+                      <li><Link href="#">Mis órdenes</Link></li>
+                      <li><Link href="#">Mi lista de deseos</Link></li>
+                      <li><Link href="#">Entrega rápida</Link></li>
+                      <li><Link href="#">Pago seguro y métodos de pago</Link></li>
+                      <li><Link href="#">Política de devolución de 30 días</Link></li>
+                      <li><Link href="#">Boletín informativo</Link></li>
+                      <li><Link href="#">Haga clic y recople</Link></li>
+                      <li><Link href="#">Declaración de accesibilidad</Link></li>
+                    </ul>
+                  </div>
+
+                  {/* Nuestros mercados */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-1.5">Nuestros mercados</h3>
+                    <ul className="space-y-[2px] text-[11px]">
+                      <li><Link href="#">Encuentra mercados</Link></li>
+                      <li><Link href="#">Servicios en el mercado</Link></li>
+                      <li><Link href="#">Tarjeta regalo</Link></li>
+                      <li><Link href="#">Salón Unisantander</Link></li>
+                      <li><Link href="#">Prácticas veterinarias activas</Link></li>
+                    </ul>
+                  </div>
+
+                  {/* Acerca de Unisantander */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-1.5">Acerca de Unisantander</h3>
+                    <ul className="space-y-[2px] text-[11px]">
+                      <li><Link href="#">Sobre nosotros</Link></li>
+                      <li><Link href="#">Carreras</Link></li>
+                      <li><Link href="#">Responsabilidad</Link></li>
+                      <li><Link href="#">Animal comprometido</Link></li>
+                      <li><Link href="#">Cumplimiento</Link></li>
+                      <li><Link href="#">Convertirse en socio del mercado</Link></li>
+                      <li><Link href="#">Prensa</Link></li>
+                      <li><Link href="#">Indicaciones</Link></li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="mt-12 border-t border-gray-800 pt-8 flex justify-between items-center">
-              <p className="text-sm">&copy; 2023 Berlin Jewels. All rights reserved.</p>
-              <div className="flex space-x-6">
-                <Link href="#" className="text-sm hover:text-gold transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link href="#" className="text-sm hover:text-gold transition-colors">
-                  Terms of Service
-                </Link>
-              </div>
+
+            {/* Social Media Icons */}
+            <div className="flex justify-end mt-3 space-x-3">
+              <Link href="#" className="text-white hover:text-gray-200">
+                <Image src="/icons/facebook.png" alt="Facebook" width={25} height={25} />
+              </Link>
+              <Link href="#" className="text-white hover:text-gray-200">
+                <Image src="/icons/instagram.png" alt="Instagram" width={25} height={25} />
+              </Link>
+              <Link href="#" className="text-white hover:text-gray-200">
+                <Image src="/icons/youtube.png" alt="YouTube" width={25} height={25} />
+              </Link>
+              <Link href="#" className="text-white hover:text-gray-200">
+                <Image src="/icons/tiktok.png" alt="TikTok" width={25} height={25} />
+              </Link>
+              <Link href="#" className="text-white hover:text-gray-200">
+                <Image src="/icons/whatsapp.png" alt="WhatsApp" width={25} height={25} />
+              </Link>
             </div>
           </div>
         </footer>
