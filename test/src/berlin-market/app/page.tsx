@@ -589,7 +589,7 @@ export default function Home() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen" style={{ backgroundColor: '#FBFFE6' }}>
         {/* Promotional Banner */}
         <div className="bg-[#196428] text-white py-1 overflow-hidden">
           <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
@@ -600,7 +600,7 @@ export default function Home() {
           </div>
         </div>
 
-        <header className="w-full bg-white border-b border-gray-200 relative z-50">
+        <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FBFFE6' }}>
           {/* Mobile Header (< 640px) */}
           <div className="md:hidden">
             <div className="container mx-auto px-4 py-3">
@@ -983,7 +983,7 @@ export default function Home() {
           </section>
 
           {/* Ofertas de la semana */}
-          <section className="py-6 sm:py-8 md:py-10 bg-white">
+          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FBFFE6' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
               <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 overflow-x-auto pb-4 md:pb-0 md:overflow-x-hidden">
@@ -1162,7 +1162,7 @@ export default function Home() {
           </section>
 
           {/* Productos destacados */}
-          <section className="py-6 sm:py-8 md:py-10 bg-white">
+          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FBFFE6' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Productos destacados</h2>
               
@@ -1267,7 +1267,7 @@ export default function Home() {
           </section>
 
           {/* Nuestras marcas */}
-          <section className="py-6 sm:py-8 md:py-10 bg-white">
+          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FBFFE6' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Nuestras marcas</h2>
               <div className="relative">
@@ -1312,7 +1312,7 @@ export default function Home() {
           </section>
 
           {/* Encuentra nuestras tiendas */}
-          <section id="nuestras-tiendas" className="py-6 sm:py-8 md:py-10 bg-gray-50 scroll-mt-20">
+          <section id="nuestras-tiendas" className="py-6 sm:py-8 md:py-10 scroll-mt-20" style={{ backgroundColor: '#FBFFE6' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Encuentra nuestras tiendas</h2>
               <div className="bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] shadow-sm overflow-hidden">
