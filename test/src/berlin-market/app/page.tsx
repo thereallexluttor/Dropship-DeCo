@@ -376,24 +376,114 @@ export default function Home() {
       href: "#",
       subcategories: [
         { name: "Medicamentos", href: "#" },
-        { name: "Vitaminas", href: "#" },
+        { name: "Vitaminas y Suplementos", href: "#" },
         { name: "Antiparasitarios", href: "#" },
+        { name: "Cuidado Dental", href: "#" },
+        { name: "Primeros Auxilios", href: "#" },
+        
+      ],
+      promotions: [
+        {
+          type: "offer" as const,
+          title: "Ofertas en Salud",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        },
+        {
+          type: "new" as const,
+          title: "Nuevos Productos",
+          href: "#",
+          icon: "/icons/diamond.png"
+        }
+      ],
+      brands: [
+        {
+          name: "Zoetis",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Bayer",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "MSD Animal Health",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        },
+        {
+          name: "Virbac",
+          logo: "/placeholder-logo.svg",
+          href: "#"
+        }
       ],
       bannerImage: {
         src: "/veterinario.png",
-        alt: "Productos para Perros",
+        alt: "Salud Animal",
         href: "#"
       }
     },
-    { name: "Ofertas", href: "#",
-      
+    { name: "Ofertas", 
+      href: "#",
+      subcategories: [
+        { name: "Ofertas del Día", href: "#" },
+        { name: "Descuentos Especiales", href: "#" },
+        { name: "Packs Ahorro", href: "#" },
+        { name: "Últimas Unidades", href: "#" },
+        { name: "Liquidación", href: "#" },
+        
+      ],
+      promotions: [
+        {
+          type: "offer" as const,
+          title: "¡Ofertas Flash!",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        },
+        {
+          type: "new" as const,
+          title: "Nuevos Descuentos",
+          href: "#",
+          icon: "/icons/diamond.png"
+        }
+      ],
       bannerImage: {
         src: "/ofertas.png",
-        alt: "Productos para Perros",
+        alt: "Ofertas y Descuentos",
         href: "#"
       }
      },
-    { name: "Novedades", href: "#" },
+    { name: "Novedades",
+      href: "#",
+      subcategories: [
+        { name: "Nuevos Productos", href: "#" },
+        { name: "Recién Llegados", href: "#" },
+        { name: "Tendencias", href: "#" },
+        { name: "Colecciones Nuevas", href: "#" },
+        { name: "Productos Exclusivos", href: "#" },
+        { name: "Ediciones Limitadas", href: "#" }
+      ],
+      promotions: [
+        {
+          type: "new" as const,
+          title: "¡Lo Último!",
+          href: "#",
+          icon: "/icons/diamond.png"
+        },
+        {
+          type: "offer" as const,
+          title: "Pre-Venta Exclusiva",
+          href: "#",
+          icon: "/icons/exclusive.png"
+        }
+      ],
+      bannerImage: {
+        src: "/new.png",
+        alt: "Novedades y Nuevos Productos",
+        href: "#"
+      }
+    },
   ];
 
   const productImages = [
@@ -1247,7 +1337,7 @@ export default function Home() {
                 
               </div>
               <div className="md:col-span-10 md:pl-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-0">
                   {/* Servicio al cliente */}
                   <div>
                     <h3 className="text-sm font-semibold mb-1.5">Servicio al cliente</h3>
@@ -1292,27 +1382,41 @@ export default function Home() {
                       <li><Link href="#">Indicaciones</Link></li>
                     </ul>
                   </div>
+
+                  {/* Footer Rabbit and Social Media */}
+                  <div className="flex flex-col items-center">
+                    {/* Footer Rabbit Image */}
+                    <div className="relative w-[300px] h-[200px]">
+                      <Image
+                        src="/footer_rabbit.png"
+                        alt="Footer Rabbit"
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+
+                    {/* Social Media Icons */}
+                    <div className="flex justify-center space-x-8 mt-4">
+                      <Link href="#" className="text-white hover:text-gray-200">
+                        <Image src="/icons/facebook.png" alt="Facebook" width={30} height={30} />
+                      </Link>
+                      <Link href="#" className="text-white hover:text-gray-200">
+                        <Image src="/icons/instagram.png" alt="Instagram" width={30} height={30} />
+                      </Link>
+                      <Link href="#" className="text-white hover:text-gray-200">
+                        <Image src="/icons/youtube.png" alt="YouTube" width={30} height={30} />
+                      </Link>
+                      <Link href="#" className="text-white hover:text-gray-200">
+                        <Image src="/icons/tiktok.png" alt="TikTok" width={30} height={30} />
+                      </Link>
+                      <Link href="#" className="text-white hover:text-gray-200">
+                        <Image src="/icons/whatsapp.png" alt="WhatsApp" width={30} height={30} />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Social Media Icons */}
-            <div className="flex justify-end mt-3 space-x-3">
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/facebook.png" alt="Facebook" width={25} height={25} />
-              </Link>
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/instagram.png" alt="Instagram" width={25} height={25} />
-              </Link>
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/youtube.png" alt="YouTube" width={25} height={25} />
-              </Link>
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/tiktok.png" alt="TikTok" width={25} height={25} />
-              </Link>
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/whatsapp.png" alt="WhatsApp" width={25} height={25} />
-              </Link>
             </div>
           </div>
         </footer>
