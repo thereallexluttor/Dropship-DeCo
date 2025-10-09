@@ -19,7 +19,10 @@ import {
   Fish,
   HeartPulse,
   Tag,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff,
+  Check
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import ProductCard from "./components/ProductCard"
@@ -34,8 +37,14 @@ import {
   SheetTrigger,
   SheetOverlay,
 } from "@/components/ui/sheet"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import MainLayout from "./components/MainLayout"
 import CategoryDropdown from "./components/CategoryDropdown"
+import AccountPopover from "./components/AccountPopover"
 
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
@@ -45,6 +54,9 @@ export default function Home() {
   const [activeBrandSlide, setActiveBrandSlide] = useState(0)
   const [openCategory, setOpenCategory] = useState<string | null>(null)
   const categoriesContainerRef = useRef<HTMLDivElement>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
   // Efecto para los carruseles de las cards
   useEffect(() => {
@@ -586,6 +598,102 @@ export default function Home() {
     { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
   ];
 
+  // Account Popover Content Component
+  const AccountContent = () => (
+    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FBFFE6] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
+      {/* Ya soy cliente */}
+      <div>
+       
+        <form className="space-y-2 md:space-y-2.5" onSubmit={(e) => e.preventDefault()}>
+          <div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-2.5 md:px-3 py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#196428] bg-white text-xs md:text-sm"
+            />
+          </div>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-2.5 md:px-3 py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#196428] bg-white text-xs md:text-sm pr-8"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 md:right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <EyeOff className="h-3.5 w-3.5 md:h-4 md:w-4" /> : <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />}
+            </button>
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-1.5 rounded-full transition-colors text-xs md:text-sm"
+          >
+            Iniciar sesión
+          </button>
+        </form>
+        <div className="mt-2 md:mt-2.5 text-center">
+          <a href="#" className="text-[#196428] hover:underline text-[9px] md:text-xs font-medium">
+            Olvidé mi contraseña
+          </a>
+        </div>
+        <div className="mt-2 md:mt-2.5 text-[8px] md:text-[10px] text-gray-600 text-center leading-tight">
+          Protegido por reCAPTCHA - <a href="#" className="underline">Privacidad</a> y{' '}
+          <a href="#" className="underline">Condiciones</a>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-gray-300"></div>
+
+      {/* Nuevo aquí */}
+      <div>
+        <h2 className="text-[10px] xs:text-xs sm:text-sm md:text-sm lg:text-base font-bold text-gray-800 mb-1.5 md:mb-2">
+          ¿Nuevo aquí?
+        </h2>
+        <p className="text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs text-gray-700 mb-1.5 md:mb-2">
+          ¡Disfruta de beneficios exclusivos!
+        </p>
+        <ul className="space-y-1 md:space-y-1.5 mb-2 md:mb-3">
+          <li className="flex items-start gap-1.5 md:gap-2">
+            <Check className="h-3 w-3 md:h-3.5 md:w-3.5 text-[#196428] flex-shrink-0 mt-0.5" />
+            <span className="text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs text-gray-700 leading-tight">
+              Compras más <span className="font-bold">rápidas</span>
+            </span>
+          </li>
+          <li className="flex items-start gap-1.5 md:gap-2">
+            <Check className="h-3 w-3 md:h-3.5 md:w-3.5 text-[#196428] flex-shrink-0 mt-0.5" />
+            <span className="text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs text-gray-700 leading-tight">
+              <span className="font-bold">Historial</span> de pedidos
+            </span>
+          </li>
+          <li className="flex items-start gap-1.5 md:gap-2">
+            <Check className="h-3 w-3 md:h-3.5 md:w-3.5 text-[#196428] flex-shrink-0 mt-0.5" />
+            <span className="text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs text-gray-700 leading-tight">
+              <span className="font-bold">Descuentos</span> exclusivos
+            </span>
+          </li>
+          <li className="flex items-start gap-1.5 md:gap-2">
+            <Check className="h-3 w-3 md:h-3.5 md:w-3.5 text-[#196428] flex-shrink-0 mt-0.5" />
+            <span className="text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs text-gray-700 leading-tight">
+              <span className="font-bold">Lista</span> de deseos
+            </span>
+          </li>
+        </ul>
+        <button
+          type="button"
+          className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-1.5 md:py-2 rounded-full transition-colors text-[9px] xs:text-[10px] sm:text-xs md:text-xs"
+        >
+          Regístrate ahora
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <MainLayout>
@@ -726,12 +834,7 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <User className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
-                    </div>
+                    <AccountPopover />
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-1">
@@ -808,12 +911,7 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <User className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
-                    </div>
+                    <AccountPopover />
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-2">
@@ -890,12 +988,7 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
                     </div>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <User className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tu Cuenta</span>
-                    </div>
+                    <AccountPopover />
                   </div>
                   <div className="w-[1.5px] h-5 bg-gray-200"></div>
                   <div className="flex items-center space-x-3">
@@ -924,7 +1017,7 @@ export default function Home() {
           <div className="hidden md:block container mx-auto px-4 py-3 relative">
             <div className="flex flex-col">
               <div className="flex justify-center">
-                <div className="flex flex-nowrap justify-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2" ref={categoriesContainerRef}>
+                <div className="flex flex-nowrap justify-center gap-0.5 sm:gap-1 md:gap-0 lg:gap-2" ref={categoriesContainerRef}>
                   {categories.map((category) => (
                     <CategoryMenu key={category.name} category={category} containerRef={categoriesContainerRef} />
                   ))}
@@ -1421,6 +1514,7 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
     </MainLayout>
   )
 }

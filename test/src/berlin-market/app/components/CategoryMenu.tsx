@@ -124,7 +124,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
 
   return (
     <div
-      className="relative group w-[70px] sm:w-[80px] md:w-[90px] lg:w-[100px] flex-shrink-0 -my-1"
+      className="relative group w-[70px] sm:w-[80px] md:w-[80px] lg:w-[100px] flex-shrink-0 -my-1"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       ref={menuRef}
