@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
+import { useScrollBehavior } from '../hooks/useScrollBehavior'
+import { useCategory } from '../contexts/CategoryContext'
 
 interface SubCategory {
   name: string
@@ -41,44 +43,84 @@ interface CategoryMenuProps {
 }
 
 export default function CategoryMenu({ category, containerRef }: CategoryMenuProps) {
-  const [isHovered, setIsHovered] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const handleMouseEnter = () => {
+  // Usar el contexto global de categorías
+  const { isCategoryOpen, toggleCategory, closeAllCategories } = useCategory()
+  const isOpen = isCategoryOpen(category.name)
+
+  // Hook para manejar el comportamiento durante scroll
+  const { shouldClose, resetCloseState } = useScrollBehavior({
+    threshold: 150, // Cerrar menú después de 150px de scroll
+    debounceMs: 16,
+    onScrollClose: closeAllCategories, // Cerrar todas las categorías al hacer scroll
+    enabled: isOpen // Solo habilitar cuando el menú esté abierto
+  })
+
+  const handleMouseEnter = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
-    setIsHovered(true)
-  }
+    if (shouldClose) {
+      resetCloseState()
+    }
+    toggleCategory(category.name) // Abrir esta categoría (cierra las demás automáticamente)
+  }, [shouldClose, resetCloseState, toggleCategory, category.name])
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     timeoutRef.current = setTimeout(() => {
-      setIsHovered(false)
-    }, 100) // 300ms de retraso antes de cerrar
-  }
+      if (!isOpen) return // Si ya está cerrado, no hacer nada
+      closeAllCategories() // Cerrar todas las categorías
+    }, 100) // 100ms de retraso antes de cerrar
+  }, [isOpen, closeAllCategories])
 
   useEffect(() => {
     const handleResize = () => {
-      if (isHovered && menuRef.current) {
+      if (isOpen && menuRef.current) {
         // Force a re-render to update position
-        setIsHovered(false)
-        setTimeout(() => setIsHovered(true), 0)
+        closeAllCategories()
+        setTimeout(() => toggleCategory(category.name), 0)
       }
     }
 
     window.addEventListener('resize', handleResize)
-    
+
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
       }
       window.removeEventListener('resize', handleResize)
     }
-  }, [isHovered])
+  }, [isOpen, closeAllCategories, toggleCategory, category.name])
+
+  // Cerrar menú si el usuario hace scroll demasiado
+  useEffect(() => {
+    if (shouldClose && isOpen) {
+      closeAllCategories()
+    }
+  }, [shouldClose, isOpen, closeAllCategories])
 
   const hasManyPromotions = category.promotions && category.promotions.length > 2;
   const menuHeightClass = hasManyPromotions ? 'md:h-[440px]' : 'md:h-[400px]';
+
+  // Función para calcular la posición centrada del menú respecto al contenedor de categorías
+  const getCenteredMenuPosition = useCallback(() => {
+    if (!containerRef?.current) {
+      return {
+        left: '50%',
+        transform: 'translateX(-50%)'
+      }
+    }
+
+    const containerRect = containerRef.current.getBoundingClientRect()
+    const containerCenterX = containerRect.left + (containerRect.width / 2)
+
+    return {
+      left: `${containerCenterX}px`,
+      transform: 'translateX(-50%)'
+    }
+  }, [containerRef])
 
   return (
     <div
@@ -97,23 +139,26 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
       </Link>
 
       {/* Menú desplegable */}
-      {isHovered && (
-        <div 
-          className="fixed w-full md:w-[95vw] lg:w-[1200px] max-w-[95vw] bg-white rounded-lg shadow-lg border border-gray-200 z-50"
-          style={{ 
+      {isOpen && !shouldClose && (
+        <div
+          className="fixed bg-white rounded-lg shadow-xl border border-gray-200 z-50 backdrop-blur-sm"
+          style={{
+            ...getCenteredMenuPosition(),
+            top: menuRef.current ? menuRef.current.getBoundingClientRect().bottom + 4 : 0,
             marginTop: '0.25rem',
             paddingTop: '0.5rem',
-            top: menuRef.current?.getBoundingClientRect().bottom ?? 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            maxHeight: '90vh',
-            overflowY: 'auto'
+            maxHeight: 'min(90vh, 600px)',
+            overflowY: 'auto',
+            transition: 'opacity 0.2s ease-in-out, transform 0.2s ease-in-out',
+            animation: 'fadeInUp 0.2s ease-out',
+            width: '100vw',
+            maxWidth: 'min(95vw, 1200px)'
           }}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
           {/* Área invisible para el cursor */}
-          <div className="absolute h-4 w-full -top-4" />
+          <div className="absolute h-4 -top-4 left-1/2 transform -translate-x-1/2 w-full" />
           
           <div className={`flex flex-col md:flex-row h-auto ${menuHeightClass} overflow-y-auto md:overflow-y-hidden`}>
             {/* Sección 1: Subcategorías */}

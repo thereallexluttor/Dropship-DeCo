@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
+import { useScrollBehavior } from '../hooks/useScrollBehavior'
 
 interface SubCategory {
   name: string
@@ -24,12 +25,47 @@ interface CategoryDropdownProps {
 }
 
 export default function CategoryDropdown({ category, isOpen, onMouseEnter, onMouseLeave }: CategoryDropdownProps) {
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Hook para manejar el comportamiento durante scroll
+  const { shouldClose, resetCloseState } = useScrollBehavior({
+    threshold: 150, // Cerrar menú después de 150px de scroll
+    debounceMs: 16
+  })
+
+  // Función mejorada para manejar mouse enter
+  const handleMouseEnter = useCallback(() => {
+    if (shouldClose) {
+      resetCloseState()
+    }
+    onMouseEnter()
+  }, [shouldClose, resetCloseState, onMouseEnter])
+
+  // Función para calcular la posición del dropdown considerando el scroll
+  const getDropdownPosition = useCallback(() => {
+    if (!dropdownRef.current) return {}
+
+    const rect = dropdownRef.current.getBoundingClientRect()
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+
+    return {
+      top: rect.bottom + scrollTop + 4, // 4px de margen
+    }
+  }, [])
+
+  // Cerrar dropdown si el usuario hace scroll demasiado
+  useEffect(() => {
+    if (shouldClose && isOpen) {
+      onMouseLeave()
+    }
+  }, [shouldClose, isOpen, onMouseLeave])
   return (
       <div
       className="relative group"
       style={{ isolation: 'isolate' }}
-      onMouseEnter={onMouseEnter}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={onMouseLeave}
+      ref={dropdownRef}
     >
       <Link 
         href={category.href}
@@ -40,15 +76,18 @@ export default function CategoryDropdown({ category, isOpen, onMouseEnter, onMou
         {category.name}
       </Link>
 
-      {isOpen && category.subcategories && (
-        <div 
+      {isOpen && !shouldClose && category.subcategories && (
+        <div
             className="absolute mt-0"
-            style={{ 
+            style={{
               zIndex: 50,
               left: '50%',
               transform: 'translateX(-50%)',
               width: 'max-content',
-              minWidth: '220px'
+              minWidth: '220px',
+              animation: 'fadeInUp 0.2s ease-out',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)'
             }}
           >
           <div className="bg-white rounded-md shadow-xl border border-gray-200 relative backdrop-blur-sm">
