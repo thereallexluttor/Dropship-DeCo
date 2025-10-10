@@ -42,9 +42,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
 import MainLayout from "./components/MainLayout"
 import CategoryDropdown from "./components/CategoryDropdown"
 import AccountPopover from "./components/AccountPopover"
+import AccountPopoverContent from "./components/AccountPopoverContent"
 
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
@@ -57,6 +67,8 @@ export default function Home() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Efecto para los carruseles de las cards
   useEffect(() => {
@@ -471,8 +483,6 @@ export default function Home() {
       subcategories: [
         { name: "Nuevos Productos", href: "#" },
         { name: "Recién Llegados", href: "#" },
-        { name: "Tendencias", href: "#" },
-        { name: "Colecciones Nuevas", href: "#" },
         { name: "Productos Exclusivos", href: "#" },
         { name: "Ediciones Limitadas", href: "#" }
       ],
@@ -590,17 +600,17 @@ export default function Home() {
   );
 
   const navLinks = [
-    { name: "Inicio", icon: HomeIcon, href: "#" },
+    { name: "Inicio", icon: HomeIcon, href: "/" },
     { name: "Tienda", icon: ShoppingBag, href: "#" },
     { name: "Carrito", icon: ShoppingCart, href: "#" },
     { name: "Cuenta", icon: User, href: "#" },
-    { name: "Info", icon: Info, href: "#" },
+    { name: "Info", icon: Info, href: "/sobre-nosotros" },
     { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
   ];
 
   // Account Popover Content Component
   const AccountContent = () => (
-    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FBFFE6] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
+    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FCFFEF] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
       {/* Ya soy cliente */}
       <div>
        
@@ -697,7 +707,7 @@ export default function Home() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FBFFE6' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
         {/* Promotional Banner */}
         <div className="bg-[#196428] text-white py-1 overflow-hidden">
           <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
@@ -708,7 +718,7 @@ export default function Home() {
           </div>
         </div>
 
-        <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FBFFE6' }}>
+        <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
           {/* Mobile Header (< 640px) */}
           <div className="md:hidden">
             <div className="container mx-auto px-4 py-3">
@@ -741,7 +751,7 @@ export default function Home() {
                   </form>
                 </div>
 
-                <Sheet>
+                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                   <SheetTrigger asChild>
                     <button className="p-2 -mr-2">
                       <Menu className="h-6 w-6 text-gray-700" />
@@ -757,7 +767,7 @@ export default function Home() {
                         <h3 className="mb-2 text-sm font-semibold text-gray-500 px-2">Categorías</h3>
                         <nav className="flex flex-col gap-1">
                           {categories.map((category) => (
-                            <Link key={category.name} href={category.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors">
+                            <Link key={category.name} href={category.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
                               <span className="text-sm font-bold text-gray-800">{category.name}</span>
                             </Link>
                           ))}
@@ -765,12 +775,50 @@ export default function Home() {
                       </div>
                       <div className="border-t border-gray-200 -mx-6"></div>
                       <nav className="flex flex-col gap-1">
-                        {navLinks.map((link) => (
-                          <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors">
-                            <link.icon className="h-5 w-5 text-gray-600" />
-                            <span className="text-sm font-medium text-gray-800">{link.name}</span>
-                          </Link>
-                        ))}
+                        {navLinks.map((link) => {
+                          if (link.name === "Inicio") {
+                            return (
+                              <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                <link.icon className="h-5 w-5 text-[#196428]" />
+                                <span className="text-sm font-medium text-[#196428]">{link.name}</span>
+                              </Link>
+                            );
+                          }
+                          if (link.name === "Cuenta") {
+                            return (
+                              <button
+                                key={link.name}
+                                onClick={() => {
+                                  setIsMobileMenuOpen(false);
+                                  setTimeout(() => setIsAccountDrawerOpen(true), 300);
+                                }}
+                                className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors text-left w-full"
+                              >
+                                <link.icon className="h-5 w-5 text-gray-600" />
+                                <span className="text-sm font-medium text-gray-800">{link.name}</span>
+                              </button>
+                            );
+                          }
+                          if (link.name === "Tiendas" || link.name === "Info") {
+                            return (
+                              <Link 
+                                key={link.name} 
+                                href={link.href} 
+                                className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                              >
+                                <link.icon className="h-5 w-5 text-gray-600" />
+                                <span className="text-sm font-medium text-gray-800">{link.name === "Info" ? "Sobre Nosotros" : link.name}</span>
+                              </Link>
+                            );
+                          }
+                          return (
+                            <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                              <link.icon className="h-5 w-5 text-gray-600" />
+                              <span className="text-sm font-medium text-gray-800">{link.name}</span>
+                            </Link>
+                          );
+                        })}
                       </nav>
                     </div>
                   </SheetContent>
@@ -816,12 +864,12 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <div className="flex items-center space-x-1">
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
-                    </div>
+                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                    </Link>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
@@ -838,12 +886,12 @@ export default function Home() {
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-1">
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
-                    </div>
+                    </Link>
                     <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
@@ -893,12 +941,12 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-3 flex-shrink-0">
                   <div className="flex items-center space-x-2">
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
-                    </div>
+                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                    </Link>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
@@ -915,12 +963,12 @@ export default function Home() {
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-2">
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
-                    </div>
+                    </Link>
                     <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
@@ -970,12 +1018,12 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-4 flex-shrink-0">
                   <div className="flex items-center space-x-3">
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Inicio</span>
-                    </div>
+                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                    </Link>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
@@ -992,12 +1040,12 @@ export default function Home() {
                   </div>
                   <div className="w-[1.5px] h-5 bg-gray-200"></div>
                   <div className="flex items-center space-x-3">
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
-                    </div>
+                    </Link>
                     <Link href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
@@ -1032,35 +1080,41 @@ export default function Home() {
                 <div className="relative aspect-[16/6] w-full max-w-6xl mx-auto">
                 {/* Carousel */}
                 <div className="absolute inset-0">
-                  {[1, 2, 3, 4].map((_, index) => (
+                  {[
+                    { video: "/farm1.mp4", alt: "Video promocional 1" },
+                    { video: "/farm2.mp4", alt: "Video promocional 2" },
+                    { video: "/farm1.mp4", alt: "Video promocional 3" },
+                    { video: "/farm2.mp4", alt: "Video promocional 4" }
+                  ].map((slide, index) => (
                     <div
                       key={index}
                       className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
                         activeSlide === index ? "opacity-100" : "opacity-0"
                       }`}
                     >
-                      <Image
-                        src="/banner_unisan.png"
-                        alt={`Slide ${index + 1}`}
-                        fill
-                        className="object-contain rounded-lg"
-                        priority={index === 0}
+                      <video
+                        src={slide.video}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="absolute inset-0 w-full h-full object-cover rounded-lg"
                       />
                       <div className="absolute inset-0 flex items-center">
                         <div className="container mx-auto px-2 xs:px-3 sm:px-4">
                           {/* Texto y botón a la izquierda */}
                           <div className="text-left ml-[3%] xs:ml-[4%] sm:ml-[5%] md:ml-[7%] lg:ml-[8%]">
-                            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-black mb-2 sm:mb-3 md:mb-4 lg:mb-5 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] leading-tight">
+                            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-white drop-shadow-lg mb-2 sm:mb-3 md:mb-4 lg:mb-5 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] leading-tight">
                               Descubre las<br />
                               mejores ofertas
                             </h2>
                             <Link
                               href="#"
-                              className="inline-block bg-[#196428] hover:bg-[#196428] text-white 
+                              className="inline-block bg-[#196428] hover:bg-[#196428] text-white
                               text-xs sm:text-sm md:text-base lg:text-lg
                               py-1.5 sm:py-2 md:py-2.5 lg:py-3
                               px-4 sm:px-5 md:px-6 lg:px-7
-                              rounded-full transition-all duration-300 transform hover:scale-105"
+                              rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg"
                             >
                               click aquí
                             </Link>
@@ -1076,7 +1130,7 @@ export default function Home() {
           </section>
 
           {/* Ofertas de la semana */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FBFFE6' }}>
+          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
               <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 overflow-x-auto pb-4 md:pb-0 md:overflow-x-hidden">
@@ -1255,7 +1309,7 @@ export default function Home() {
           </section>
 
           {/* Productos destacados */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FBFFE6' }}>
+          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Productos destacados</h2>
               
@@ -1360,7 +1414,7 @@ export default function Home() {
           </section>
 
           {/* Nuestras marcas */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FBFFE6' }}>
+          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Nuestras marcas</h2>
               <div className="relative">
@@ -1405,7 +1459,7 @@ export default function Home() {
           </section>
 
           {/* Encuentra nuestras tiendas */}
-          <section id="nuestras-tiendas" className="py-6 sm:py-8 md:py-10 scroll-mt-20" style={{ backgroundColor: '#FBFFE6' }}>
+          <section id="nuestras-tiendas" className="py-6 sm:py-8 md:py-10 scroll-mt-20" style={{ backgroundColor: '#FCFFEF' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Encuentra nuestras tiendas</h2>
               <div className="bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] shadow-sm overflow-hidden">
@@ -1418,24 +1472,25 @@ export default function Home() {
 
         <footer className="bg-[#196428] text-white py-4">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="md:col-span-2">
+            <div className="flex flex-col md:grid md:grid-cols-4 lg:grid-cols-12 gap-8 md:gap-6 lg:gap-4">
+              <div className="md:col-span-1 lg:col-span-2 flex flex-col items-center md:items-start">
                 <Image
                   src="/unisantander.png"
                   alt="Unisantander"
                   width={220}
                   height={30}
-                  className="mb-1"
+                  className="mb-4 md:mb-1 w-40 md:w-full"
                 />
                 
               </div>
-              <div className="md:col-span-10 md:pl-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-0">
+              <div className="md:col-span-2 lg:col-span-7 lg:pl-8 order-first md:order-none">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-4">
                   {/* Servicio al cliente */}
-                  <div>
+                  <div className="md:col-span-1">
                     <h3 className="text-sm font-semibold mb-1.5">Servicio al cliente</h3>
                     <ul className="space-y-[2px] text-[11px]">
                       <li><Link href="#">Ayuda y preguntas frecuentes</Link></li>
+                      <li><Link href="#">Contacto</Link></li>
                       <li><Link href="#">Mi cuenta</Link></li>
                       <li><Link href="#">Solicitar contraseña</Link></li>
                       <li><Link href="#">Mis órdenes</Link></li>
@@ -1443,14 +1498,14 @@ export default function Home() {
                       <li><Link href="#">Entrega rápida</Link></li>
                       <li><Link href="#">Pago seguro y métodos de pago</Link></li>
                       <li><Link href="#">Política de devolución de 30 días</Link></li>
-                      <li><Link href="#">Boletín informativo</Link></li>
+                      <li><Link href="#">Newsletter</Link></li>
                       <li><Link href="#">Haga clic y recople</Link></li>
                       <li><Link href="#">Declaración de accesibilidad</Link></li>
                     </ul>
                   </div>
 
                   {/* Nuestros mercados */}
-                  <div>
+                  <div className="md:col-span-1">
                     <h3 className="text-sm font-semibold mb-1.5">Nuestros mercados</h3>
                     <ul className="space-y-[2px] text-[11px]">
                       <li><Link href="#">Encuentra mercados</Link></li>
@@ -1462,10 +1517,10 @@ export default function Home() {
                   </div>
 
                   {/* Acerca de Unisantander */}
-                  <div>
+                  <div className="col-span-2 sm:col-span-1">
                     <h3 className="text-sm font-semibold mb-1.5">Acerca de Unisantander</h3>
                     <ul className="space-y-[2px] text-[11px]">
-                      <li><Link href="#">Sobre nosotros</Link></li>
+                      <li><Link href="/sobre-nosotros">Sobre nosotros</Link></li>
                       <li><Link href="#">Carreras</Link></li>
                       <li><Link href="#">Responsabilidad</Link></li>
                       <li><Link href="#">Animal comprometido</Link></li>
@@ -1476,10 +1531,15 @@ export default function Home() {
                     </ul>
                   </div>
 
-                  {/* Footer Rabbit and Social Media */}
-                  <div className="flex flex-col items-center">
+                  <div className="hidden lg:block lg:col-span-1">
+                    {/* Este div es para mantener el layout en 4 columnas en desktop, se rellena con el conejo */}
+                  </div>
+                </div>
+              </div>
+              {/* Footer Rabbit and Social Media */}
+              <div className="md:col-span-1 lg:col-span-3 flex flex-col items-center md:items-start">
                     {/* Footer Rabbit Image */}
-                    <div className="relative w-[300px] h-[200px]">
+                    <div className="relative w-full max-w-[250px] h-[150px] lg:w-[300px] lg:h-[200px]">
                       <Image
                         src="/footer_rabbit.png"
                         alt="Footer Rabbit"
@@ -1490,7 +1550,7 @@ export default function Home() {
                     </div>
 
                     {/* Social Media Icons */}
-                    <div className="flex justify-center space-x-8 mt-4">
+                    <div className="flex justify-center space-x-6 lg:space-x-8 mt-4">
                       <Link href="#" className="text-white hover:text-gray-200">
                         <Image src="/icons/facebook.png" alt="Facebook" width={30} height={30} />
                       </Link>
@@ -1508,12 +1568,22 @@ export default function Home() {
                       </Link>
                     </div>
                   </div>
-                </div>
-              </div>
             </div>
           </div>
         </footer>
       </div>
+
+      {/* Account Drawer for Mobile */}
+      <Drawer open={isAccountDrawerOpen} onOpenChange={setIsAccountDrawerOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="text-center border-b border-gray-200">
+            <DrawerTitle className="text-lg font-bold text-gray-800">Mi Cuenta</DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-6">
+            <AccountPopoverContent />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
     </MainLayout>
   )

@@ -27,11 +27,16 @@ export default function AccountPopover() {
   return (
     <Popover onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <button type="button" className="group flex flex-col items-center justify-center cursor-pointer bg-transparent border-none p-0 outline-none">
-          <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+        <button
+          type="button"
+          className="group flex flex-col items-center justify-center cursor-pointer bg-transparent border-none p-0 outline-none"
+        >
+          <div className={`h-4 w-4 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'}`}>
             <User className="h-full w-full" />
           </div>
-          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Cuenta</span>
+          <span className={`text-xs font-light mt-1 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'}`}>
+            Cuenta
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="p-0 border-none shadow-xl z-[9999] w-auto" align="center" sideOffset={8}>

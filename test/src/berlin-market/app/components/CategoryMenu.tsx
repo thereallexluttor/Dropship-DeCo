@@ -102,7 +102,9 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
   }, [shouldClose, isOpen, closeAllCategories])
 
   const hasManyPromotions = category.promotions && category.promotions.length > 2;
-  const menuHeightClass = hasManyPromotions ? 'md:h-[440px]' : 'md:h-[400px]';
+  const menuHeightClass = hasManyPromotions
+    ? 'md:h-[440px] lg:h-[420px] xl:h-[400px]'
+    : 'md:h-[400px] lg:h-[380px] xl:h-[360px]';
 
   // Función para calcular la posición centrada del menú respecto al contenedor de categorías
   const getCenteredMenuPosition = useCallback(() => {
@@ -180,7 +182,11 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                   ))}
                 </div>
               )}
-              <div className="mt-4 pt-4 md:absolute md:bottom-6 md:left-6 md:right-6">
+              <div
+                className={`md:absolute md:bottom-6 md:left-6 md:right-6 ${
+                  category.subcategories && category.subcategories.length > 6 ? 'mt-8 pt-4' : 'mt-4 pt-4'
+                }`}
+              >
                 <Link 
                   href={category.href} 
                   className="text-[#196428] text-[10px] sm:text-xs lg:text-sm hover:underline"

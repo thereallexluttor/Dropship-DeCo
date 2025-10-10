@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Check } from 'lucide-react';
 
-export default function AccountPopoverContent() {
+const AccountForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   return (
-    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FBFFE6] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
+    <div className="w-full space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5">
       {/* Ya soy cliente */}
       <div>
        
@@ -20,7 +20,7 @@ export default function AccountPopoverContent() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-2.5 md:px-3 py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#196428] bg-white text-xs md:text-sm"
+              className="w-full px-2.5 md:px-3 py-2 md:py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#196428] bg-white text-base md:text-sm"
             />
           </div>
           <div className="relative">
@@ -29,19 +29,19 @@ export default function AccountPopoverContent() {
               placeholder="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-2.5 md:px-3 py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#196428] bg-white text-xs md:text-sm pr-8"
+              className="w-full px-2.5 md:px-3 py-2 md:py-1.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#196428] bg-white text-base md:text-sm pr-8"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-2 md:right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
             >
-              {showPassword ? <EyeOff className="h-3.5 w-3.5 md:h-4 md:w-4" /> : <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           <button
             type="submit"
-            className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-1.5 rounded-full transition-colors text-xs md:text-sm"
+            className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-2 md:py-1.5 rounded-full transition-colors text-base md:text-sm"
           >
             Iniciar sesión
           </button>
@@ -101,6 +101,14 @@ export default function AccountPopoverContent() {
           Regístrate ahora
         </button>
       </div>
+    </div>
+  );
+}
+
+export default function AccountPopoverContent() {
+  return (
+    <div className="w-full bg-[#FBFFE6] p-3 sm:p-4 md:p-5 rounded-lg">
+      <AccountForm />
     </div>
   );
 }
