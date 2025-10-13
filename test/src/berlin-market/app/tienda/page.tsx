@@ -1,14 +1,14 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link" 
-import { 
-  ShoppingBag, 
-  Search, 
-  Home as HomeIcon, 
-  User, 
-  ShoppingCart, 
-  Info, 
+import Link from "next/link"
+import {
+  ShoppingBag,
+  Search,
+  Home as HomeIcon,
+  User,
+  ShoppingCart,
+  Info,
   MapPin,
   Menu,
   Dog,
@@ -25,10 +25,10 @@ import {
   Check
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
-import ProductCard from "./components/ProductCard"
-import FadeInOnScroll from './components/FadeInOnScroll'
-import CategoryMenu from './components/CategoryMenu'
-import StoreLocator from './components/StoreLocator'
+import ProductCard from "../components/ProductCard"
+import FadeInOnScroll from '../components/FadeInOnScroll'
+import CategoryMenu from '../components/CategoryMenu'
+import StoreLocator from '../components/StoreLocator'
 import {
   Sheet,
   SheetContent,
@@ -51,12 +51,12 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-import MainLayout from "./components/MainLayout"
-import CategoryDropdown from "./components/CategoryDropdown"
-import AccountPopover from "./components/AccountPopover"
-import AccountPopoverContent from "./components/AccountPopoverContent"
+import MainLayout from "../components/MainLayout"
+import CategoryDropdown from "../components/CategoryDropdown"
+import AccountPopover from "../components/AccountPopover"
+import AccountPopoverContent from "../components/AccountPopover"
 
-export default function Home() {
+export default function TiendaPage() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [activeCardSlide, setActiveCardSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
@@ -69,6 +69,134 @@ export default function Home() {
   const [password, setPassword] = useState("")
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // Estado para la navegación de categorías
+  const [selectedCategory, setSelectedCategory] = useState<string>("perro")
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("comida-para-perros")
+  const [currentTitle, setCurrentTitle] = useState<string>("Comida para perros")
+  const [currentBreadcrumbs, setCurrentBreadcrumbs] = useState<string[]>(["🏠", "Perro", "Comida para perros"])
+
+  // Datos de categorías y productos
+  const categoryData: Record<string, Record<string, { title: string; breadcrumbs: string[]; products: any[] }>> = {
+    perro: {
+      "comida-para-perros": {
+        title: "Comida para perros",
+        breadcrumbs: ["🏠", "Perro", "Comida para perros"],
+        products: Array.from({ length: 8 }, (_, i) => ({
+          id: `perro-comida-${i + 1}`,
+          name: "Palitos MultiFit Mint DentalCare Junior Multipack 28 piezas",
+          price: "17.000",
+          image: `/cap${(i % 4) + 1}.png`,
+          tag: "Exclusivo",
+          tagColor: "bg-[#196428]",
+        }))
+      },
+      "comida-seca-para-perros": {
+        title: "Comida seca para perros",
+        breadcrumbs: ["🏠", "Perro", "Comida seca para perros"],
+        products: Array.from({ length: 6 }, (_, i) => ({
+          id: `perro-comida-seca-${i + 1}`,
+          name: "Royal Canin Adult Large Breed 15kg",
+          price: "85.000",
+          image: `/cap${(i % 4) + 1}.png`,
+          tag: i % 2 === 0 ? "Oferta" : null,
+          tagColor: "bg-red-500",
+        }))
+      },
+      "snacks": {
+        title: "Snacks",
+        breadcrumbs: ["🏠", "Perro", "Snacks"],
+        products: Array.from({ length: 8 }, (_, i) => ({
+          id: `perro-snacks-${i + 1}`,
+          name: "Dental Sticks Medium 7 unidades",
+          price: "12.500",
+          image: `/cap${(i % 4) + 1}.png`,
+          tag: "Nuevo",
+          tagColor: "bg-blue-500",
+        }))
+      },
+      "lugares-para-dormir": {
+        title: "Lugares para dormir",
+        breadcrumbs: ["🏠", "Perro", "Lugares para dormir"],
+        products: Array.from({ length: 4 }, (_, i) => ({
+          id: `perro-dormir-${i + 1}`,
+          name: "Cama ortopédica para perros grandes",
+          price: "45.000",
+          image: `/cap${(i % 4) + 1}.png`,
+          tag: null,
+          tagColor: "",
+        }))
+      },
+      "juguetes": {
+        title: "Juguetes para perros",
+        breadcrumbs: ["🏠", "Perro", "Juguetes"],
+        products: Array.from({ length: 6 }, (_, i) => ({
+          id: `perro-juguetes-${i + 1}`,
+          name: "Kong Classic Large",
+          price: "22.000",
+          image: `/cap${(i % 4) + 1}.png`,
+          tag: "Popular",
+          tagColor: "bg-purple-500",
+        }))
+      }
+    },
+    gato: {
+      "comida-para-gatos": {
+        title: "Comida para gatos",
+        breadcrumbs: ["🏠", "Gato", "Comida para gatos"],
+        products: Array.from({ length: 8 }, (_, i) => ({
+          id: `gato-comida-${i + 1}`,
+          name: "Whiskas Adult Pouch 85g",
+          price: "2.500",
+          image: `/cap${(i % 4) + 1}.png`,
+          tag: "Exclusivo",
+          tagColor: "bg-[#196428]",
+        }))
+      },
+      "arena": {
+        title: "Arena para gatos",
+        breadcrumbs: ["🏠", "Gato", "Arena"],
+        products: Array.from({ length: 6 }, (_, i) => ({
+          id: `gato-arena-${i + 1}`,
+          name: "Arena aglomerante 10kg",
+          price: "18.000",
+          image: `/cap${(i % 4) + 1}.png`,
+          tag: i % 3 === 0 ? "Oferta" : null,
+          tagColor: "bg-red-500",
+        }))
+      }
+    },
+    ofertas: {
+      "ofertas-del-dia": {
+        title: "Ofertas del día",
+        breadcrumbs: ["🏠", "Ofertas", "Ofertas del día"],
+        products: Array.from({ length: 8 }, (_, i) => ({
+          id: `ofertas-${i + 1}`,
+          name: "Producto en oferta especial",
+          price: "15.000",
+          originalPrice: "25.000",
+          image: `/cap${(i % 4) + 1}.png`,
+          tag: "Oferta",
+          tagColor: "bg-red-500",
+        }))
+      }
+    }
+  }
+
+  // Función para manejar el cambio de categoría
+  const handleCategoryChange = (category: string, subcategory: string) => {
+    setSelectedCategory(category)
+    setSelectedSubcategory(subcategory)
+
+    const data = categoryData[category]?.[subcategory]
+    if (data) {
+      setCurrentTitle(data.title)
+      setCurrentBreadcrumbs(data.breadcrumbs)
+    }
+  }
+
+  // Obtener productos actuales
+  const currentProducts = categoryData[selectedCategory]?.[selectedSubcategory]?.products || []
 
   // Efecto para los carruseles de las cards
   useEffect(() => {
@@ -101,7 +229,7 @@ export default function Home() {
   }
 
   const categories = [
-    { 
+    {
       name: "Perro",
       href: "#",
       subcategories: [
@@ -149,7 +277,7 @@ export default function Home() {
         href: "#"
       }
     },
-    { 
+    {
       name: "Gato",
       href: "#",
       subcategories: [
@@ -196,316 +324,6 @@ export default function Home() {
         href: "#"
       }
     },
-    { 
-      name: "Roedores",
-      href: "#",
-      subcategories: [
-        { name: "Conejos", href: "#" },
-        { name: "Hamsters", href: "#" },
-        { name: "Comida", href: "#" },
-        { name: "Accesorios", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Especiales",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Vitakraft",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Cunipic",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Living World",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/roedores.png",
-        alt: "Productos para Animales Pequeños",
-        href: "#"
-      }
-    },
-    { 
-      name: "Aves",
-      href: "#",
-      subcategories: [
-        { name: "Pájaros", href: "#" },
-        { name: "Comida para Aves", href: "#" },
-        { name: "Jaulas y Accesorios", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Aves",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos",
-          href: "#",
-          icon: "/icons/warranty.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos2",
-          href: "#",
-          icon: "/icons/warranty.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos3",
-          href: "#",
-          icon: "/icons/warranty.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Versele-Laga",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Zupreem",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Kaytee",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Kaytee",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/aves.png",
-        alt: "Productos para Aves",
-        href: "#"
-      }
-    },
-    { 
-      name: "Bovinos",
-      href: "#",
-      subcategories: [
-        { name: "Alimentación", href: "#" },
-        { name: "Salud", href: "#" },
-        { name: "Equipamiento", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Especiales",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Novedades",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Royal Canin",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Purina",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Pedigree",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/bovinos.png",
-        alt: "Productos para Perros",
-        href: "#"
-      }
-    },
-    { 
-      name: "Peces",
-      href: "#",
-      subcategories: [
-        { name: "Peces Tropicales", href: "#" },
-        { name: "Acuarios", href: "#" },
-        { name: "Alimentación", href: "#" },
-        { name: "Accesorios", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Especiales",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Novedades",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Royal Canin",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Purina",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Pedigree",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/fish.png",
-        alt: "Productos para Perros",
-        href: "#"
-      }
-    },
-    { 
-      name: "Salud animal",
-      href: "#",
-      subcategories: [
-        { name: "Medicamentos", href: "#" },
-        { name: "Vitaminas y Suplementos", href: "#" },
-        { name: "Antiparasitarios", href: "#" },
-        { name: "Cuidado Dental", href: "#" },
-        { name: "Primeros Auxilios", href: "#" },
-        
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas en Salud",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Zoetis",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Bayer",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "MSD Animal Health",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Virbac",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/veterinario.png",
-        alt: "Salud Animal",
-        href: "#"
-      }
-    },
-    { name: "Ofertas", 
-      href: "#",
-      subcategories: [
-        { name: "Ofertas del Día", href: "#" },
-        { name: "Descuentos Especiales", href: "#" },
-        { name: "Packs Ahorro", href: "#" },
-        { name: "Últimas Unidades", href: "#" },
-        { name: "Liquidación", href: "#" },
-        
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "¡Ofertas Flash!",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Descuentos",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      bannerImage: {
-        src: "/ofertas.png",
-        alt: "Ofertas y Descuentos",
-        href: "#"
-      }
-     },
-    { name: "Novedades",
-      href: "#",
-      subcategories: [
-        { name: "Nuevos Productos", href: "#" },
-        { name: "Recién Llegados", href: "#" },
-        { name: "Productos Exclusivos", href: "#" },
-        { name: "Ediciones Limitadas", href: "#" }
-      ],
-      promotions: [
-        {
-          type: "new" as const,
-          title: "¡Lo Último!",
-          href: "#",
-          icon: "/icons/diamond.png"
-        },
-        {
-          type: "offer" as const,
-          title: "Pre-Venta Exclusiva",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        }
-      ],
-      bannerImage: {
-        src: "/new.png",
-        alt: "Novedades y Nuevos Productos",
-        href: "#"
-      }
-    },
   ];
 
   const productImages = [
@@ -523,7 +341,7 @@ export default function Home() {
     "/cap4-3.png",
   ];
 
-  const featuredProducts = Array.from({ length: 12 }, (_, i) => ({
+  const featuredProducts = Array.from({ length: 8 }, (_, i) => ({
     id: `${i + 1}`,
     name: `Producto Destacado ${i + 1}`,
     price: `${(Math.random() * 50 + 10).toFixed(3)}`,
@@ -557,7 +375,6 @@ export default function Home() {
   const prevBrandSlide = () => {
     setActiveBrandSlide((current) => (current - 1 + totalBrandSlides) % totalBrandSlides);
   };
-
 
   const totalProductSlides = Math.ceil(featuredProducts.length / 4);
 
@@ -613,7 +430,7 @@ export default function Home() {
     <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FCFFEF] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
       {/* Ya soy cliente */}
       <div>
-       
+
         <form className="space-y-2 md:space-y-2.5" onSubmit={(e) => e.preventDefault()}>
           <div>
             <input
@@ -779,6 +596,14 @@ export default function Home() {
                           if (link.name === "Inicio") {
                             return (
                               <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                <link.icon className="h-5 w-5 text-gray-500" />
+                                <span className="text-sm font-medium text-gray-500">{link.name}</span>
+                              </Link>
+                            );
+                          }
+                          if (link.name === "Tienda") {
+                            return (
+                              <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
                                 <link.icon className="h-5 w-5 text-[#196428]" />
                                 <span className="text-sm font-medium text-[#196428]">{link.name}</span>
                               </Link>
@@ -801,9 +626,9 @@ export default function Home() {
                           }
                           if (link.name === "Tiendas" || link.name === "Info") {
                             return (
-                              <Link 
-                                key={link.name} 
-                                href={link.href} 
+                              <Link
+                                key={link.name}
+                                href={link.href}
                                 className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
                                 onClick={() => setIsMobileMenuOpen(false)}
                               >
@@ -864,17 +689,17 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <div className="flex items-center space-x-1">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
+                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                      <span className="text-xs font-light text-gray-500 mt-1 transition-colors">Inicio</span>
                     </Link>
                     <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                      <div className="h-4 w-4 text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
+                          <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Tienda</span>
                     </Link>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
@@ -941,17 +766,17 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-3 flex-shrink-0">
                   <div className="flex items-center space-x-2">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
+                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                      <span className="text-xs font-light text-gray-500 mt-1 transition-colors">Inicio</span>
                     </Link>
                     <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                      <div className="h-4 w-4 text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
+                          <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Tienda</span>
                     </Link>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
@@ -1018,17 +843,17 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-4 flex-shrink-0">
                   <div className="flex items-center space-x-3">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
+                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                      <span className="text-xs font-light text-gray-500 mt-1 transition-colors">Inicio</span>
                     </Link>
                     <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                      <div className="h-4 w-4 text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
+                          <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Tienda</span>
                     </Link>
                     <div className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
@@ -1061,413 +886,377 @@ export default function Home() {
         </header>
 
         <main>
-          {/* Category Grid */}
-          <div className="hidden md:block container mx-auto px-4 py-3 relative">
-            <div className="flex flex-col">
-              <div className="flex justify-center">
-                <div className="flex flex-nowrap justify-center gap-0.5 sm:gap-1 md:gap-0 lg:gap-2" ref={categoriesContainerRef}>
-                  {categories.map((category) => (
-                    <CategoryMenu key={category.name} category={category} containerRef={categoriesContainerRef} />
-                  ))}
-                </div>
-              </div>
-              <div className="w-full h-[1px] bg-gray-200 mt-3"></div>
-            </div>
-          </div>
-
-          <section className="relative w-full">
+          {/* Main content with sidebar and products */}
+          <section className="py-8" style={{ backgroundColor: '#FCFFEF' }}>
             <div className="container mx-auto px-4">
-                <div className="relative aspect-[16/6] w-full max-w-6xl mx-auto">
-                {/* Carousel */}
-                <div className="absolute inset-0">
-                  {[
-                    { video: "/farm1.mp4", alt: "Video promocional 1" },
-                    { video: "/farm2.mp4", alt: "Video promocional 2" },
-                    { video: "/farm1.mp4", alt: "Video promocional 3" },
-                    { video: "/farm2.mp4", alt: "Video promocional 4" }
-                  ].map((slide, index) => (
-                    <div
-                      key={index}
-                      className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                        activeSlide === index ? "opacity-100" : "opacity-0"
-                      }`}
-                    >
-                      <video
-                        src={slide.video}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                      />
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="container mx-auto px-2 xs:px-3 sm:px-4">
-                          {/* Texto y botón a la izquierda */}
-                          <div className="text-left ml-[3%] xs:ml-[4%] sm:ml-[5%] md:ml-[7%] lg:ml-[8%]">
-                            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-white drop-shadow-lg mb-2 sm:mb-3 md:mb-4 lg:mb-5 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] leading-tight">
-                              Descubre las<br />
-                              mejores ofertas
-                            </h2>
-                            <Link
-                              href="#"
-                              className="inline-block bg-[#196428] hover:bg-[#196428] text-white
-                              text-xs sm:text-sm md:text-base lg:text-lg
-                              py-1.5 sm:py-2 md:py-2.5 lg:py-3
-                              px-4 sm:px-5 md:px-6 lg:px-7
-                              rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg"
-                            >
-                              click aquí
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="flex gap-8">
+                {/* Sidebar with categories */}
+                <aside className="w-80 flex-shrink-0">
+                  <div className="bg-white rounded-lg p-6 shadow-sm">
+                    <h2 className="text-xl font-bold text-gray-800 mb-6">Categorías</h2>
 
-              </div>
-            </div>
-          </section>
+                    {/* Ofertas section */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-3">Ofertas %</h3>
+                      <button
+                        onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                        className={`block text-sm w-full text-left mb-1 ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                      >
+                        Comida para perros
+                      </button>
+                      <button
+                        onClick={() => handleCategoryChange("perro", "comida-seca-para-perros")}
+                        className={`block text-sm w-full text-left mb-1 ${selectedCategory === "perro" && selectedSubcategory === "comida-seca-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                      >
+                        Comida seca para perros
+                      </button>
+                      <button
+                        onClick={() => handleCategoryChange("perro", "snacks")}
+                        className={`block text-sm w-full text-left mb-1 ${selectedCategory === "perro" && selectedSubcategory === "snacks" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                      >
+                        Snacks
+                      </button>
+                      <button
+                        onClick={() => handleCategoryChange("perro", "lugares-para-dormir")}
+                        className={`block text-sm w-full text-left mb-1 ${selectedCategory === "perro" && selectedSubcategory === "lugares-para-dormir" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                      >
+                        Lugares para dormir
+                      </button>
+                      <button
+                        onClick={() => handleCategoryChange("perro", "juguetes")}
+                        className={`block text-sm w-full text-left mb-1 ${selectedCategory === "perro" && selectedSubcategory === "juguetes" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                      >
+                        Juguetes para perros
+                      </button>
+                    </div>
 
-          {/* Ofertas de la semana */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
-            <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-              <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
-              <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 overflow-x-auto pb-4 md:pb-0 md:overflow-x-hidden">
-                <style jsx global>{`
-                  @media (max-width: 768px) {
-                    .scroll-container::-webkit-scrollbar {
-                      display: none;
-                    }
-                    .scroll-container {
-                      -ms-overflow-style: none;
-                      scrollbar-width: none;
-                    }
-                  }
-                `}</style>
-                {/* Hill's */}
-                <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                  <div className="relative aspect-square">
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap1.png"
-                        alt="Plan científico Hill"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap1-2.png"
-                        alt="Plan científico Hill"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap1-3.png"
-                        alt="Plan científico Hill"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="text-sm sm:text-base md:text-lg font-medium mb-1 sm:mb-2">Plan científico Hill</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Descubre comida de alta calidad para tus mascotas</p>
-                    <Link 
-                      href="#" 
-                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                    >
-                      Ahorra ahora
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Carny */}
-                <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                  <div className="relative aspect-square">
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap2.png"
-                        alt="Carny"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap2-2.png"
-                        alt="Carny"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap2-3.png"
-                        alt="Carny"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Carny</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Comida única e irresistible</p>
-                    <Link 
-                      href="#" 
-                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                    >
-                      Ahorra ahora
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Royal Canin */}
-                <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                  <div className="relative aspect-square">
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap3.png"
-                        alt="Royal canin"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap3-2.png"
-                        alt="Royal canin"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap3-3.png"
-                        alt="Royal canin"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Royal canin</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Para las necesidades especiales de tu gato</p>
-                    <Link 
-                      href="#" 
-                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                    >
-                      Ahorra ahora
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Felix */}
-                <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                  <div className="relative aspect-square">
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap4.png"
-                        alt="Felix"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap4-2.png"
-                        alt="Felix"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap4-3.png"
-                        alt="Felix"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Felix</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Ahorra en comida irresistible para tu gato</p>
-                    <Link 
-                      href="#" 
-                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                    >
-                      Ahorra ahora
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Productos destacados */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
-            <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-              <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Productos destacados</h2>
-              
-              {/* Vista móvil: scroll horizontal */}
-              <div className="md:hidden overflow-x-auto pb-4 scroll-container">
-                <div className="flex gap-3">
-                  {featuredProducts.map((product) => (
-                    <div key={product.id} className="flex-none w-[200px] bg-white rounded-[15px] overflow-hidden shadow-sm border border-gray-200">
-                      <div className="relative aspect-square">
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          fill
-                          className="object-contain p-2"
-                        />
-                        <button className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300">
-                          <ShoppingCart className="h-3 w-3" />
+                    {/* Perro section */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span className="text-[#196428]">🐕</span>
+                        Perro
+                      </h3>
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Alimentación y crianza complementarias
                         </button>
-                        {product.tag && (
-                          <div className="absolute top-2 left-2">
-                            <span className={`${product.tagColor} text-white text-[10px] px-1.5 py-0.5 rounded`}>
-                              {product.tag}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-2">
-                        <h3 className="text-sm font-semibold mb-1">{product.name}</h3>
-                        <p className="text-xs text-gray-600 mb-1">Descripción del producto</p>
-                        <p className="text-[#196428] hover:text-[#196428] font-medium text-xs">$ {product.price}</p>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "lugares-para-dormir")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "lugares-para-dormir" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Lugares para dormir para perros
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Paseo al perro
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Cachorro y junior
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Cuidado e higiene
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "juguetes")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "juguetes" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Juguetes para perros
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Entrenamiento de perros
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Transporte y seguridad
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Cuencos y pezones para perros
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Ropa para perros
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("perro", "comida-para-perros")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Personas mayores
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Vista tablet/desktop: carrusel 4x1 con navegación */}
-              <div className="hidden md:flex items-center gap-3 md:gap-4">
-                {/* Botón de navegación izquierdo */}
-                <button 
-                  onClick={prevProductSlide}
-                  className="flex-shrink-0 bg-white p-2 rounded-full border border-[#196428] hover:bg-green-50 transition-colors duration-300"
-                >
-                  <svg className="w-5 h-5 text-[#196428]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
+                    {/* Gato section */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span className="text-[#196428]">🐱</span>
+                        Gato
+                      </h3>
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => handleCategoryChange("gato", "comida-para-gatos")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "gato" && selectedSubcategory === "comida-para-gatos" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Gatitos
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("gato", "comida-para-gatos")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "gato" && selectedSubcategory === "comida-para-gatos" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Comida para Gatos
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("gato", "arena")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "gato" && selectedSubcategory === "arena" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Arena para Gatos
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("gato", "comida-para-gatos")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "gato" && selectedSubcategory === "comida-para-gatos" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Cuidado e Higiene
+                        </button>
+                        <button
+                          onClick={() => handleCategoryChange("gato", "comida-para-gatos")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "gato" && selectedSubcategory === "comida-para-gatos" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Juguetes para Gatos
+                        </button>
+                      </div>
+                    </div>
 
-                {/* Contenedor del carrusel */}
-                <div className="flex-grow overflow-hidden">
-                  <div
-                    className="flex transition-transform duration-500 ease-in-out"
-                    style={{ transform: `translateX(-${activeProductSlide * 100}%)` }}
-                  >
-                    {Array.from({ length: totalProductSlides }).map((_, slideIndex) => (
-                      <div key={slideIndex} className="w-full flex-shrink-0">
-                        <div className="grid grid-cols-4 gap-4 md:gap-5">
-                          {featuredProducts.slice(slideIndex * 4, slideIndex * 4 + 4).map((product) => (
-                            <div key={product.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                              <div className="relative aspect-square">
-                                <Image
-                                  src={product.image}
-                                  alt={product.name}
-                                  fill
-                                  className="object-contain p-3 md:p-4"
-                                />
-                                <button className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300">
-                                  <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
-                                </button>
-                                {product.tag && (
-                                  <div className="absolute top-3 md:top-4 left-3 md:left-4">
-                                    <span className={`${product.tagColor} text-white text-xs px-2 py-1 rounded`}>
-                                      {product.tag}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="p-3 md:p-4">
-                                <h3 className="text-base md:text-lg font-semibold mb-2">{product.name}</h3>
-                                <p className="text-sm text-gray-600 mb-2">Descripción del producto</p>
-                                <p className="text-[#196428] hover:text-[#196428] font-medium text-sm">$ {product.price}</p>
-                              </div>
+                    {/* Other categories */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-3">Otros</h3>
+                      <div className="space-y-1">
+                        <button className="block text-sm w-full text-left text-gray-600 hover:text-[#196428] hover:bg-gray-50 px-2 py-1 rounded">
+                          Roedores
+                        </button>
+                        <button className="block text-sm w-full text-left text-gray-600 hover:text-[#196428] hover:bg-gray-50 px-2 py-1 rounded">
+                          Aves
+                        </button>
+                        <button className="block text-sm w-full text-left text-gray-600 hover:text-[#196428] hover:bg-gray-50 px-2 py-1 rounded">
+                          Peces
+                        </button>
+                        <button className="block text-sm w-full text-left text-gray-600 hover:text-[#196428] hover:bg-gray-50 px-2 py-1 rounded">
+                          Salud animal
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Special sections */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-700 mb-3">Especiales</h3>
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => handleCategoryChange("ofertas", "ofertas-del-dia")}
+                          className={`block text-sm w-full text-left ${selectedCategory === "ofertas" && selectedSubcategory === "ofertas-del-dia" ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                        >
+                          Ofertas
+                        </button>
+                        <button className="block text-sm w-full text-left text-gray-600 hover:text-[#196428] hover:bg-gray-50 px-2 py-1 rounded">
+                          Novedades
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+
+                {/* Main content area */}
+                <div className="flex-1">
+                  {/* Title */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      {currentBreadcrumbs.map((breadcrumb, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          {index > 0 && <span>&gt;</span>}
+                          {breadcrumb.startsWith('🏠') ? (
+                            <Link href="/" className="hover:text-[#196428]">{breadcrumb}</Link>
+                          ) : (
+                            <span className={index === currentBreadcrumbs.length - 1 ? "text-gray-800 font-medium" : "hover:text-[#196428]"}>
+                              {breadcrumb}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <h1 className="text-3xl font-black text-black">{currentTitle}</h1>
+                  </div>
+
+                  {/* Filters - horizontal layout like in the image */}
+                  <div className="flex flex-wrap gap-3 mb-8">
+                    {selectedCategory === "perro" && selectedSubcategory === "comida-para-perros" && (
+                      <>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Marcas</option>
+                          <option>Royal Canin</option>
+                          <option>Purina</option>
+                          <option>Hill's</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Etapas de la vida</option>
+                          <option>Cachorro</option>
+                          <option>Adulto</option>
+                          <option>Senior</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Propiedades especiales del alimento</option>
+                          <option>Dental</option>
+                          <option>Digestivo</option>
+                          <option>Piel y Pelo</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Tamaño del perro</option>
+                          <option>Pequeño</option>
+                          <option>Mediano</option>
+                          <option>Grande</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Varietal</option>
+                          <option>Pollo</option>
+                          <option>Res</option>
+                          <option>Pescado</option>
+                        </select>
+                      </>
+                    )}
+
+                    {selectedCategory === "perro" && selectedSubcategory === "comida-seca-para-perros" && (
+                      <>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Marcas</option>
+                          <option>Royal Canin</option>
+                          <option>Purina</option>
+                          <option>Hill's</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Tamaño del perro</option>
+                          <option>Pequeño</option>
+                          <option>Mediano</option>
+                          <option>Grande</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Sabor</option>
+                          <option>Pollo</option>
+                          <option>Res</option>
+                          <option>Pescado</option>
+                        </select>
+                      </>
+                    )}
+
+                    {selectedCategory === "perro" && selectedSubcategory === "snacks" && (
+                      <>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Tipo de snack</option>
+                          <option>Dental</option>
+                          <option>Premio</option>
+                          <option>Entrenamiento</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Sabor</option>
+                          <option>Pollo</option>
+                          <option>Res</option>
+                          <option>Pescado</option>
+                        </select>
+                      </>
+                    )}
+
+                    {selectedCategory === "gato" && (
+                      <>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Marcas</option>
+                          <option>Whiskas</option>
+                          <option>Felix</option>
+                          <option>Cat Chow</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Etapas de la vida</option>
+                          <option>Gatito</option>
+                          <option>Adulto</option>
+                          <option>Senior</option>
+                        </select>
+                      </>
+                    )}
+
+                    {selectedCategory === "ofertas" && (
+                      <>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Tipo de oferta</option>
+                          <option>Descuento %</option>
+                          <option>2x1</option>
+                          <option>Liquidación</option>
+                        </select>
+                        <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
+                          <option>Categoría</option>
+                          <option>Comida</option>
+                          <option>Juguetes</option>
+                          <option>Accesorios</option>
+                        </select>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Products Grid - 4 columns like in the image */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {currentProducts.map((product) => (
+                      <div key={product.id} className="bg-white rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                        <div className="relative aspect-square">
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            fill
+                            className="object-contain p-4"
+                          />
+                          <button className="absolute top-4 right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300">
+                            <ShoppingCart className="h-5 w-5" />
+                          </button>
+                          {product.tag && (
+                            <div className="absolute top-4 left-4">
+                              <span className={`${product.tagColor} text-white text-xs px-2 py-1 rounded`}>
+                                {product.tag}
+                              </span>
                             </div>
-                          ))}
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2">Descripción del producto</p>
+                          {product.originalPrice ? (
+                            <div className="flex items-center gap-2">
+                              <p className="text-red-500 font-medium text-sm line-through">$ {product.originalPrice}</p>
+                              <p className="text-[#196428] hover:text-[#196428] font-medium text-sm">$ {product.price}</p>
+                            </div>
+                          ) : (
+                            <p className="text-[#196428] hover:text-[#196428] font-medium text-sm">$ {product.price}</p>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-
-                {/* Botón de navegación derecho */}
-                <button 
-                  onClick={nextProductSlide}
-                  className="flex-shrink-0 bg-white p-2 rounded-full border border-[#196428] hover:bg-green-50 transition-colors duration-300"
-                >
-                  <svg className="w-5 h-5 text-[#196428]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
               </div>
             </div>
           </section>
-
-          {/* Nuestras marcas */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
-            <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-              <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Nuestras marcas</h2>
-              <div className="relative">
-                <div className="overflow-hidden">
-                  <div
-                    className="flex transition-transform duration-500 ease-in-out"
-                    style={{ transform: `translateX(-${activeBrandSlide * 100}%)` }}
-                  >
-                    {Array.from({ length: totalBrandSlides }).map((_, slideIndex) => (
-                      <div key={slideIndex} className="w-full flex-shrink-0">
-                        <div className="grid grid-cols-3 sm:flex sm:items-center sm:justify-center gap-4 sm:gap-6 md:gap-8 lg:gap-16">
-                          {brands.slice(slideIndex * brandsPerSlide, slideIndex * brandsPerSlide + brandsPerSlide).map((brand, brandIndex) => (
-                            <div key={brandIndex} className="w-full sm:w-24 md:w-32 lg:w-40">
-                              <div className="relative aspect-[2/1]">
-                                <Image
-                                  src={brand.src}
-                                  alt={brand.alt}
-                                  fill
-                                  className="object-contain"
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex justify-center mt-4 sm:mt-5 md:mt-6 gap-1.5 sm:gap-2">
-                  {Array.from({ length: totalBrandSlides }).map((_, index) => (
-                    <button 
-                      key={index} 
-                      onClick={() => setActiveBrandSlide(index)} 
-                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors duration-300 ${
-                        activeBrandSlide === index ? 'bg-[#196428]' : 'bg-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Encuentra nuestras tiendas */}
-          <section id="nuestras-tiendas" className="py-6 sm:py-8 md:py-10 scroll-mt-20" style={{ backgroundColor: '#FCFFEF' }}>
-            <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-              <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Encuentra nuestras tiendas</h2>
-              <div className="bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] shadow-sm overflow-hidden">
-                <StoreLocator />
-              </div>
-            </div>
-          </section>
-
         </main>
 
         <footer className="bg-[#196428] text-white py-4">
@@ -1481,7 +1270,7 @@ export default function Home() {
                   height={30}
                   className="mb-4 md:mb-1 w-40 md:w-full"
                 />
-                
+
               </div>
               <div className="md:col-span-2 lg:col-span-7 lg:pl-8 order-first md:order-none">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-4">
