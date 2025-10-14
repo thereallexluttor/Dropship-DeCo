@@ -16,7 +16,14 @@ const AdminDashboard = () => {
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
 
   // Estados para formularios
-  const [newCategoria, setNewCategoria] = useState({ nombre: '', descripcion: '' });
+  const [newCategoria, setNewCategoria] = useState({
+    nombre: '',
+    descripcion: '',
+    imagen_marca1: '',
+    imagen_marca2: '',
+    imagen_marca3: '',
+    categoria_imagen: ''
+  });
   const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null);
   const [newSubcategoria, setNewSubcategoria] = useState({ categories_id: 0, nombre: '', descripcion: '' });
   const [editingSubcategoria, setEditingSubcategoria] = useState<Subcategoria | null>(null);
@@ -122,7 +129,11 @@ const AdminDashboard = () => {
         .from('categories')
         .insert([{
           nombre: newCategoria.nombre,
-          descripcion: newCategoria.descripcion
+          descripcion: newCategoria.descripcion,
+          imagen_marca1: newCategoria.imagen_marca1 || null,
+          imagen_marca2: newCategoria.imagen_marca2 || null,
+          imagen_marca3: newCategoria.imagen_marca3 || null,
+          categoria_imagen: newCategoria.categoria_imagen || null
         }])
         .select()
         .single();
@@ -130,7 +141,14 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       setCategorias([...categorias, data]);
-      setNewCategoria({ nombre: '', descripcion: '' });
+      setNewCategoria({
+        nombre: '',
+        descripcion: '',
+        imagen_marca1: '',
+        imagen_marca2: '',
+        imagen_marca3: '',
+        categoria_imagen: ''
+      });
       alert('Categoría creada exitosamente');
     } catch (error: any) {
       console.error('Error creando categoría:', error);
@@ -155,7 +173,11 @@ const AdminDashboard = () => {
         .from('categories')
         .update({
           nombre: categoria.nombre,
-          descripcion: categoria.descripcion
+          descripcion: categoria.descripcion,
+          imagen_marca1: categoria.imagen_marca1,
+          imagen_marca2: categoria.imagen_marca2,
+          imagen_marca3: categoria.imagen_marca3,
+          categoria_imagen: categoria.categoria_imagen
         })
         .eq('id', categoria.id);
 
@@ -313,7 +335,13 @@ const AdminDashboard = () => {
   };
 
   const startEditCategoria = (categoria: Categoria) => {
-    setEditingCategoria(categoria);
+    setEditingCategoria({
+      ...categoria,
+      imagen_marca1: categoria.imagen_marca1 || '',
+      imagen_marca2: categoria.imagen_marca2 || '',
+      imagen_marca3: categoria.imagen_marca3 || '',
+      categoria_imagen: categoria.categoria_imagen || ''
+    });
   };
 
   const cancelEditCategoria = () => {
@@ -521,6 +549,60 @@ const AdminDashboard = () => {
     }
   };
 
+  // Función para manejar selección de archivo de marca
+  const handleFileSelectMarca = async (event: React.ChangeEvent<HTMLInputElement>, marcaType: string) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar que sea una imagen
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen debe ser menor a 5MB');
+      return;
+    }
+
+    try {
+      const imageUrl = await uploadImageToStorage(file, `marca-${marcaType}`);
+      return imageUrl;
+    } catch (error) {
+      console.error('Error subiendo imagen de marca:', error);
+      alert('Error al subir la imagen. Inténtalo de nuevo.');
+      return null;
+    }
+  };
+
+  // Función para manejar selección de archivo de categoría
+  const handleFileSelectCategoria = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar que sea una imagen
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen debe ser menor a 5MB');
+      return;
+    }
+
+    try {
+      const imageUrl = await uploadImageToStorage(file, 'categoria-banner');
+      return imageUrl;
+    } catch (error) {
+      console.error('Error subiendo imagen de categoría:', error);
+      alert('Error al subir la imagen. Inténtalo de nuevo.');
+      return null;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-8">
@@ -615,6 +697,155 @@ const AdminDashboard = () => {
                     />
                   </div>
                 </div>
+
+                {/* Campos para imágenes de marcas */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Imagen Marca 1 (Royal Canin)
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const imageUrl = await handleFileSelectMarca(e, 'marca1');
+                          if (imageUrl) {
+                            setNewCategoria({ ...newCategoria, imagen_marca1: imageUrl });
+                          }
+                        }}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                      />
+                      {newCategoria.imagen_marca1 && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
+                          <img
+                            src={newCategoria.imagen_marca1}
+                            alt="Marca 1 Preview"
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setNewCategoria({ ...newCategoria, imagen_marca1: '' })}
+                            className="ml-2 text-red-500 text-sm hover:text-red-700"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Imagen Marca 2 (Purina)
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const imageUrl = await handleFileSelectMarca(e, 'marca2');
+                          if (imageUrl) {
+                            setNewCategoria({ ...newCategoria, imagen_marca2: imageUrl });
+                          }
+                        }}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                      />
+                      {newCategoria.imagen_marca2 && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
+                          <img
+                            src={newCategoria.imagen_marca2}
+                            alt="Marca 2 Preview"
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setNewCategoria({ ...newCategoria, imagen_marca2: '' })}
+                            className="ml-2 text-red-500 text-sm hover:text-red-700"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Imagen Marca 3
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const imageUrl = await handleFileSelectMarca(e, 'marca3');
+                          if (imageUrl) {
+                            setNewCategoria({ ...newCategoria, imagen_marca3: imageUrl });
+                          }
+                        }}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                      />
+                      {newCategoria.imagen_marca3 && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
+                          <img
+                            src={newCategoria.imagen_marca3}
+                            alt="Marca 3 Preview"
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setNewCategoria({ ...newCategoria, imagen_marca3: '' })}
+                            className="ml-2 text-red-500 text-sm hover:text-red-700"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Campo para imagen de categoría */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Imagen de la Categoría (Banner)
+                  </label>
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const imageUrl = await handleFileSelectCategoria(e);
+                        if (imageUrl) {
+                          setNewCategoria({ ...newCategoria, categoria_imagen: imageUrl });
+                        }
+                      }}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                    />
+                    {newCategoria.categoria_imagen && (
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
+                        <img
+                          src={newCategoria.categoria_imagen}
+                          alt="Categoría Preview"
+                          className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setNewCategoria({ ...newCategoria, categoria_imagen: '' })}
+                          className="ml-2 text-red-500 text-sm hover:text-red-700"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <Button type="submit" className="w-full bg-[#196428] hover:bg-[#145020] text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Categoría
@@ -655,6 +886,155 @@ const AdminDashboard = () => {
                                 placeholder="Descripción"
                               />
                             </div>
+
+                            {/* Campos para imágenes de marcas */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Imagen Marca 1 (Royal Canin)
+                                </label>
+                                <div className="space-y-2">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                      const imageUrl = await handleFileSelectMarca(e, 'marca1-edit');
+                                      if (imageUrl && editingCategoria) {
+                                        setEditingCategoria({ ...editingCategoria, imagen_marca1: imageUrl });
+                                      }
+                                    }}
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                  />
+                                  {editingCategoria?.imagen_marca1 && (
+                                    <div className="mt-2">
+                                      <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                                      <img
+                                        src={editingCategoria.imagen_marca1}
+                                        alt="Marca 1 Preview"
+                                        className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => editingCategoria && setEditingCategoria({ ...editingCategoria, imagen_marca1: '' })}
+                                        className="ml-2 text-red-500 text-sm hover:text-red-700"
+                                      >
+                                        Eliminar
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Imagen Marca 2 (Purina)
+                                </label>
+                                <div className="space-y-2">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                      const imageUrl = await handleFileSelectMarca(e, 'marca2-edit');
+                                      if (imageUrl && editingCategoria) {
+                                        setEditingCategoria({ ...editingCategoria, imagen_marca2: imageUrl });
+                                      }
+                                    }}
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                  />
+                                  {editingCategoria?.imagen_marca2 && (
+                                    <div className="mt-2">
+                                      <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                                      <img
+                                        src={editingCategoria.imagen_marca2}
+                                        alt="Marca 2 Preview"
+                                        className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => editingCategoria && setEditingCategoria({ ...editingCategoria, imagen_marca2: '' })}
+                                        className="ml-2 text-red-500 text-sm hover:text-red-700"
+                                      >
+                                        Eliminar
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Imagen Marca 3
+                                </label>
+                                <div className="space-y-2">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                      const imageUrl = await handleFileSelectMarca(e, 'marca3-edit');
+                                      if (imageUrl && editingCategoria) {
+                                        setEditingCategoria({ ...editingCategoria, imagen_marca3: imageUrl });
+                                      }
+                                    }}
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                  />
+                                  {editingCategoria?.imagen_marca3 && (
+                                    <div className="mt-2">
+                                      <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                                      <img
+                                        src={editingCategoria.imagen_marca3}
+                                        alt="Marca 3 Preview"
+                                        className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => editingCategoria && setEditingCategoria({ ...editingCategoria, imagen_marca3: '' })}
+                                        className="ml-2 text-red-500 text-sm hover:text-red-700"
+                                      >
+                                        Eliminar
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Campo para imagen de categoría */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Imagen de la Categoría (Banner)
+                              </label>
+                              <div className="space-y-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={async (e) => {
+                                    const imageUrl = await handleFileSelectCategoria(e);
+                                    if (imageUrl && editingCategoria) {
+                                      setEditingCategoria({ ...editingCategoria, categoria_imagen: imageUrl });
+                                    }
+                                  }}
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                />
+                                {editingCategoria?.categoria_imagen && (
+                                  <div className="mt-2">
+                                    <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                                    <img
+                                      src={editingCategoria.categoria_imagen}
+                                      alt="Categoría Preview"
+                                      className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => editingCategoria && setEditingCategoria({ ...editingCategoria, categoria_imagen: '' })}
+                                      className="ml-2 text-red-500 text-sm hover:text-red-700"
+                                    >
+                                      Eliminar
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
                             <div className="flex gap-2">
                               <Button
                                 onClick={() => handleUpdateCategoria(editingCategoria!)}

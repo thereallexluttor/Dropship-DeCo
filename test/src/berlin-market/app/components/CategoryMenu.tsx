@@ -6,6 +6,9 @@ import { ChevronRight } from 'lucide-react'
 import { useScrollBehavior } from '../hooks/useScrollBehavior'
 import { useCategory } from '../contexts/CategoryContext'
 
+// Estos tipos ahora se importan desde el hook useCategories
+import { CategoryWithSubcategories } from '../hooks/useCategories'
+
 interface SubCategory {
   name: string
   href: string
@@ -24,18 +27,7 @@ interface Promotion {
   icon: string
 }
 
-interface Category {
-  name: string
-  href: string
-  subcategories?: SubCategory[]
-  promotions?: Promotion[]
-  brands?: Brand[]
-  bannerImage?: {
-    src: string
-    alt: string
-    href: string
-  }
-}
+interface Category extends CategoryWithSubcategories {}
 
 interface CategoryMenuProps {
   category: Category

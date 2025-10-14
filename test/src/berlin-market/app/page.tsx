@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { supabase, Producto } from '@/lib/supabase'
+import { useCategories } from './hooks/useCategories'
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 import CategoryMenu from './components/CategoryMenu'
@@ -71,6 +72,9 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [productosDestacados, setProductosDestacados] = useState<Producto[]>([])
   const [productosEnOferta, setProductosEnOferta] = useState<Producto[]>([])
+
+  // Usar el hook personalizado para cargar categorías dinámicamente
+  const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
 
   // Efecto para los carruseles de las cards
   // Cargar productos destacados
@@ -133,413 +137,37 @@ export default function Home() {
     console.log("Searching for:", searchQuery)
   }
 
-  const categories = [
-    { 
-      name: "Perro",
-      href: "#",
-      subcategories: [
-        { name: "Cachorros", href: "#" },
-        { name: "Comida para Perros", href: "#" },
-        { name: "Snacks y Premios", href: "#" },
-        { name: "Paseos al Perro", href: "#" },
-        { name: "Cuidado e Higiene", href: "#" },
-        { name: "Juguetes para Perro", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Especiales",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Novedades",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Royal Canin",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Purina",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Pedigree",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/dog.png",
-        alt: "Productos para Perros",
-        href: "#"
-      }
-    },
-    { 
-      name: "Gato",
-      href: "#",
-      subcategories: [
-        { name: "Gatitos", href: "#" },
-        { name: "Comida para Gatos", href: "#" },
-        { name: "Arena para Gatos", href: "#" },
-        { name: "Cuidado e Higiene", href: "#" },
-        { name: "Juguetes para Gatos", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Felinas",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos",
-          href: "#",
-          icon: "/icons/warranty.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Whiskas",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Felix",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Cat Chow",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/cat.png",
-        alt: "Productos para Gatos",
-        href: "#"
-      }
-    },
-    { 
-      name: "Roedores",
-      href: "#",
-      subcategories: [
-        { name: "Conejos", href: "#" },
-        { name: "Hamsters", href: "#" },
-        { name: "Comida", href: "#" },
-        { name: "Accesorios", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Especiales",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Vitakraft",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Cunipic",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Living World",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/roedores.png",
-        alt: "Productos para Animales Pequeños",
-        href: "#"
-      }
-    },
-    { 
-      name: "Aves",
-      href: "#",
-      subcategories: [
-        { name: "Pájaros", href: "#" },
-        { name: "Comida para Aves", href: "#" },
-        { name: "Jaulas y Accesorios", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Aves",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos",
-          href: "#",
-          icon: "/icons/warranty.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos2",
-          href: "#",
-          icon: "/icons/warranty.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos3",
-          href: "#",
-          icon: "/icons/warranty.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Versele-Laga",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Zupreem",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Kaytee",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Kaytee",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/aves.png",
-        alt: "Productos para Aves",
-        href: "#"
-      }
-    },
-    { 
-      name: "Bovinos",
-      href: "#",
-      subcategories: [
-        { name: "Alimentación", href: "#" },
-        { name: "Salud", href: "#" },
-        { name: "Equipamiento", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Especiales",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Novedades",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Royal Canin",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Purina",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Pedigree",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/bovinos.png",
-        alt: "Productos para Perros",
-        href: "#"
-      }
-    },
-    { 
-      name: "Peces",
-      href: "#",
-      subcategories: [
-        { name: "Peces Tropicales", href: "#" },
-        { name: "Acuarios", href: "#" },
-        { name: "Alimentación", href: "#" },
-        { name: "Accesorios", href: "#" },
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas Especiales",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Novedades",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Royal Canin",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Purina",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Pedigree",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/fish.png",
-        alt: "Productos para Perros",
-        href: "#"
-      }
-    },
-    { 
-      name: "Salud animal",
-      href: "#",
-      subcategories: [
-        { name: "Medicamentos", href: "#" },
-        { name: "Vitaminas y Suplementos", href: "#" },
-        { name: "Antiparasitarios", href: "#" },
-        { name: "Cuidado Dental", href: "#" },
-        { name: "Primeros Auxilios", href: "#" },
-        
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "Ofertas en Salud",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Productos",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      brands: [
-        {
-          name: "Zoetis",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Bayer",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "MSD Animal Health",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        },
-        {
-          name: "Virbac",
-          logo: "/placeholder-logo.svg",
-          href: "#"
-        }
-      ],
-      bannerImage: {
-        src: "/veterinario.png",
-        alt: "Salud Animal",
-        href: "#"
-      }
-    },
-    { name: "Ofertas", 
-      href: "#",
-      subcategories: [
-        { name: "Ofertas del Día", href: "#" },
-        { name: "Descuentos Especiales", href: "#" },
-        { name: "Packs Ahorro", href: "#" },
-        { name: "Últimas Unidades", href: "#" },
-        { name: "Liquidación", href: "#" },
-        
-      ],
-      promotions: [
-        {
-          type: "offer" as const,
-          title: "¡Ofertas Flash!",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        },
-        {
-          type: "new" as const,
-          title: "Nuevos Descuentos",
-          href: "#",
-          icon: "/icons/diamond.png"
-        }
-      ],
-      bannerImage: {
-        src: "/ofertas.png",
-        alt: "Ofertas y Descuentos",
-        href: "#"
-      }
-     },
-    { name: "Novedades",
-      href: "#",
-      subcategories: [
-        { name: "Nuevos Productos", href: "#" },
-        { name: "Recién Llegados", href: "#" },
-        { name: "Productos Exclusivos", href: "#" },
-        { name: "Ediciones Limitadas", href: "#" }
-      ],
-      promotions: [
-        {
-          type: "new" as const,
-          title: "¡Lo Último!",
-          href: "#",
-          icon: "/icons/diamond.png"
-        },
-        {
-          type: "offer" as const,
-          title: "Pre-Venta Exclusiva",
-          href: "#",
-          icon: "/icons/exclusive.png"
-        }
-      ],
-      bannerImage: {
-        src: "/new.png",
-        alt: "Novedades y Nuevos Productos",
-        href: "#"
-      }
-    },
-  ];
+  // Categorías se cargan dinámicamente desde el hook useCategories
+
+  // Mostrar indicador de carga mientras se cargan las categorías
+  if (categoriesLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando categorías...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error si hay un problema cargando categorías
+  if (categoriesError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error cargando categorías: {categoriesError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-[#196428] hover:bg-[#145020] text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
 
   const productImages = [
     "/cap1.png",

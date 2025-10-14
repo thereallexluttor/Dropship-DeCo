@@ -30,6 +30,10 @@ export interface Categoria {
   id?: number
   nombre: string
   descripcion: string
+  imagen_marca1?: string | null
+  imagen_marca2?: string | null
+  imagen_marca3?: string | null
+  categoria_imagen?: string | null
   created_at?: string
   updated_at?: string
 }

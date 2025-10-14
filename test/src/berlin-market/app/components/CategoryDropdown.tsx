@@ -6,16 +6,15 @@ import Image from 'next/image'
 import { ChevronRight } from 'lucide-react'
 import { useScrollBehavior } from '../hooks/useScrollBehavior'
 
+// Estos tipos ahora se importan desde el hook useCategories
+import { CategoryWithSubcategories } from '../hooks/useCategories'
+
 interface SubCategory {
   name: string
   href: string
 }
 
-interface Category {
-  name: string
-  href: string
-  subcategories?: SubCategory[]
-}
+interface Category extends CategoryWithSubcategories {}
 
 interface CategoryDropdownProps {
   category: Category
