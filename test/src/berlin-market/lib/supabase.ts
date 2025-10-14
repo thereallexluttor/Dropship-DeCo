@@ -44,4 +44,20 @@ export interface Subcategoria {
   updated_at?: string
 }
 
+// Tipos para la tabla productos
+export interface Producto {
+  id?: number
+  subcategorias_id: number
+  nombre: string
+  descripcion: string
+  precio: number | string
+  stock: number | string
+  imagen_url?: string | null
+  descuento?: boolean
+  descuento_valor?: number | string
+  destacado?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
 export default supabase

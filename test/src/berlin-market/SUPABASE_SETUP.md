@@ -67,6 +67,48 @@ CREATE TABLE subcategories (
 );
 ```
 
+### Tabla `productos`
+
+```sql
+CREATE TABLE productos (
+  id SERIAL PRIMARY KEY,
+  subcategorias_id INTEGER NOT NULL REFERENCES subcategories(id) ON DELETE CASCADE,
+  nombre VARCHAR(255) NOT NULL,
+  descripcion TEXT,
+  precio DECIMAL(10,2) NOT NULL,
+  stock INTEGER NOT NULL DEFAULT 0,
+  imagen_url TEXT,
+  descuento BOOLEAN DEFAULT FALSE,
+  descuento_valor DECIMAL(5,2) DEFAULT 0,
+  destacado BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+## Configuración del Bucket de Storage para Imágenes
+
+Para habilitar la subida de imágenes de productos:
+
+1. En tu proyecto de Supabase, ve a "Storage" en el menú lateral
+2. Crea un nuevo bucket llamado "images" (o usa uno existente)
+3. En la configuración del bucket, asegúrate de que:
+   - "Allow public access" esté habilitado
+   - Las políticas de acceso permitan subir archivos desde tu aplicación
+
+### Políticas de Storage recomendadas:
+
+```sql
+-- Política para permitir que usuarios autenticados suban archivos
+CREATE POLICY "Allow authenticated users to upload images" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'images');
+
+-- Política para permitir acceso público a las imágenes
+CREATE POLICY "Allow public access to images" ON storage.objects
+FOR SELECT USING (bucket_id = 'images');
+```
+
 ## Configuración de Email Confirmation
 
 Para habilitar el envío de emails de confirmación:
@@ -91,7 +133,16 @@ Para habilitar el envío de emails de confirmación:
 ✅ Dashboard administrativo para usuarios con rol "admin"
 ✅ Gestión completa de categorías (CRUD)
 ✅ Gestión completa de subcategorías (CRUD)
+✅ Gestión completa de productos (CRUD)
 ✅ Navegación condicional según rol del usuario
+
+### Gestión de Productos e Imágenes
+✅ Gestión completa de productos (CRUD)
+✅ Subida automática de imágenes locales al bucket de Supabase
+✅ Generación automática de URLs públicas para imágenes
+✅ Validación de archivos de imagen (tipo y tamaño)
+✅ Preview de imágenes seleccionadas
+✅ Gestión de categorías y subcategorías
 
 ### Diseño y UX
 ✅ Header y Footer reutilizables

@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { supabase, Categoria, Subcategoria } from '@/lib/supabase';
+import supabase, { Categoria, Subcategoria, Producto } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [subcategorias, setSubcategorias] = useState<Subcategoria[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
 
@@ -19,6 +20,18 @@ const AdminDashboard = () => {
   const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null);
   const [newSubcategoria, setNewSubcategoria] = useState({ categories_id: 0, nombre: '', descripcion: '' });
   const [editingSubcategoria, setEditingSubcategoria] = useState<Subcategoria | null>(null);
+  const [newProducto, setNewProducto] = useState({
+    subcategorias_id: 0,
+    nombre: '',
+    descripcion: '',
+    precio: '',
+    stock: '',
+    imagen_url: '',
+    descuento: false,
+    descuento_valor: '',
+    destacado: false
+  });
+  const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
 
   useEffect(() => {
     loadData();
@@ -64,9 +77,28 @@ const AdminDashboard = () => {
         throw subcategoriasError;
       }
       setSubcategorias(subcategoriasData || []);
+
+      // Cargar productos
+      const { data: productosData, error: productosError } = await supabase
+        .from('productos')
+        .select('*')
+        .order('id');
+
+      if (productosError) {
+        console.error('Error cargando productos:', productosError);
+        if (productosError.message.includes('relation "productos" does not exist')) {
+          setTablesConfigured(false);
+          setIsLoading(false);
+          return;
+        }
+        throw productosError;
+      }
+      setProductos(productosData || []);
     } catch (error: any) {
       console.error('Error cargando datos:', error);
-      if (error?.message?.includes('relation "categories" does not exist') || error?.message?.includes('relation "subcategories" does not exist')) {
+      if (error?.message?.includes('relation "categories" does not exist') ||
+          error?.message?.includes('relation "subcategories" does not exist') ||
+          error?.message?.includes('relation "productos" does not exist')) {
         setTablesConfigured(false);
       } else if (error?.code === 'PGRST301') {
         alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
@@ -296,6 +328,199 @@ const AdminDashboard = () => {
     setEditingSubcategoria(null);
   };
 
+  const handleCreateProducto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProducto.subcategorias_id ||
+        !newProducto.nombre.trim() ||
+        !newProducto.descripcion.trim() ||
+        !newProducto.precio.trim() ||
+        !newProducto.stock.trim()) {
+      alert('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('productos')
+        .insert([{
+          subcategorias_id: newProducto.subcategorias_id,
+          nombre: newProducto.nombre,
+          descripcion: newProducto.descripcion,
+          precio: parseFloat(newProducto.precio),
+          stock: parseInt(newProducto.stock),
+          imagen_url: newProducto.imagen_url || null,
+          descuento: newProducto.descuento || false,
+          descuento_valor: newProducto.descuento_valor ? parseFloat(newProducto.descuento_valor) : null,
+          destacado: newProducto.destacado || false
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProductos([...productos, data]);
+      setNewProducto({
+        subcategorias_id: 0,
+        nombre: '',
+        descripcion: '',
+        precio: '',
+        stock: '',
+        imagen_url: '',
+        descuento: false,
+        descuento_valor: '',
+        destacado: false
+      });
+      alert('Producto creado exitosamente');
+    } catch (error: any) {
+      console.error('Error creando producto:', error);
+      if (error?.message?.includes('relation "productos" does not exist')) {
+        alert('La tabla "productos" no existe en Supabase. Crea las tablas siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.message?.includes('violates foreign key constraint')) {
+        alert('Error: La subcategoría seleccionada no existe. Selecciona una subcategoría válida.');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al crear el producto: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const handleUpdateProducto = async (producto: Producto) => {
+    if (!producto.nombre.trim() || 
+        !producto.descripcion.trim() || 
+        !producto.precio || 
+        !producto.stock) {
+      alert('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('productos')
+        .update({
+          subcategorias_id: producto.subcategorias_id,
+          nombre: producto.nombre,
+          descripcion: producto.descripcion,
+          precio: parseFloat(producto.precio.toString()),
+          stock: parseInt(producto.stock.toString()),
+          imagen_url: producto.imagen_url || null,
+          descuento: producto.descuento || false,
+          descuento_valor: producto.descuento_valor ? parseFloat(producto.descuento_valor.toString()) : null,
+          destacado: producto.destacado || false
+        })
+        .eq('id', producto.id);
+
+      if (error) throw error;
+
+      setProductos(productos.map(p => p.id === producto.id ? producto : p));
+      setEditingProducto(null);
+      alert('Producto actualizado exitosamente');
+    } catch (error: any) {
+      console.error('Error actualizando producto:', error);
+      if (error?.message?.includes('relation "productos" does not exist')) {
+        alert('La tabla "productos" no existe en Supabase. Crea las tablas siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.message?.includes('violates foreign key constraint')) {
+        alert('Error: La subcategoría seleccionada no existe. Selecciona una subcategoría válida.');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al actualizar el producto: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const handleDeleteProducto = async (id: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('productos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProductos(productos.filter(p => p.id !== id));
+      alert('Producto eliminado exitosamente');
+    } catch (error: any) {
+      console.error('Error eliminando producto:', error);
+      if (error?.message?.includes('relation "productos" does not exist')) {
+        alert('La tabla "productos" no existe en Supabase. Crea las tablas siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al eliminar el producto: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const startEditProducto = (producto: Producto) => {
+    setEditingProducto(producto);
+  };
+
+  const cancelEditProducto = () => {
+    setEditingProducto(null);
+  };
+
+  // Función para subir imagen a Supabase Storage
+  const uploadImageToStorage = async (file: File, productName: string): Promise<string> => {
+    try {
+      // Crear nombre único para el archivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${productName.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}.${fileExt}`;
+      const filePath = `productos/${fileName}`;
+
+      // Subir archivo al bucket 'images'
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
+
+      if (error) {
+        console.error('Error subiendo imagen:', error);
+        throw error;
+      }
+
+      // Obtener URL pública de la imagen
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error en upload de imagen:', error);
+      throw error;
+    }
+  };
+
+  // Función para manejar selección de archivo
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>, productName: string) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar que sea una imagen
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen debe ser menor a 5MB');
+      return;
+    }
+
+    try {
+      const imageUrl = await uploadImageToStorage(file, productName);
+      return imageUrl;
+    } catch (error) {
+      console.error('Error subiendo imagen:', error);
+      alert('Error al subir la imagen. Inténtalo de nuevo.');
+      return null;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-8">
@@ -338,7 +563,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+        <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto">
           <TabsTrigger value="categorias" className="flex items-center gap-2">
             <FolderPlus className="h-4 w-4" />
             Categorías
@@ -346,6 +571,10 @@ const AdminDashboard = () => {
           <TabsTrigger value="subcategorias" className="flex items-center gap-2">
             <FolderOpen className="h-4 w-4" />
             Subcategorías
+          </TabsTrigger>
+          <TabsTrigger value="productos" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Productos
           </TabsTrigger>
         </TabsList>
 
@@ -640,6 +869,439 @@ const AdminDashboard = () => {
                                 </Button>
                                 <Button
                                   onClick={() => handleDeleteSubcategoria(subcategoria.id || 0, subcategoria.categories_id)}
+                                  size="sm"
+                                  variant="destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="productos" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Crear Nuevo Producto
+              </CardTitle>
+              <CardDescription>
+                Agrega un nuevo producto al catálogo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateProducto} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subcategoría
+                    </label>
+                    <select
+                      value={newProducto.subcategorias_id}
+                      onChange={(e) => setNewProducto({ ...newProducto, subcategorias_id: parseInt(e.target.value) })}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                      required
+                    >
+                      <option value={0}>Seleccionar subcategoría</option>
+                      {subcategorias.map((subcategoria) => {
+                        const categoria = categorias.find(c => c.id === subcategoria.categories_id);
+                        return (
+                          <option key={subcategoria.id} value={subcategoria.id}>
+                            {categoria?.nombre} - {subcategoria.nombre}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre del Producto
+                    </label>
+                    <Input
+                      value={newProducto.nombre}
+                      onChange={(e) => setNewProducto({ ...newProducto, nombre: e.target.value })}
+                      placeholder="Ej: Collar para perro, Juguete para gatos, etc."
+                      required
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descripción
+                    </label>
+                    <Input
+                      value={newProducto.descripcion}
+                      onChange={(e) => setNewProducto({ ...newProducto, descripcion: e.target.value })}
+                      placeholder="Descripción detallada del producto"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Precio
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={newProducto.precio}
+                      onChange={(e) => setNewProducto({ ...newProducto, precio: e.target.value })}
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Stock
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={newProducto.stock}
+                      onChange={(e) => setNewProducto({ ...newProducto, stock: e.target.value })}
+                      placeholder="0"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="descuento"
+                      checked={newProducto.descuento || false}
+                      onChange={(e) => setNewProducto({ ...newProducto, descuento: e.target.checked })}
+                      className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                    />
+                    <label htmlFor="descuento" className="text-sm font-medium text-gray-700">
+                      ¿Tiene descuento?
+                    </label>
+                  </div>
+                  {newProducto.descuento && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Valor del descuento (%)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={newProducto.descuento_valor}
+                        onChange={(e) => setNewProducto({ ...newProducto, descuento_valor: e.target.value })}
+                        placeholder="10.50"
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="destacado"
+                      checked={newProducto.destacado || false}
+                      onChange={(e) => setNewProducto({ ...newProducto, destacado: e.target.checked })}
+                      className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                    />
+                    <label htmlFor="destacado" className="text-sm font-medium text-gray-700">
+                      Producto destacado
+                    </label>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Imagen del Producto
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const imageUrl = await handleFileSelect(e, newProducto.nombre || 'producto');
+                          if (imageUrl) {
+                            setNewProducto({ ...newProducto, imagen_url: imageUrl });
+                          }
+                        }}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                      />
+                      {newProducto.imagen_url && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
+                          <img
+                            src={newProducto.imagen_url}
+                            alt="Preview"
+                            className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setNewProducto({ ...newProducto, imagen_url: '' })}
+                            className="ml-2 text-red-500 text-sm hover:text-red-700"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full bg-[#196428] hover:bg-[#145020] text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Producto
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Productos Existentes</CardTitle>
+              <CardDescription>
+                Gestiona los productos del catálogo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {productos.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No hay productos registrados</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {productos.map((producto) => {
+                    const subcategoria = subcategorias.find(s => s.id === producto.subcategorias_id);
+                    const categoria = categorias.find(c => c.id === subcategoria?.categories_id);
+                    return (
+                      <Card key={producto.id} className="border-l-4 border-l-[#196428]">
+                        <CardContent className="p-4">
+                          {editingProducto?.id === producto.id ? (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <select
+                                  value={editingProducto?.subcategorias_id}
+                                  onChange={(e) => editingProducto && setEditingProducto({
+                                    ...editingProducto,
+                                    subcategorias_id: parseInt(e.target.value)
+                                  })}
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                                >
+                                  {subcategorias.map((subcategoria) => {
+                                    const categoria = categorias.find(c => c.id === subcategoria.categories_id);
+                                    return (
+                                      <option key={subcategoria.id} value={subcategoria.id}>
+                                        {categoria?.nombre} - {subcategoria.nombre}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <Input
+                                  value={editingProducto?.nombre || ''}
+                                  onChange={(e) => editingProducto && setEditingProducto({ 
+                                    ...editingProducto, 
+                                    nombre: e.target.value 
+                                  })}
+                                  placeholder="Nombre del producto"
+                                />
+                                <Input
+                                  value={editingProducto?.descripcion || ''}
+                                  onChange={(e) => editingProducto && setEditingProducto({ 
+                                    ...editingProducto, 
+                                    descripcion: e.target.value 
+                                  })}
+                                  placeholder="Descripción"
+                                  className="md:col-span-2"
+                                />
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={editingProducto?.precio || ''}
+                                  onChange={(e) => editingProducto && setEditingProducto({ 
+                                    ...editingProducto, 
+                                    precio: e.target.value 
+                                  })}
+                                  placeholder="Precio"
+                                />
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={editingProducto?.stock || ''}
+                                  onChange={(e) => editingProducto && setEditingProducto({
+                                    ...editingProducto,
+                                    stock: e.target.value
+                                  })}
+                                  placeholder="Stock"
+                                />
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id="edit-descuento"
+                                    checked={editingProducto?.descuento || false}
+                                    onChange={(e) => editingProducto && setEditingProducto({
+                                      ...editingProducto,
+                                      descuento: e.target.checked
+                                    })}
+                                    className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                                  />
+                                  <label htmlFor="edit-descuento" className="text-sm font-medium text-gray-700">
+                                    ¿Tiene descuento?
+                                  </label>
+                                </div>
+                                {editingProducto?.descuento && (
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value={editingProducto?.descuento_valor || ''}
+                                    onChange={(e) => editingProducto && setEditingProducto({
+                                      ...editingProducto,
+                                      descuento_valor: e.target.value
+                                    })}
+                                    placeholder="10.50"
+                                  />
+                                )}
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id="edit-destacado"
+                                    checked={editingProducto?.destacado || false}
+                                    onChange={(e) => editingProducto && setEditingProducto({
+                                      ...editingProducto,
+                                      destacado: e.target.checked
+                                    })}
+                                    className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                                  />
+                                  <label htmlFor="edit-destacado" className="text-sm font-medium text-gray-700">
+                                    Producto destacado
+                                  </label>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Imagen del Producto
+                                  </label>
+                                  <div className="space-y-2">
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={async (e) => {
+                                        if (editingProducto) {
+                                          const imageUrl = await handleFileSelect(e, editingProducto.nombre || 'producto');
+                                          if (imageUrl) {
+                                            setEditingProducto({ ...editingProducto, imagen_url: imageUrl });
+                                          }
+                                        }
+                                      }}
+                                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                    />
+                                    {editingProducto?.imagen_url && (
+                                      <div className="mt-2">
+                                        <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                                        <img
+                                          src={editingProducto.imagen_url}
+                                          alt="Preview"
+                                          className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => editingProducto && setEditingProducto({ ...editingProducto, imagen_url: '' })}
+                                          className="ml-2 text-red-500 text-sm hover:text-red-700"
+                                        >
+                                          Eliminar
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => {
+                                    if (editingProducto) {
+                                      handleUpdateProducto({
+                                        ...editingProducto,
+                                        subcategorias_id: editingProducto.subcategorias_id || 0,
+                                        nombre: editingProducto.nombre || '',
+                                        descripcion: editingProducto.descripcion || '',
+                                        precio: editingProducto.precio || 0,
+                                        stock: editingProducto.stock || 0,
+                                        descuento: editingProducto.descuento || false,
+                                        descuento_valor: editingProducto.descuento_valor || 0,
+                                        destacado: editingProducto.destacado || false
+                                      });
+                                    }
+                                  }}
+                                  size="sm"
+                                  className="bg-[#196428] hover:bg-[#145020] text-white"
+                                >
+                                  <Save className="h-4 w-4 mr-1" />
+                                  Guardar
+                                </Button>
+                                <Button
+                                  onClick={cancelEditProducto}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancelar
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-sm font-medium text-[#196428] bg-green-100 px-2 py-1 rounded">
+                                    {categoria?.nombre} - {subcategoria?.nombre}
+                                  </span>
+                                </div>
+                                <div className="flex items-start gap-4">
+                                  {producto.imagen_url && (
+                                    <img 
+                                      src={producto.imagen_url} 
+                                      alt={producto.nombre}
+                                      className="w-24 h-24 object-cover rounded-lg"
+                                    />
+                                  )}
+                                  <div>
+                                    <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                                      {producto.nombre}
+                                    </h3>
+                                    <p className="text-gray-600 text-sm mb-2">
+                                      {producto.descripcion}
+                                    </p>
+                                    <div className="flex gap-4 text-sm text-gray-500">
+                                      <span>Precio: ${producto.precio}</span>
+                                      <span>Stock: {producto.stock} unidades</span>
+                                      {producto.descuento && (
+                                        <span className="text-green-600 font-medium">
+                                          Descuento: {producto.descuento_valor}%
+                                        </span>
+                                      )}
+                                      {producto.destacado && (
+                                        <span className="text-yellow-600 font-medium">
+                                          ⭐ Destacado
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-2">
+                                      ID: {producto.id} • Creado: {new Date(producto.created_at || '').toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 ml-4">
+                                <Button
+                                  onClick={() => startEditProducto(producto)}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  onClick={() => handleDeleteProducto(producto.id || 0)}
                                   size="sm"
                                   variant="destructive"
                                 >
