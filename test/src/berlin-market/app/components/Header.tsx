@@ -29,7 +29,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import AccountPopover from "./AccountPopover"
-import AccountPopoverContent from "./AccountPopoverContent"
 
 interface HeaderProps {
   searchQuery?: string
@@ -40,7 +39,6 @@ interface HeaderProps {
 export default function Header({ searchQuery = "", onSearchChange, onSearchSubmit }: HeaderProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -118,17 +116,9 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                       }
                       if (link.name === "Cuenta") {
                         return (
-                          <button
-                            key={link.name}
-                            onClick={() => {
-                              setIsMobileMenuOpen(false);
-                              setTimeout(() => setIsAccountDrawerOpen(true), 300);
-                            }}
-                            className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors text-left w-full"
-                          >
-                            <link.icon className="h-5 w-5 text-gray-600" />
-                            <span className="text-sm font-medium text-gray-800">{link.name}</span>
-                          </button>
+                          <div key={link.name} onClick={() => setIsMobileMenuOpen(false)}>
+                            <AccountPopover />
+                          </div>
                         );
                       }
                       if (link.name === "Tiendas" || link.name === "Info") {
@@ -382,17 +372,6 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
         </div>
       </div>
 
-      {/* Account Drawer for Mobile */}
-      <Drawer open={isAccountDrawerOpen} onOpenChange={setIsAccountDrawerOpen}>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="text-center border-b border-gray-200">
-            <DrawerTitle className="text-lg font-bold text-gray-800">Mi Cuenta</DrawerTitle>
-          </DrawerHeader>
-          <div className="overflow-y-auto px-4 pb-6">
-            <AccountPopoverContent />
-          </div>
-        </DrawerContent>
-      </Drawer>
     </header>
   )
 }

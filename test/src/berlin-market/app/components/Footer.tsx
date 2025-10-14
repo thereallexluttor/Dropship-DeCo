@@ -1,7 +1,9 @@
-import Image from "next/image"
-import Link from "next/link"
+"use client";
 
-export default function Footer() {
+import Image from "next/image";
+import Link from "next/link";
+
+const Footer = () => {
   return (
     <footer className="bg-[#196428] text-white py-4">
       <div className="container mx-auto px-4">
@@ -14,6 +16,7 @@ export default function Footer() {
               height={30}
               className="mb-4 md:mb-1 w-40 md:w-full"
             />
+
           </div>
           <div className="md:col-span-2 lg:col-span-7 lg:pl-8 order-first md:order-none">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-4">
@@ -70,39 +73,40 @@ export default function Footer() {
           </div>
           {/* Footer Rabbit and Social Media */}
           <div className="md:col-span-1 lg:col-span-3 flex flex-col items-center md:items-start">
-            {/* Footer Rabbit Image */}
-            <div className="relative w-full max-w-[250px] h-[150px] lg:w-[300px] lg:h-[200px]">
-              <Image
-                src="/footer_rabbit.png"
-                alt="Footer Rabbit"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
+                {/* Footer Rabbit Image */}
+                <div className="relative w-full max-w-[250px] h-[150px] lg:w-[300px] lg:h-[200px]">
+                  <Image
+                    src="/footer_rabbit.png"
+                    alt="Footer Rabbit"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
 
-            {/* Social Media Icons */}
-            <div className="flex justify-center space-x-6 lg:space-x-8 mt-4">
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/facebook.png" alt="Facebook" width={30} height={30} />
-              </Link>
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/instagram.png" alt="Instagram" width={30} height={30} />
-              </Link>
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/youtube.png" alt="YouTube" width={30} height={30} />
-              </Link>
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/tiktok.png" alt="TikTok" width={30} height={30} />
-              </Link>
-              <Link href="#" className="text-white hover:text-gray-200">
-                <Image src="/icons/whatsapp.png" alt="WhatsApp" width={30} height={30} />
-              </Link>
-            </div>
-          </div>
+                {/* Social Media Icons */}
+                <div className="flex justify-center space-x-6 lg:space-x-8 mt-4">
+                  <Link href="#" className="text-white hover:text-gray-200">
+                    <Image src="/icons/facebook.png" alt="Facebook" width={30} height={30} />
+                  </Link>
+                  <Link href="#" className="text-white hover:text-gray-200">
+                    <Image src="/icons/instagram.png" alt="Instagram" width={30} height={30} />
+                  </Link>
+                  <Link href="#" className="text-white hover:text-gray-200">
+                    <Image src="/icons/youtube.png" alt="YouTube" width={30} height={30} />
+                  </Link>
+                  <Link href="#" className="text-white hover:text-gray-200">
+                    <Image src="/icons/tiktok.png" alt="TikTok" width={30} height={30} />
+                  </Link>
+                  <Link href="#" className="text-white hover:text-gray-200">
+                    <Image src="/icons/whatsapp.png" alt="WhatsApp" width={30} height={30} />
+                  </Link>
+                </div>
+              </div>
         </div>
       </div>
     </footer>
-  )
-}
+  );
+};
 
+export default Footer;

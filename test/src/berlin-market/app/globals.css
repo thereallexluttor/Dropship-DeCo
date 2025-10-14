@@ -188,3 +188,64 @@ body {
     transform: translate3d(-50%, 0, 0);
   }
 }
+
+/* Estilos para mantener tamaño fijo del bottom sheet en móvil y tablet */
+@media screen and (max-width: 768px) {
+  /* Evitar que el viewport height cambie cuando se oculta el teclado */
+  .mobile-fixed-height {
+    /* Usar un tamaño mínimo fijo basado en el contenido real */
+    min-height: 85vh;
+    max-height: 85vh;
+    height: 85vh;
+    overflow-y: auto;
+    /* Mantener el tamaño incluso cuando cambia el viewport */
+    contain: layout style;
+  }
+
+  /* Para el contenedor del popover - estilos más específicos */
+  .mobile-popover-content[data-radix-popover-content] {
+    /* Mantener tamaño fijo y posición estable */
+    min-height: 85vh !important;
+    max-height: 85vh !important;
+    height: 85vh !important;
+    width: 90vw !important;
+    max-width: 400px !important;
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    border-radius: 16px 16px 0 0 !important;
+    margin: 0 !important;
+    /* Evitar animaciones que puedan causar problemas */
+    animation: none !important;
+  }
+
+  /* Asegurar que el popover mantenga su posición y tamaño */
+  [data-radix-popper-content-wrapper] {
+    /* Evitar recolocación automática cuando cambia el viewport */
+    transform: none !important;
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  /* Evitar que el body haga scroll cuando el popover está abierto */
+  body:has(.mobile-popover-content[data-state="open"]) {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+}
+
+/* Reset para desktop - mantener comportamiento normal */
+@media screen and (min-width: 769px) {
+  .mobile-fixed-height-none {
+    min-height: auto;
+    max-height: none;
+    height: auto;
+    overflow-y: visible;
+  }
+}
