@@ -25,6 +25,7 @@ import {
   Check
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
+import { supabase, Producto } from '@/lib/supabase'
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 import CategoryMenu from './components/CategoryMenu'
@@ -58,7 +59,6 @@ import AccountPopoverContent from "./components/AccountPopoverContent"
 
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
-  const [activeCardSlide, setActiveCardSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeProductSlide, setActiveProductSlide] = useState(0)
   const [activeBrandSlide, setActiveBrandSlide] = useState(0)
@@ -69,15 +69,48 @@ export default function Home() {
   const [password, setPassword] = useState("")
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [productosDestacados, setProductosDestacados] = useState<Producto[]>([])
+  const [productosEnOferta, setProductosEnOferta] = useState<Producto[]>([])
 
   // Efecto para los carruseles de las cards
+  // Cargar productos destacados
   useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveCardSlide(current => (current + 1) % 3);
-    }, 3000);
+    const cargarProductosDestacados = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('productos')
+          .select('*')
+          .eq('destacado', true);
 
-    return () => clearInterval(timer);
+        if (error) throw error;
+        setProductosDestacados(data || []);
+      } catch (error) {
+        console.error('Error cargando productos destacados:', error);
+      }
+    };
+
+    cargarProductosDestacados();
   }, []);
+
+  // Cargar productos en oferta
+  useEffect(() => {
+    const cargarProductosEnOferta = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('productos')
+          .select('*')
+          .eq('descuento', true);
+
+        if (error) throw error;
+        setProductosEnOferta(data || []);
+      } catch (error) {
+        console.error('Error cargando productos en oferta:', error);
+      }
+    };
+
+    cargarProductosEnOferta();
+  }, []);
+
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1145,165 +1178,145 @@ export default function Home() {
                     }
                   }
                 `}</style>
-                {/* Hill's */}
-                <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                  <div className="relative aspect-square">
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap1.png"
-                        alt="Plan científico Hill"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
+                {productosEnOferta.length > 0 ? (
+                  productosEnOferta.slice(0, 4).map((producto, index) => (
+                    <div key={producto.id} className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                      <div className="relative aspect-square">
+                        <Image
+                          src={producto.imagen_url || '/placeholder.jpg'}
+                          alt={producto.nombre}
+                          fill
+                          className="object-contain p-2 sm:p-3 md:p-4"
+                        />
+                        {/* Indicador de descuento */}
+                        <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                          OFERTA
+                        </div>
+                      </div>
+                      <div className="p-2 sm:p-3 md:p-4">
+                        <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">{producto.nombre}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{producto.descripcion || 'Producto en oferta especial'}</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          {producto.descuento_valor && (
+                            <>
+                              <span className="text-sm font-medium text-gray-500 line-through">
+                                ${producto.precio}
+                              </span>
+                              <span className="text-lg font-bold text-red-600">
+                                ${producto.precio && producto.descuento_valor ?
+                                  (parseFloat(producto.precio.toString()) * (1 - parseFloat(producto.descuento_valor.toString()) / 100)).toFixed(2) :
+                                  producto.precio
+                                }
+                              </span>
+                            </>
+                          )}
+                          {!producto.descuento_valor && producto.precio && (
+                            <span className="text-lg font-bold text-[#196428]">
+                              ${producto.precio}
+                            </span>
+                          )}
+                        </div>
+                        <Link
+                          href="#"
+                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
+                        >
+                          Comprar ahora
+                        </Link>
+                      </div>
                     </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap1-2.png"
-                        alt="Plan científico Hill"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
+                  ))
+                ) : (
+                  /* Productos hardcodeados como fallback si no hay productos en oferta */
+                  <>
+                    {/* Hill's */}
+                    <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                      <div className="relative aspect-square">
+                        <Image
+                          src="/cap1.png"
+                          alt="Plan científico Hill"
+                          fill
+                          className="object-contain p-2 sm:p-3 md:p-4"
+                        />
+                      </div>
+                      <div className="p-2 sm:p-3 md:p-4">
+                        <h3 className="text-sm sm:text-base md:text-lg font-medium mb-1 sm:mb-2">Plan científico Hill</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Descubre comida de alta calidad para tus mascotas</p>
+                        <Link
+                          href="#"
+                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
+                        >
+                          Ahorra ahora
+                        </Link>
+                      </div>
                     </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap1-3.png"
-                        alt="Plan científico Hill"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="text-sm sm:text-base md:text-lg font-medium mb-1 sm:mb-2">Plan científico Hill</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Descubre comida de alta calidad para tus mascotas</p>
-                    <Link 
-                      href="#" 
-                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                    >
-                      Ahorra ahora
-                    </Link>
-                  </div>
-                </div>
 
-                {/* Carny */}
-                <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                  <div className="relative aspect-square">
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap2.png"
-                        alt="Carny"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
+                    {/* Carny */}
+                    <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                      <div className="relative aspect-square">
+                        <Image
+                          src="/cap2.png"
+                          alt="Carny"
+                          fill
+                          className="object-contain p-2 sm:p-3 md:p-4"
+                        />
+                      </div>
+                      <div className="p-2 sm:p-3 md:p-4">
+                        <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Carny</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Comida única e irresistible</p>
+                        <Link
+                          href="#"
+                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
+                        >
+                          Ahorra ahora
+                        </Link>
+                      </div>
                     </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap2-2.png"
-                        alt="Carny"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap2-3.png"
-                        alt="Carny"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Carny</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Comida única e irresistible</p>
-                    <Link 
-                      href="#" 
-                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                    >
-                      Ahorra ahora
-                    </Link>
-                  </div>
-                </div>
 
-                {/* Royal Canin */}
-                <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                  <div className="relative aspect-square">
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap3.png"
-                        alt="Royal canin"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
+                    {/* Royal Canin */}
+                    <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                      <div className="relative aspect-square">
+                        <Image
+                          src="/cap3.png"
+                          alt="Royal canin"
+                          fill
+                          className="object-contain p-2 sm:p-3 md:p-4"
+                        />
+                      </div>
+                      <div className="p-2 sm:p-3 md:p-4">
+                        <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Royal canin</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Para las necesidades especiales de tu gato</p>
+                        <Link
+                          href="#"
+                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
+                        >
+                          Ahorra ahora
+                        </Link>
+                      </div>
                     </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap3-2.png"
-                        alt="Royal canin"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap3-3.png"
-                        alt="Royal canin"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Royal canin</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Para las necesidades especiales de tu gato</p>
-                    <Link 
-                      href="#" 
-                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                    >
-                      Ahorra ahora
-                    </Link>
-                  </div>
-                </div>
 
-                {/* Felix */}
-                <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                  <div className="relative aspect-square">
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 0 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap4.png"
-                        alt="Felix"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
+                    {/* Felix */}
+                    <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                      <div className="relative aspect-square">
+                        <Image
+                          src="/cap4.png"
+                          alt="Felix"
+                          fill
+                          className="object-contain p-2 sm:p-3 md:p-4"
+                        />
+                      </div>
+                      <div className="p-2 sm:p-3 md:p-4">
+                        <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Felix</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Ahorra en comida irresistible para tu gato</p>
+                        <Link
+                          href="#"
+                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
+                        >
+                          Ahorra ahora
+                        </Link>
+                      </div>
                     </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 1 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap4-2.png"
-                        alt="Felix"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                    <div className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${activeCardSlide === 2 ? "opacity-100" : "opacity-0"}`}>
-                      <Image
-                        src="/cap4-3.png"
-                        alt="Felix"
-                        fill
-                        className="object-contain p-2 sm:p-3 md:p-4"
-                      />
-                    </div>
-                  </div>
-                  <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Felix</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Ahorra en comida irresistible para tu gato</p>
-                    <Link 
-                      href="#" 
-                      className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                    >
-                      Ahorra ahora
-                    </Link>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </section>
@@ -1316,30 +1329,43 @@ export default function Home() {
               {/* Vista móvil: scroll horizontal */}
               <div className="md:hidden overflow-x-auto pb-4 scroll-container">
                 <div className="flex gap-3">
-                  {featuredProducts.map((product) => (
-                    <div key={product.id} className="flex-none w-[200px] bg-white rounded-[15px] overflow-hidden shadow-sm border border-gray-200">
+                  {productosDestacados.map((producto) => (
+                    <div key={producto.id} className="flex-none w-[200px] bg-white rounded-[15px] overflow-hidden shadow-sm border border-gray-200">
                       <div className="relative aspect-square">
                         <Image
-                          src={product.image}
-                          alt={product.name}
+                          src={producto.imagen_url || '/placeholder.jpg'}
+                          alt={producto.nombre}
                           fill
                           className="object-contain p-2"
                         />
                         <button className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300">
                           <ShoppingCart className="h-3 w-3" />
                         </button>
-                        {product.tag && (
+                        {producto.descuento && (
                           <div className="absolute top-2 left-2">
-                            <span className={`${product.tagColor} text-white text-[10px] px-1.5 py-0.5 rounded`}>
-                              {product.tag}
+                            <span className="bg-green-600 text-white text-[10px] px-1.5 py-0.5 rounded">
+                              {producto.descuento_valor}% OFF
                             </span>
                           </div>
                         )}
                       </div>
                       <div className="p-2">
-                        <h3 className="text-sm font-semibold mb-1">{product.name}</h3>
-                        <p className="text-xs text-gray-600 mb-1">Descripción del producto</p>
-                        <p className="text-[#196428] hover:text-[#196428] font-medium text-xs">$ {product.price}</p>
+                        <h3 className="text-sm font-semibold mb-1">{producto.nombre}</h3>
+                        <p className="text-xs text-gray-600 mb-1">{producto.descripcion}</p>
+                        <div className="flex items-center gap-2">
+                          {producto.descuento ? (
+                            <>
+                              <p className="text-[#196428] font-medium text-xs">
+                                $ {(Number(producto.precio) * (1 - Number(producto.descuento_valor || 0)/100)).toFixed(2)}
+                              </p>
+                              <p className="text-gray-400 text-xs line-through">
+                                $ {Number(producto.precio).toFixed(2)}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-[#196428] font-medium text-xs">$ {Number(producto.precio).toFixed(2)}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1364,33 +1390,46 @@ export default function Home() {
                     className="flex transition-transform duration-500 ease-in-out"
                     style={{ transform: `translateX(-${activeProductSlide * 100}%)` }}
                   >
-                    {Array.from({ length: totalProductSlides }).map((_, slideIndex) => (
+                    {Array.from({ length: Math.ceil(productosDestacados.length / 4) }).map((_, slideIndex) => (
                       <div key={slideIndex} className="w-full flex-shrink-0">
                         <div className="grid grid-cols-4 gap-4 md:gap-5">
-                          {featuredProducts.slice(slideIndex * 4, slideIndex * 4 + 4).map((product) => (
-                            <div key={product.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                          {productosDestacados.slice(slideIndex * 4, slideIndex * 4 + 4).map((producto) => (
+                            <div key={producto.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
                               <div className="relative aspect-square">
                                 <Image
-                                  src={product.image}
-                                  alt={product.name}
+                                  src={producto.imagen_url || '/placeholder.jpg'}
+                                  alt={producto.nombre}
                                   fill
                                   className="object-contain p-3 md:p-4"
                                 />
                                 <button className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300">
                                   <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
                                 </button>
-                                {product.tag && (
+                                {producto.descuento && (
                                   <div className="absolute top-3 md:top-4 left-3 md:left-4">
-                                    <span className={`${product.tagColor} text-white text-xs px-2 py-1 rounded`}>
-                                      {product.tag}
+                                    <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
+                                      {producto.descuento_valor}% OFF
                                     </span>
                                   </div>
                                 )}
                               </div>
                               <div className="p-3 md:p-4">
-                                <h3 className="text-base md:text-lg font-semibold mb-2">{product.name}</h3>
-                                <p className="text-sm text-gray-600 mb-2">Descripción del producto</p>
-                                <p className="text-[#196428] hover:text-[#196428] font-medium text-sm">$ {product.price}</p>
+                                <h3 className="text-base md:text-lg font-semibold mb-2">{producto.nombre}</h3>
+                                <p className="text-sm text-gray-600 mb-2">{producto.descripcion}</p>
+                                <div className="flex items-center gap-2">
+                                  {producto.descuento ? (
+                                    <>
+                                      <p className="text-[#196428] font-medium text-sm">
+                                        $ {(Number(producto.precio) * (1 - Number(producto.descuento_valor || 0)/100)).toFixed(2)}
+                                      </p>
+                                      <p className="text-gray-400 text-sm line-through">
+                                        $ {Number(producto.precio).toFixed(2)}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <p className="text-[#196428] font-medium text-sm">$ {Number(producto.precio).toFixed(2)}</p>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))}
