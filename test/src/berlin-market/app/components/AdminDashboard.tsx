@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import supabase, { Categoria, Subcategoria, Producto } from '@/lib/supabase';
+import supabase, { Categoria, Subcategoria, Producto, Marca } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [subcategorias, setSubcategorias] = useState<Subcategoria[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [marcas, setMarcas] = useState<Marca[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
 
@@ -36,7 +37,9 @@ const AdminDashboard = () => {
     imagen_url: '',
     descuento: false,
     descuento_valor: '',
-    destacado: false
+    destacado: false,
+    novedad: false,
+    id_marca: 0
   });
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
 
@@ -99,13 +102,31 @@ const AdminDashboard = () => {
           return;
         }
         throw productosError;
-      }
-      setProductos(productosData || []);
+        }
+        setProductos(productosData || []);
+
+        // Cargar marcas
+        const { data: marcasData, error: marcasError } = await supabase
+          .from('marcas')
+          .select('*')
+          .order('nombre_marca', { ascending: true });
+
+        if (marcasError) {
+          console.error('Error cargando marcas:', marcasError);
+          if (marcasError.message.includes('relation "marcas" does not exist')) {
+            setTablesConfigured(false);
+            setIsLoading(false);
+            return;
+          }
+          throw marcasError;
+        }
+        setMarcas(marcasData || []);
     } catch (error: any) {
       console.error('Error cargando datos:', error);
       if (error?.message?.includes('relation "categories" does not exist') ||
           error?.message?.includes('relation "subcategories" does not exist') ||
-          error?.message?.includes('relation "productos" does not exist')) {
+          error?.message?.includes('relation "productos" does not exist') ||
+          error?.message?.includes('relation "marcas" does not exist')) {
         setTablesConfigured(false);
       } else if (error?.code === 'PGRST301') {
         alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
@@ -379,7 +400,9 @@ const AdminDashboard = () => {
           imagen_url: newProducto.imagen_url || null,
           descuento: newProducto.descuento || false,
           descuento_valor: newProducto.descuento_valor ? parseFloat(newProducto.descuento_valor) : null,
-          destacado: newProducto.destacado || false
+          destacado: newProducto.destacado || false,
+          novedad: newProducto.novedad || false,
+          id_marca: newProducto.id_marca || null
         }])
         .select()
         .single();
@@ -396,7 +419,9 @@ const AdminDashboard = () => {
         imagen_url: '',
         descuento: false,
         descuento_valor: '',
-        destacado: false
+        destacado: false,
+        novedad: false,
+        id_marca: 0
       });
       alert('Producto creado exitosamente');
     } catch (error: any) {
@@ -434,7 +459,9 @@ const AdminDashboard = () => {
           imagen_url: producto.imagen_url || null,
           descuento: producto.descuento || false,
           descuento_valor: producto.descuento_valor ? parseFloat(producto.descuento_valor.toString()) : null,
-          destacado: producto.destacado || false
+          destacado: producto.destacado || false,
+          novedad: producto.novedad || false,
+          id_marca: producto.id_marca || null
         })
         .eq('id', producto.id);
 
@@ -1351,6 +1378,23 @@ const AdminDashboard = () => {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Marca
+                    </label>
+                    <select
+                      value={newProducto.id_marca}
+                      onChange={(e) => setNewProducto({ ...newProducto, id_marca: parseInt(e.target.value) })}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                    >
+                      <option value={0}>Seleccionar marca</option>
+                      {marcas.map((marca) => (
+                        <option key={marca.id} value={marca.id}>
+                          {marca.nombre_marca}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -1389,6 +1433,18 @@ const AdminDashboard = () => {
                     />
                     <label htmlFor="destacado" className="text-sm font-medium text-gray-700">
                       Producto destacado
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="novedad"
+                      checked={newProducto.novedad || false}
+                      onChange={(e) => setNewProducto({ ...newProducto, novedad: e.target.checked })}
+                      className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                    />
+                    <label htmlFor="novedad" className="text-sm font-medium text-gray-700">
+                      Producto nuevo/novedad
                     </label>
                   </div>
                   <div className="md:col-span-2">
@@ -1453,6 +1509,7 @@ const AdminDashboard = () => {
                   {productos.map((producto) => {
                     const subcategoria = subcategorias.find(s => s.id === producto.subcategorias_id);
                     const categoria = categorias.find(c => c.id === subcategoria?.categories_id);
+                    const marca = marcas.find(m => m.id === producto.id_marca);
                     return (
                       <Card key={producto.id} className="border-l-4 border-l-[#196428]">
                         <CardContent className="p-4">
@@ -1514,6 +1571,21 @@ const AdminDashboard = () => {
                                   })}
                                   placeholder="Stock"
                                 />
+                                <select
+                                  value={editingProducto?.id_marca?.toString() || ''}
+                                  onChange={(e) => editingProducto && setEditingProducto({
+                                    ...editingProducto,
+                                    id_marca: e.target.value ? parseInt(e.target.value) : null
+                                  })}
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                                >
+                                  <option value="">Seleccionar marca</option>
+                                  {marcas.map((marca) => (
+                                    <option key={marca.id} value={marca.id}>
+                                      {marca.nombre_marca}
+                                    </option>
+                                  ))}
+                                </select>
                                 <div className="flex items-center space-x-2">
                                   <input
                                     type="checkbox"
@@ -1556,6 +1628,21 @@ const AdminDashboard = () => {
                                   />
                                   <label htmlFor="edit-destacado" className="text-sm font-medium text-gray-700">
                                     Producto destacado
+                                  </label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id="edit-novedad"
+                                    checked={editingProducto?.novedad || false}
+                                    onChange={(e) => editingProducto && setEditingProducto({
+                                      ...editingProducto,
+                                      novedad: e.target.checked
+                                    })}
+                                    className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                                  />
+                                  <label htmlFor="edit-novedad" className="text-sm font-medium text-gray-700">
+                                    Producto nuevo/novedad
                                   </label>
                                 </div>
                                 <div className="md:col-span-2">
@@ -1636,6 +1723,11 @@ const AdminDashboard = () => {
                                   <span className="text-sm font-medium text-[#196428] bg-green-100 px-2 py-1 rounded">
                                     {categoria?.nombre} - {subcategoria?.nombre}
                                   </span>
+                                  {marca && (
+                                    <span className="text-sm font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                                      {marca.nombre_marca}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="flex items-start gap-4">
                                   {producto.imagen_url && (
@@ -1663,6 +1755,11 @@ const AdminDashboard = () => {
                                       {producto.destacado && (
                                         <span className="text-yellow-600 font-medium">
                                           ⭐ Destacado
+                                        </span>
+                                      )}
+                                      {producto.novedad && (
+                                        <span className="text-green-600 font-medium">
+                                          🆕 Novedad
                                         </span>
                                       )}
                                     </div>

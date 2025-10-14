@@ -27,6 +27,8 @@ import {
 import { useState, useEffect, useRef } from "react"
 import { supabase, Producto } from '@/lib/supabase'
 import { useCategories } from './hooks/useCategories'
+import { useCart } from './contexts/CartContext'
+import CartCounter from './components/CartCounter'
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 import CategoryMenu from './components/CategoryMenu'
@@ -72,6 +74,9 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [productosDestacados, setProductosDestacados] = useState<Producto[]>([])
   const [productosEnOferta, setProductosEnOferta] = useState<Producto[]>([])
+
+  // Usar el contexto del carrito
+  const { addToCart } = useCart()
 
   // Usar el hook personalizado para cargar categorías dinámicamente
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
@@ -135,6 +140,12 @@ export default function Home() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     console.log("Searching for:", searchQuery)
+  }
+
+  const handleAddToCart = (producto: Producto) => {
+    addToCart(producto, 1)
+    // Aquí podrías agregar una notificación o toast
+    console.log(`Agregado al carrito: ${producto.nombre}`)
   }
 
   // Categorías se cargan dinámicamente desde el hook useCategories
@@ -263,7 +274,7 @@ export default function Home() {
   const navLinks = [
     { name: "Inicio", icon: HomeIcon, href: "/" },
     { name: "Tienda", icon: ShoppingBag, href: "/tienda" },
-    { name: "Carrito", icon: ShoppingCart, href: "#" },
+    { name: "Carrito", icon: ShoppingCart, href: "/carrito" },
     { name: "Cuenta", icon: User, href: "#" },
     { name: "Info", icon: Info, href: "/sobre-nosotros" },
     { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
@@ -537,12 +548,12 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </Link>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <ShoppingCart className="h-full w-full" />
+                        <CartCounter />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </div>
+                    </Link>
                     <AccountPopover />
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
@@ -614,12 +625,12 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </Link>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <ShoppingCart className="h-full w-full" />
+                        <CartCounter />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </div>
+                    </Link>
                     <AccountPopover />
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
@@ -691,12 +702,12 @@ export default function Home() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </Link>
-                    <div className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <ShoppingCart className="h-full w-full" />
+                        <CartCounter />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </div>
+                    </Link>
                     <AccountPopover />
                   </div>
                   <div className="w-[1.5px] h-5 bg-gray-200"></div>
@@ -844,12 +855,15 @@ export default function Home() {
                             </span>
                           )}
                         </div>
-                        <Link
-                          href="#"
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleAddToCart(producto)
+                          }}
                           className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
                         >
-                          Comprar ahora
-                        </Link>
+                          Agregar al carrito
+                        </button>
                       </div>
                     </div>
                   ))
@@ -966,7 +980,13 @@ export default function Home() {
                           fill
                           className="object-contain p-2"
                         />
-                        <button className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleAddToCart(producto)
+                          }}
+                          className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300"
+                        >
                           <ShoppingCart className="h-3 w-3" />
                         </button>
                         {producto.descuento && (
@@ -1030,7 +1050,13 @@ export default function Home() {
                                   fill
                                   className="object-contain p-3 md:p-4"
                                 />
-                                <button className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    handleAddToCart(producto)
+                                  }}
+                                  className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300"
+                                >
                                   <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
                                 </button>
                                 {producto.descuento && (

@@ -48,6 +48,14 @@ export interface Subcategoria {
   updated_at?: string
 }
 
+// Tipos para la tabla marcas
+export interface Marca {
+  id?: number
+  nombre_marca: string
+  created_at?: string
+  updated_at?: string
+}
+
 // Tipos para la tabla productos
 export interface Producto {
   id?: number
@@ -60,6 +68,8 @@ export interface Producto {
   descuento?: boolean
   descuento_valor?: number | string
   destacado?: boolean
+  novedad?: boolean
+  id_marca?: number | null
   created_at?: string
   updated_at?: string
 }
