@@ -58,6 +58,7 @@ import AccountPopoverContent from "../components/AccountPopover"
 import { useCategories } from "../hooks/useCategories"
 import { useProducts, ProductWithDetails } from "../hooks/useProducts"
 import CartCounter from "../components/CartCounter"
+import ProductSizeBadges from "../components/ProductSizeBadges"
 
 export default function TiendaPage() {
   const [activeSlide, setActiveSlide] = useState(0)
@@ -73,6 +74,8 @@ export default function TiendaPage() {
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCategoriesDrawerOpen, setIsCategoriesDrawerOpen] = useState(false)
+  // Estado para manejar el tamaño seleccionado de cada producto
+  const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
 
   // Hooks para datos de Supabase
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
@@ -865,7 +868,22 @@ export default function TiendaPage() {
                   {/* Products Grid - responsive layout */}
                   {displayProducts.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                      {displayProducts.map((product: ProductWithDetails) => (
+                      {displayProducts.map((product: ProductWithDetails) => {
+                        const selectedSizeIndex = selectedSizes[product.id!] || 0;
+                        const hasSizes = product.tamano && product.tamano.length > 0;
+                        const hasPrices = product.precios && product.precios.length > 0;
+                        
+                        // Obtener el precio según el tamaño seleccionado
+                        const getCurrentPrice = () => {
+                          if (hasSizes && hasPrices && product.precios![selectedSizeIndex] !== undefined) {
+                            return product.precios![selectedSizeIndex];
+                          }
+                          return 0;
+                        };
+
+                        const currentPrice = getCurrentPrice();
+
+                        return (
                       <div key={product.id} className="bg-white rounded-[20px] sm:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
                         <div className="relative aspect-square">
                           <Image
@@ -884,14 +902,14 @@ export default function TiendaPage() {
                                 </span>
                               </div>
                             )}
-                            {product.destacado && (
+                            {product.destacado && !product.descuento && (
                               <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
                                 <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
                                   Destacado
                                 </span>
                               </div>
                             )}
-                            {product.novedad && (
+                            {product.novedad && !product.descuento && !product.destacado && (
                               <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
                                 <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
                                   Nuevo
@@ -902,28 +920,58 @@ export default function TiendaPage() {
                         <div className="p-3 sm:p-4">
                             <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">{product.nombre}</h3>
                             <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{product.descripcion || "Descripción del producto"}</p>
-                            {product.descuento && product.descuento_valor ? (
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                <p className="text-red-500 font-medium text-xs sm:text-sm line-through">
-                                  $ {typeof product.precio === 'string' ? product.precio : String(product.precio)}
-                                </p>
+
+                            {/* Mostrar tamaños del producto - Seleccionables */}
+                            {hasSizes && (
+                              <div className="mb-3">
+                                <p className="text-xs text-gray-500 mb-1">Tamaños disponibles:</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {product.tamano!.map((tamano, index) => (
+                                    <button
+                                      key={index}
+                                      onClick={() => setSelectedSizes({...selectedSizes, [product.id!]: index})}
+                                      className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                                        selectedSizeIndex === index
+                                          ? 'bg-[#196428] text-white shadow-sm'
+                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                      }`}
+                                    >
+                                      {tamano.cantidad} {tamano.unidad}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Mostrar precio según tamaño seleccionado */}
+                            {hasPrices && currentPrice > 0 ? (
+                              product.descuento && product.descuento_valor ? (
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                  <p className="text-red-500 font-medium text-xs sm:text-sm line-through">
+                                    $ {currentPrice.toLocaleString('es-CO')}
+                                  </p>
+                                  <p className="text-[#196428] font-medium text-sm sm:text-base">
+                                    $ {(() => {
+                                      const descuentoValor = typeof product.descuento_valor === 'string' ? parseFloat(product.descuento_valor) : Number(product.descuento_valor)
+                                      const precioConDescuento = currentPrice * (1 - (descuentoValor / 100))
+                                      return precioConDescuento.toLocaleString('es-CO')
+                                    })()}
+                                  </p>
+                                </div>
+                              ) : (
                                 <p className="text-[#196428] font-medium text-sm sm:text-base">
-                                  $ {(() => {
-                                    const precio = typeof product.precio === 'string' ? parseFloat(product.precio.replace(/\./g, '').replace(',', '.')) : Number(product.precio)
-                                    const descuentoValor = typeof product.descuento_valor === 'string' ? parseFloat(product.descuento_valor) : Number(product.descuento_valor)
-                                    const precioConDescuento = precio * (1 - (descuentoValor / 100))
-                                    return precioConDescuento.toLocaleString('es-CO')
-                                  })()}
+                                  $ {currentPrice.toLocaleString('es-CO')}
                                 </p>
-                            </div>
-                          ) : (
-                              <p className="text-[#196428] font-medium text-sm sm:text-base">
-                                $ {typeof product.precio === 'string' ? product.precio : String(product.precio)}
+                              )
+                            ) : (
+                              <p className="text-gray-400 text-xs sm:text-sm italic">
+                                Precio no disponible
                               </p>
-                          )}
+                            )}
                         </div>
                       </div>
-                    ))}
+                        );
+                      })}
                   </div>
                   ) : (
                     <div className="text-center py-20">

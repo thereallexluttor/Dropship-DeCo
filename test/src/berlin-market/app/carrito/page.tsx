@@ -57,6 +57,7 @@ import AccountPopoverContent from "../components/AccountPopoverContent"
 import { useCategories } from "../hooks/useCategories"
 import { useCart } from "../contexts/CartContext"
 import CartCounter from "../components/CartCounter"
+import ProductSizeBadges from "../components/ProductSizeBadges"
 
 export default function CarritoPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -541,6 +542,9 @@ export default function CarritoPage() {
                             <h3 className="font-semibold text-lg text-gray-900 mb-1">{item.nombre}</h3>
                             <p className="text-sm text-gray-600 mb-2">{item.descripcion || 'Descripción del producto'}</p>
 
+                            {/* Mostrar tamaños del producto */}
+                            <ProductSizeBadges tamaños={item.tamano} size="sm" className="mb-2" />
+
                             {/* Indicadores */}
                             <div className="flex gap-2 mb-2">
                               {item.descuento && (
@@ -582,7 +586,7 @@ export default function CarritoPage() {
                           {/* Controles de cantidad */}
                           <div className="flex items-center gap-3">
                             <button
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.id, (item.quantity || 1) - 1)}
                               className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
                             >
                               <Minus className="h-4 w-4" />
@@ -593,7 +597,7 @@ export default function CarritoPage() {
                             </span>
 
                             <button
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1)}
                               className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
                             >
                               <Plus className="h-4 w-4" />

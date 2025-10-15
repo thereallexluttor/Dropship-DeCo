@@ -75,16 +75,37 @@ CREATE TABLE productos (
   subcategorias_id INTEGER NOT NULL REFERENCES subcategories(id) ON DELETE CASCADE,
   nombre VARCHAR(255) NOT NULL,
   descripcion TEXT,
-  precio DECIMAL(10,2) NOT NULL,
   stock INTEGER NOT NULL DEFAULT 0,
   imagen_url TEXT,
   descuento BOOLEAN DEFAULT FALSE,
   descuento_valor DECIMAL(5,2) DEFAULT 0,
   destacado BOOLEAN DEFAULT FALSE,
+  novedad BOOLEAN DEFAULT FALSE,
+  id_marca INTEGER REFERENCES marcas(id) ON DELETE SET NULL,
+  tamano JSONB,
+  precios JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
+
+### Migración: Eliminar columna `precio` y agregar `precios`
+
+Si ya tienes la tabla `productos` creada con el campo antiguo `precio`, ejecuta estos comandos SQL:
+
+```sql
+-- Eliminar la columna precio antigua (si existe)
+ALTER TABLE productos DROP COLUMN IF EXISTS precio;
+
+-- Agregar la nueva columna precios JSONB
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS precios JSONB;
+```
+
+**Nota:** La columna `precios` almacena un array de precios en formato JSON que corresponden en orden a los tamaños definidos en la columna `tamano`. Por ejemplo:
+- `tamano`: `[{"unidad": "G", "cantidad": 500}, {"unidad": "KG", "cantidad": 1}]`
+- `precios`: `[15000, 28000]`
+
+Esto significa que el primer precio (15000) corresponde al primer tamaño (500G), y el segundo precio (28000) corresponde al segundo tamaño (1KG).
 
 ## Configuración del Bucket de Storage para Imágenes
 

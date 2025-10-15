@@ -1,7 +1,23 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import supabase, { Categoria, Subcategoria, Producto, Marca } from '@/lib/supabase';
+import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto } from '@/lib/supabase';
+
+// Tipos para formularios internos
+interface ProductoForm {
+  subcategorias_id: number
+  nombre: string
+  descripcion: string
+  stock: string
+  imagen_url: string
+  descuento: boolean
+  descuento_valor: string
+  destacado: boolean
+  novedad: boolean
+  id_marca: number
+  tamano: TamanoProducto[]
+  precios: number[]
+}
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,18 +44,19 @@ const AdminDashboard = () => {
   const [editingCategoria, setEditingCategoria] = useState<Categoria | null>(null);
   const [newSubcategoria, setNewSubcategoria] = useState({ categories_id: 0, nombre: '', descripcion: '' });
   const [editingSubcategoria, setEditingSubcategoria] = useState<Subcategoria | null>(null);
-  const [newProducto, setNewProducto] = useState({
+  const [newProducto, setNewProducto] = useState<ProductoForm>({
     subcategorias_id: 0,
     nombre: '',
     descripcion: '',
-    precio: '',
     stock: '',
     imagen_url: '',
     descuento: false,
     descuento_valor: '',
     destacado: false,
     novedad: false,
-    id_marca: 0
+    id_marca: 0,
+    tamano: [],
+    precios: []
   });
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
 
@@ -382,28 +399,55 @@ const AdminDashboard = () => {
     if (!newProducto.subcategorias_id ||
         !newProducto.nombre.trim() ||
         !newProducto.descripcion.trim() ||
-        !newProducto.precio.trim() ||
         !newProducto.stock.trim()) {
       alert('Por favor completa todos los campos obligatorios');
       return;
     }
 
+    // Validar tamaños
+    if (newProducto.tamano && newProducto.tamano.length > 0) {
+      const tamañosValidos = newProducto.tamano.filter(t => t.cantidad > 0);
+      if (tamañosValidos.length === 0) {
+        alert('Si defines tamaños, al menos uno debe tener una cantidad mayor a 0');
+        return;
+      }
+      // Actualizar solo los tamaños válidos
+      newProducto.tamano = tamañosValidos;
+    }
+
+    // Validar que si hay tamaños, también haya precios correspondientes
+    if (newProducto.tamano && newProducto.tamano.length > 0) {
+      if (!newProducto.precios || newProducto.precios.length !== newProducto.tamano.length) {
+        alert('Debe haber un precio para cada tamaño definido');
+        return;
+      }
+      // Validar que todos los precios sean mayores a 0
+      if (newProducto.precios.some(p => p <= 0)) {
+        alert('Todos los precios deben ser mayores a 0');
+        return;
+      }
+    }
+
+    // Convertir ProductoForm a Producto para enviar a Supabase
+    const productoParaEnviar: Omit<Producto, 'id' | 'created_at' | 'updated_at'> = {
+      subcategorias_id: newProducto.subcategorias_id,
+      nombre: newProducto.nombre,
+      descripcion: newProducto.descripcion,
+      stock: parseInt(newProducto.stock),
+      imagen_url: newProducto.imagen_url || null,
+      descuento: newProducto.descuento || false,
+      descuento_valor: newProducto.descuento_valor ? parseFloat(newProducto.descuento_valor) : undefined,
+      destacado: newProducto.destacado || false,
+      novedad: newProducto.novedad || false,
+      id_marca: newProducto.id_marca || null,
+      tamano: newProducto.tamano && newProducto.tamano.length > 0 ? newProducto.tamano : null,
+      precios: newProducto.precios && newProducto.precios.length > 0 ? newProducto.precios : null
+    };
+
     try {
       const { data, error } = await supabase
         .from('productos')
-        .insert([{
-          subcategorias_id: newProducto.subcategorias_id,
-          nombre: newProducto.nombre,
-          descripcion: newProducto.descripcion,
-          precio: parseFloat(newProducto.precio),
-          stock: parseInt(newProducto.stock),
-          imagen_url: newProducto.imagen_url || null,
-          descuento: newProducto.descuento || false,
-          descuento_valor: newProducto.descuento_valor ? parseFloat(newProducto.descuento_valor) : null,
-          destacado: newProducto.destacado || false,
-          novedad: newProducto.novedad || false,
-          id_marca: newProducto.id_marca || null
-        }])
+        .insert([productoParaEnviar])
         .select()
         .single();
 
@@ -414,15 +458,16 @@ const AdminDashboard = () => {
         subcategorias_id: 0,
         nombre: '',
         descripcion: '',
-        precio: '',
         stock: '',
         imagen_url: '',
         descuento: false,
         descuento_valor: '',
         destacado: false,
         novedad: false,
-        id_marca: 0
-      });
+        id_marca: 0,
+        tamano: [],
+        precios: []
+      } as ProductoForm);
       alert('Producto creado exitosamente');
     } catch (error: any) {
       console.error('Error creando producto:', error);
@@ -439,12 +484,46 @@ const AdminDashboard = () => {
   };
 
   const handleUpdateProducto = async (producto: Producto) => {
-    if (!producto.nombre.trim() || 
-        !producto.descripcion.trim() || 
-        !producto.precio || 
-        !producto.stock) {
-      alert('Por favor completa todos los campos obligatorios');
+    // Validar campos obligatorios
+    if (!producto.nombre || !producto.nombre.trim()) {
+      alert('Por favor completa el nombre del producto');
       return;
+    }
+    
+    if (!producto.descripcion || !producto.descripcion.trim()) {
+      alert('Por favor completa la descripción del producto');
+      return;
+    }
+
+    const stockNum = typeof producto.stock === 'string' ? parseInt(producto.stock) : producto.stock;
+
+    if (isNaN(stockNum) || stockNum < 0) {
+      alert('Por favor ingresa un stock válido');
+      return;
+    }
+
+    // Validar tamaños
+    if (producto.tamano && producto.tamano.length > 0) {
+      const tamañosValidos = producto.tamano.filter(t => t.cantidad > 0);
+      if (tamañosValidos.length === 0) {
+        alert('Si defines tamaños, al menos uno debe tener una cantidad mayor a 0');
+        return;
+      }
+      // Actualizar solo los tamaños válidos
+      producto.tamano = tamañosValidos;
+    }
+
+    // Validar que si hay tamaños, también haya precios correspondientes
+    if (producto.tamano && producto.tamano.length > 0) {
+      if (!producto.precios || producto.precios.length !== producto.tamano.length) {
+        alert('Debe haber un precio para cada tamaño definido');
+        return;
+      }
+      // Validar que todos los precios sean mayores a 0
+      if (producto.precios.some(p => p <= 0)) {
+        alert('Todos los precios deben ser mayores a 0');
+        return;
+      }
     }
 
     try {
@@ -454,14 +533,15 @@ const AdminDashboard = () => {
           subcategorias_id: producto.subcategorias_id,
           nombre: producto.nombre,
           descripcion: producto.descripcion,
-          precio: parseFloat(producto.precio.toString()),
           stock: parseInt(producto.stock.toString()),
           imagen_url: producto.imagen_url || null,
           descuento: producto.descuento || false,
           descuento_valor: producto.descuento_valor ? parseFloat(producto.descuento_valor.toString()) : null,
           destacado: producto.destacado || false,
           novedad: producto.novedad || false,
-          id_marca: producto.id_marca || null
+          id_marca: producto.id_marca || null,
+          tamano: producto.tamano && producto.tamano.length > 0 ? producto.tamano : null,
+          precios: producto.precios && producto.precios.length > 0 ? producto.precios : null
         })
         .eq('id', producto.id);
 
@@ -512,11 +592,40 @@ const AdminDashboard = () => {
   };
 
   const startEditProducto = (producto: Producto) => {
-    setEditingProducto(producto);
+    setEditingProducto({
+      ...producto,
+      tamano: producto.tamano || [],
+      precios: producto.precios || []
+    });
   };
 
   const cancelEditProducto = () => {
     setEditingProducto(null);
+  };
+
+  // Funciones para manejar tamaños y precios de productos
+  const agregarTamano = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void) => {
+    const nuevosTamanos = [...(producto.tamano || []), { unidad: 'ML' as const, cantidad: 0 }];
+    const nuevosPrecios = [...(producto.precios || []), 0];
+    setProducto({ ...producto, tamano: nuevosTamanos, precios: nuevosPrecios });
+  };
+
+  const eliminarTamano = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number) => {
+    const nuevosTamanos = (producto.tamano || []).filter((_, i) => i !== index);
+    const nuevosPrecios = (producto.precios || []).filter((_, i) => i !== index);
+    setProducto({ ...producto, tamano: nuevosTamanos, precios: nuevosPrecios });
+  };
+
+  const actualizarTamano = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, campo: 'unidad' | 'cantidad', valor: string | number) => {
+    const nuevosTamanos = [...(producto.tamano || [])];
+    nuevosTamanos[index] = { ...nuevosTamanos[index], [campo]: valor } as TamanoProducto;
+    setProducto({ ...producto, tamano: nuevosTamanos });
+  };
+
+  const actualizarPrecio = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, valor: number) => {
+    const nuevosPrecios = [...(producto.precios || [])];
+    nuevosPrecios[index] = valor;
+    setProducto({ ...producto, precios: nuevosPrecios });
   };
 
   // Función para subir imagen a Supabase Storage
@@ -1353,20 +1462,6 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={newProducto.precio}
-                      onChange={(e) => setNewProducto({ ...newProducto, precio: e.target.value })}
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Stock
                     </label>
                     <Input
@@ -1483,6 +1578,100 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Sección de Tamaños */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Tamaños del Producto
+                    </label>
+                    <Button
+                      type="button"
+                      onClick={() => agregarTamano(newProducto, setNewProducto as any)}
+                      variant="outline"
+                      size="sm"
+                      className="text-[#196428] border-[#196428] hover:bg-[#196428] hover:text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Agregar Tamaño
+                    </Button>
+                  </div>
+
+                  {newProducto.tamano && newProducto.tamano.length > 0 ? (
+                    <div className="space-y-3">
+                      {newProducto.tamano.map((tamano, index) => (
+                        <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Cantidad
+                            </label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={tamano.cantidad}
+                              onChange={(e) => actualizarTamano(newProducto, setNewProducto as any, index, 'cantidad', parseFloat(e.target.value) || 0)}
+                              placeholder="500"
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Unidad
+                            </label>
+                            <select
+                              value={tamano.unidad}
+                              onChange={(e) => actualizarTamano(newProducto, setNewProducto as any, index, 'unidad', e.target.value)}
+                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                            >
+                              <option value="ML">Mililitros (ML)</option>
+                              <option value="L">Litros (L)</option>
+                              <option value="G">Gramos (G)</option>
+                              <option value="KG">Kilogramos (KG)</option>
+                              <option value="MG">Miligramos (MG)</option>
+                              <option value="OZ">Onzas (OZ)</option>
+                              <option value="LB">Libras (LB)</option>
+                            </select>
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Precio ($)
+                            </label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={newProducto.precios?.[index] || 0}
+                              onChange={(e) => actualizarPrecio(newProducto, setNewProducto as any, index, parseFloat(e.target.value) || 0)}
+                              placeholder="0.00"
+                              className="w-full"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={() => eliminarTamano(newProducto, setNewProducto as any, index)}
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 border-red-300 hover:bg-red-50 hover:border-red-500 mt-5"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-gray-500 text-sm bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                      No hay tamaños definidos. Haz clic en "Agregar Tamaño" para añadir tamaños y precios al producto.
+                    </div>
+                  )}
+
+                  {newProducto.tamano && newProducto.tamano.length > 0 && (
+                    <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                      <strong>Ejemplos:</strong> 500 ML - $15.000, 1.5 KG - $28.000, 250 G - $8.500
+                    </div>
+                  )}
+                </div>
+
                 <Button type="submit" className="w-full bg-[#196428] hover:bg-[#145020] text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Producto
@@ -1549,17 +1738,6 @@ const AdminDashboard = () => {
                                   })}
                                   placeholder="Descripción"
                                   className="md:col-span-2"
-                                />
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  value={editingProducto?.precio || ''}
-                                  onChange={(e) => editingProducto && setEditingProducto({ 
-                                    ...editingProducto, 
-                                    precio: e.target.value 
-                                  })}
-                                  placeholder="Precio"
                                 />
                                 <Input
                                   type="number"
@@ -1682,22 +1860,105 @@ const AdminDashboard = () => {
                                     )}
                                   </div>
                                 </div>
+
+                                {/* Sección de Tamaños - Edición */}
+                                <div className="md:col-span-2 space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                      Tamaños del Producto
+                                    </label>
+                                    <Button
+                                      type="button"
+                                      onClick={() => editingProducto && agregarTamano(editingProducto, setEditingProducto)}
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-[#196428] border-[#196428] hover:bg-[#196428] hover:text-white"
+                                    >
+                                      <Plus className="h-4 w-4 mr-1" />
+                                      Agregar Tamaño
+                                    </Button>
+                                  </div>
+
+                                  {editingProducto?.tamano && editingProducto.tamano.length > 0 ? (
+                                    <div className="space-y-3">
+                                      {editingProducto.tamano.map((tamano, index) => (
+                                        <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                          <div className="flex-1">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                              Cantidad
+                                            </label>
+                                            <Input
+                                              type="number"
+                                              min="0"
+                                              step="0.01"
+                                              value={tamano.cantidad}
+                                              onChange={(e) => editingProducto && actualizarTamano(editingProducto, setEditingProducto, index, 'cantidad', parseFloat(e.target.value) || 0)}
+                                              placeholder="500"
+                                              className="w-full"
+                                            />
+                                          </div>
+                                          <div className="flex-1">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                              Unidad
+                                            </label>
+                                            <select
+                                              value={tamano.unidad}
+                                              onChange={(e) => editingProducto && actualizarTamano(editingProducto, setEditingProducto, index, 'unidad', e.target.value)}
+                                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                                            >
+                                              <option value="ML">Mililitros (ML)</option>
+                                              <option value="L">Litros (L)</option>
+                                              <option value="G">Gramos (G)</option>
+                                              <option value="KG">Kilogramos (KG)</option>
+                                              <option value="MG">Miligramos (MG)</option>
+                                              <option value="OZ">Onzas (OZ)</option>
+                                              <option value="LB">Libras (LB)</option>
+                                            </select>
+                                          </div>
+                                          <div className="flex-1">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                              Precio ($)
+                                            </label>
+                                            <Input
+                                              type="number"
+                                              min="0"
+                                              step="0.01"
+                                              value={editingProducto.precios?.[index] || 0}
+                                              onChange={(e) => editingProducto && actualizarPrecio(editingProducto, setEditingProducto, index, parseFloat(e.target.value) || 0)}
+                                              placeholder="0.00"
+                                              className="w-full"
+                                            />
+                                          </div>
+                                          <Button
+                                            type="button"
+                                            onClick={() => editingProducto && eliminarTamano(editingProducto, setEditingProducto as any, index)}
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-red-500 border-red-300 hover:bg-red-50 hover:border-red-500 mt-5"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-4 text-gray-500 text-sm bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                      No hay tamaños definidos. Haz clic en "Agregar Tamaño" para añadir tamaños y precios al producto.
+                                    </div>
+                                  )}
+
+                                  {editingProducto?.tamano && editingProducto.tamano.length > 0 && (
+                                    <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                                      <strong>Ejemplos:</strong> 500 ML - $15.000, 1.5 KG - $28.000, 250 G - $8.500
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex gap-2">
                                 <Button
                                   onClick={() => {
                                     if (editingProducto) {
-                                      handleUpdateProducto({
-                                        ...editingProducto,
-                                        subcategorias_id: editingProducto.subcategorias_id || 0,
-                                        nombre: editingProducto.nombre || '',
-                                        descripcion: editingProducto.descripcion || '',
-                                        precio: editingProducto.precio || 0,
-                                        stock: editingProducto.stock || 0,
-                                        descuento: editingProducto.descuento || false,
-                                        descuento_valor: editingProducto.descuento_valor || 0,
-                                        destacado: editingProducto.destacado || false
-                                      });
+                                      handleUpdateProducto(editingProducto);
                                     }
                                   }}
                                   size="sm"
@@ -1744,8 +2005,7 @@ const AdminDashboard = () => {
                                     <p className="text-gray-600 text-sm mb-2">
                                       {producto.descripcion}
                                     </p>
-                                    <div className="flex gap-4 text-sm text-gray-500">
-                                      <span>Precio: ${producto.precio}</span>
+                                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                                       <span>Stock: {producto.stock} unidades</span>
                                       {producto.descuento && (
                                         <span className="text-green-600 font-medium">
@@ -1763,6 +2023,18 @@ const AdminDashboard = () => {
                                         </span>
                                       )}
                                     </div>
+                                    {producto.tamano && producto.tamano.length > 0 && (
+                                      <div className="mt-2">
+                                        <span className="text-sm font-medium text-gray-700">Tamaños y Precios: </span>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                          {producto.tamano.map((tamano, index) => (
+                                            <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-800 font-medium">
+                                              {tamano.cantidad} {tamano.unidad} - ${producto.precios?.[index] ? producto.precios[index].toLocaleString('es-CO') : 'N/A'}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                     <p className="text-xs text-gray-400 mt-2">
                                       ID: {producto.id} • Creado: {new Date(producto.created_at || '').toLocaleDateString()}
                                     </p>

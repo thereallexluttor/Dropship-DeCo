@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import PageTransition from "./PageTransition"
 import { useScrollAnimation } from "../hooks/useScrollAnimation"
+import WhatsAppButton from "./WhatsAppButton"
 interface MainLayoutProps {
   children: React.ReactNode;
 }
@@ -22,6 +23,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <PageTransition>
       <div className="min-h-screen bg-white relative">
         {children}
+
+        {/* WhatsApp floating button */}
+        <WhatsAppButton />
 
         {/* Scroll to top button */}
         <button

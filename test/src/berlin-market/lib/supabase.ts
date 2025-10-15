@@ -56,13 +56,18 @@ export interface Marca {
   updated_at?: string
 }
 
+// Tipos para tamaños de productos
+export interface TamanoProducto {
+  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB'
+  cantidad: number
+}
+
 // Tipos para la tabla productos
 export interface Producto {
   id?: number
   subcategorias_id: number
   nombre: string
   descripcion: string
-  precio: number | string
   stock: number | string
   imagen_url?: string | null
   descuento?: boolean
@@ -70,6 +75,8 @@ export interface Producto {
   destacado?: boolean
   novedad?: boolean
   id_marca?: number | null
+  tamano?: TamanoProducto[] | null
+  precios?: number[] | null  // Array de precios que corresponden a cada tamaño
   created_at?: string
   updated_at?: string
 }

@@ -33,6 +33,7 @@ import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 import CategoryMenu from './components/CategoryMenu'
 import StoreLocator from './components/StoreLocator'
+import ProductSizeBadges from './components/ProductSizeBadges'
 import {
   Sheet,
   SheetContent,
@@ -74,6 +75,8 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [productosDestacados, setProductosDestacados] = useState<Producto[]>([])
   const [productosEnOferta, setProductosEnOferta] = useState<Producto[]>([])
+  // Estado para manejar el tamaño seleccionado de cada producto
+  const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
 
   // Usar el contexto del carrito
   const { addToCart } = useCart()
@@ -818,7 +821,21 @@ export default function Home() {
                   }
                 `}</style>
                 {productosEnOferta.length > 0 ? (
-                  productosEnOferta.slice(0, 4).map((producto, index) => (
+                  productosEnOferta.slice(0, 4).map((producto) => {
+                    const selectedSizeIndex = selectedSizes[producto.id!] || 0;
+                    const hasSizes = producto.tamano && producto.tamano.length > 0;
+                    const hasPrices = producto.precios && producto.precios.length > 0;
+                    
+                    const getCurrentPrice = () => {
+                      if (hasSizes && hasPrices && producto.precios![selectedSizeIndex] !== undefined) {
+                        return producto.precios![selectedSizeIndex];
+                      }
+                      return 0;
+                    };
+
+                    const currentPrice = getCurrentPrice();
+
+                    return (
                     <div key={producto.id} className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
                       <div className="relative aspect-square">
                         <Image
@@ -835,26 +852,55 @@ export default function Home() {
                       <div className="p-2 sm:p-3 md:p-4">
                         <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">{producto.nombre}</h3>
                         <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{producto.descripcion || 'Producto en oferta especial'}</p>
-                        <div className="flex items-center gap-2 mb-2">
-                          {producto.descuento_valor && (
-                            <>
-                              <span className="text-sm font-medium text-gray-500 line-through">
-                                ${producto.precio}
+
+                        {/* Mostrar tamaños del producto - Seleccionables */}
+                        {hasSizes && (
+                          <div className="mb-2">
+                            <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {producto.tamano!.map((tamano, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => setSelectedSizes({...selectedSizes, [producto.id!]: index})}
+                                  className={`px-1.5 py-0.5 rounded-full text-xs font-medium transition-all ${
+                                    selectedSizeIndex === index
+                                      ? 'bg-[#196428] text-white shadow-sm'
+                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                  }`}
+                                >
+                                  {tamano.cantidad} {tamano.unidad}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mostrar precio según tamaño seleccionado */}
+                        {hasPrices && currentPrice > 0 ? (
+                          <div className="flex items-center gap-2 mb-2">
+                            {producto.descuento_valor && (
+                              <>
+                                <span className="text-sm font-medium text-gray-500 line-through">
+                                  ${currentPrice.toLocaleString('es-CO')}
+                                </span>
+                                <span className="text-lg font-bold text-red-600">
+                                  ${(() => {
+                                    const descuentoValor = typeof producto.descuento_valor === 'string' ? parseFloat(producto.descuento_valor) : Number(producto.descuento_valor)
+                                    const precioConDescuento = currentPrice * (1 - (descuentoValor / 100))
+                                    return precioConDescuento.toLocaleString('es-CO')
+                                  })()}
+                                </span>
+                              </>
+                            )}
+                            {!producto.descuento_valor && (
+                              <span className="text-lg font-bold text-[#196428]">
+                                ${currentPrice.toLocaleString('es-CO')}
                               </span>
-                              <span className="text-lg font-bold text-red-600">
-                                ${producto.precio && producto.descuento_valor ?
-                                  (parseFloat(producto.precio.toString()) * (1 - parseFloat(producto.descuento_valor.toString()) / 100)).toFixed(2) :
-                                  producto.precio
-                                }
-                              </span>
-                            </>
-                          )}
-                          {!producto.descuento_valor && producto.precio && (
-                            <span className="text-lg font-bold text-[#196428]">
-                              ${producto.precio}
-                            </span>
-                          )}
-                        </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-400 text-xs italic mb-2">Precio no disponible</p>
+                        )}
                         <button
                           onClick={(e) => {
                             e.preventDefault()
@@ -866,7 +912,8 @@ export default function Home() {
                         </button>
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 ) : (
                   /* Productos hardcodeados como fallback si no hay productos en oferta */
                   <>
@@ -971,7 +1018,21 @@ export default function Home() {
               {/* Vista móvil: scroll horizontal */}
               <div className="md:hidden overflow-x-auto pb-4 scroll-container">
                 <div className="flex gap-3">
-                  {productosDestacados.map((producto) => (
+                  {productosDestacados.map((producto) => {
+                    const selectedSizeIndex = selectedSizes[producto.id!] || 0;
+                    const hasSizes = producto.tamano && producto.tamano.length > 0;
+                    const hasPrices = producto.precios && producto.precios.length > 0;
+                    
+                    const getCurrentPrice = () => {
+                      if (hasSizes && hasPrices && producto.precios![selectedSizeIndex] !== undefined) {
+                        return producto.precios![selectedSizeIndex];
+                      }
+                      return 0;
+                    };
+
+                    const currentPrice = getCurrentPrice();
+
+                    return (
                     <div key={producto.id} className="flex-none w-[200px] bg-white rounded-[15px] overflow-hidden shadow-sm border border-gray-200">
                       <div className="relative aspect-square">
                         <Image
@@ -1000,23 +1061,52 @@ export default function Home() {
                       <div className="p-2">
                         <h3 className="text-sm font-semibold mb-1">{producto.nombre}</h3>
                         <p className="text-xs text-gray-600 mb-1">{producto.descripcion}</p>
-                        <div className="flex items-center gap-2">
-                          {producto.descuento ? (
-                            <>
-                              <p className="text-[#196428] font-medium text-xs">
-                                $ {(Number(producto.precio) * (1 - Number(producto.descuento_valor || 0)/100)).toFixed(2)}
-                              </p>
-                              <p className="text-gray-400 text-xs line-through">
-                                $ {Number(producto.precio).toFixed(2)}
-                              </p>
-                            </>
-                          ) : (
-                            <p className="text-[#196428] font-medium text-xs">$ {Number(producto.precio).toFixed(2)}</p>
-                          )}
-                        </div>
+
+                        {/* Mostrar tamaños del producto - Seleccionables */}
+                        {hasSizes && (
+                          <div className="mb-2">
+                            <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {producto.tamano!.map((tamano, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => setSelectedSizes({...selectedSizes, [producto.id!]: index})}
+                                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-all ${
+                                    selectedSizeIndex === index
+                                      ? 'bg-[#196428] text-white'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}
+                                >
+                                  {tamano.cantidad}{tamano.unidad}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mostrar precio según tamaño seleccionado */}
+                        {hasPrices && currentPrice > 0 ? (
+                          <div className="flex items-center gap-2">
+                            {producto.descuento ? (
+                              <>
+                                <p className="text-[#196428] font-medium text-xs">
+                                  $ {(currentPrice * (1 - Number(producto.descuento_valor || 0)/100)).toLocaleString('es-CO')}
+                                </p>
+                                <p className="text-gray-400 text-xs line-through">
+                                  $ {currentPrice.toLocaleString('es-CO')}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-[#196428] font-medium text-xs">$ {currentPrice.toLocaleString('es-CO')}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-400 text-xs italic">No disponible</p>
+                        )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1041,7 +1131,21 @@ export default function Home() {
                     {Array.from({ length: Math.ceil(productosDestacados.length / 4) }).map((_, slideIndex) => (
                       <div key={slideIndex} className="w-full flex-shrink-0">
                         <div className="grid grid-cols-4 gap-4 md:gap-5">
-                          {productosDestacados.slice(slideIndex * 4, slideIndex * 4 + 4).map((producto) => (
+                          {productosDestacados.slice(slideIndex * 4, slideIndex * 4 + 4).map((producto) => {
+                            const selectedSizeIndex = selectedSizes[producto.id!] || 0;
+                            const hasSizes = producto.tamano && producto.tamano.length > 0;
+                            const hasPrices = producto.precios && producto.precios.length > 0;
+                            
+                            const getCurrentPrice = () => {
+                              if (hasSizes && hasPrices && producto.precios![selectedSizeIndex] !== undefined) {
+                                return producto.precios![selectedSizeIndex];
+                              }
+                              return 0;
+                            };
+
+                            const currentPrice = getCurrentPrice();
+
+                            return (
                             <div key={producto.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
                               <div className="relative aspect-square">
                                 <Image
@@ -1070,23 +1174,52 @@ export default function Home() {
                               <div className="p-3 md:p-4">
                                 <h3 className="text-base md:text-lg font-semibold mb-2">{producto.nombre}</h3>
                                 <p className="text-sm text-gray-600 mb-2">{producto.descripcion}</p>
-                                <div className="flex items-center gap-2">
-                                  {producto.descuento ? (
-                                    <>
-                                      <p className="text-[#196428] font-medium text-sm">
-                                        $ {(Number(producto.precio) * (1 - Number(producto.descuento_valor || 0)/100)).toFixed(2)}
-                                      </p>
-                                      <p className="text-gray-400 text-sm line-through">
-                                        $ {Number(producto.precio).toFixed(2)}
-                                      </p>
-                                    </>
-                                  ) : (
-                                    <p className="text-[#196428] font-medium text-sm">$ {Number(producto.precio).toFixed(2)}</p>
-                                  )}
-                                </div>
+
+                                {/* Mostrar tamaños del producto - Seleccionables */}
+                                {hasSizes && (
+                                  <div className="mb-2">
+                                    <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {producto.tamano!.map((tamano, index) => (
+                                        <button
+                                          key={index}
+                                          onClick={() => setSelectedSizes({...selectedSizes, [producto.id!]: index})}
+                                          className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
+                                            selectedSizeIndex === index
+                                              ? 'bg-[#196428] text-white shadow-sm'
+                                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                          }`}
+                                        >
+                                          {tamano.cantidad} {tamano.unidad}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Mostrar precio según tamaño seleccionado */}
+                                {hasPrices && currentPrice > 0 ? (
+                                  <div className="flex items-center gap-2">
+                                    {producto.descuento ? (
+                                      <>
+                                        <p className="text-[#196428] font-medium text-sm">
+                                          $ {(currentPrice * (1 - Number(producto.descuento_valor || 0)/100)).toLocaleString('es-CO')}
+                                        </p>
+                                        <p className="text-gray-400 text-sm line-through">
+                                          $ {currentPrice.toLocaleString('es-CO')}
+                                        </p>
+                                      </>
+                                    ) : (
+                                      <p className="text-[#196428] font-medium text-sm">$ {currentPrice.toLocaleString('es-CO')}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-gray-400 text-xs italic">Precio no disponible</p>
+                                )}
                               </div>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
@@ -1109,7 +1242,7 @@ export default function Home() {
           {/* Nuestras marcas */}
           <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-              <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Nuestras marcas</h2>
+              <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Nuestros aliados</h2>
               <div className="relative">
                 <div className="overflow-hidden">
                   <div
