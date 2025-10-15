@@ -75,37 +75,63 @@ CREATE TABLE productos (
   subcategorias_id INTEGER NOT NULL REFERENCES subcategories(id) ON DELETE CASCADE,
   nombre VARCHAR(255) NOT NULL,
   descripcion TEXT,
-  stock INTEGER NOT NULL DEFAULT 0,
   imagen_url TEXT,
   descuento BOOLEAN DEFAULT FALSE,
   descuento_valor DECIMAL(5,2) DEFAULT 0,
   destacado BOOLEAN DEFAULT FALSE,
   novedad BOOLEAN DEFAULT FALSE,
   id_marca INTEGER REFERENCES marcas(id) ON DELETE SET NULL,
-  tamano JSONB,
-  precios JSONB,
+  stocks JSONB,  -- Nuevo campo que combina tamaño, precio y stock
+  tamano JSONB,  -- Campo antiguo mantenido para compatibilidad
+  precios JSONB, -- Campo antiguo mantenido para compatibilidad
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
-### Migración: Eliminar columna `precio` y agregar `precios`
+### Migración: Actualizar estructura de productos
 
-Si ya tienes la tabla `productos` creada con el campo antiguo `precio`, ejecuta estos comandos SQL:
+Si ya tienes la tabla `productos` creada con campos antiguos, ejecuta estos comandos SQL:
 
 ```sql
--- Eliminar la columna precio antigua (si existe)
+-- 1. Eliminar columnas antiguas (si existen)
 ALTER TABLE productos DROP COLUMN IF EXISTS precio;
+ALTER TABLE productos DROP COLUMN IF EXISTS stock;
 
--- Agregar la nueva columna precios JSONB
+-- 2. Agregar nuevas columnas JSONB
 ALTER TABLE productos ADD COLUMN IF NOT EXISTS precios JSONB;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS stocks JSONB;
+
+-- 3. Crear índice para mejorar rendimiento
+CREATE INDEX IF NOT EXISTS idx_productos_stocks ON productos USING GIN (stocks);
 ```
 
-**Nota:** La columna `precios` almacena un array de precios en formato JSON que corresponden en orden a los tamaños definidos en la columna `tamano`. Por ejemplo:
-- `tamano`: `[{"unidad": "G", "cantidad": 500}, {"unidad": "KG", "cantidad": 1}]`
-- `precios`: `[15000, 28000]`
+**Nota sobre campos:**
+- `precios`: Array de precios que corresponden en orden a los tamaños en `tamano`
+- `stocks`: Nuevo campo JSONB que combina tamaño, precio y stock individual
+- `tamano`: Campo antiguo mantenido para compatibilidad
 
-Esto significa que el primer precio (15000) corresponde al primer tamaño (500G), y el segundo precio (28000) corresponde al segundo tamaño (1KG).
+**Ejemplo del nuevo campo `stocks`:**
+```json
+{
+  "stocks": [
+    {
+      "id": "unique_id_1",
+      "cantidad": 500,
+      "unidad": "G",
+      "precio": 15000,
+      "stock": 50
+    },
+    {
+      "id": "unique_id_2",
+      "cantidad": 1,
+      "unidad": "KG",
+      "precio": 28000,
+      "stock": 25
+    }
+  ]
+}
+```
 
 ## Configuración del Bucket de Storage para Imágenes
 
@@ -159,6 +185,7 @@ Para habilitar el envío de emails de confirmación:
 
 ### Gestión de Productos e Imágenes
 ✅ Gestión completa de productos (CRUD)
+✅ Sistema avanzado de stocks con campo JSONB que combina tamaño, precio y stock
 ✅ Subida automática de imágenes locales al bucket de Supabase
 ✅ Generación automática de URLs públicas para imágenes
 ✅ Validación de archivos de imagen (tipo y tamaño)

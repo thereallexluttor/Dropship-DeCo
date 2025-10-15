@@ -55,6 +55,7 @@ import MainLayout from "../components/MainLayout"
 import CategoryDropdown from "../components/CategoryDropdown"
 import AccountPopover from "../components/AccountPopover"
 import AccountPopoverContent from "../components/AccountPopover"
+import { Marca } from "@/lib/supabase"
 import { useCategories } from "../hooks/useCategories"
 import { useProducts, ProductWithDetails } from "../hooks/useProducts"
 import CartCounter from "../components/CartCounter"
@@ -77,6 +78,10 @@ export default function TiendaPage() {
   // Estado para manejar el tamaño seleccionado de cada producto
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
 
+  // Estado para filtros de marcas
+  const [selectedBrand, setSelectedBrand] = useState<number | null>(null)
+  const [availableBrands, setAvailableBrands] = useState<Marca[]>([])
+
   // Hooks para datos de Supabase
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
   const { products, productsByCategory, discountedProducts, featuredProducts, newProducts, brands, isLoading: productsLoading, error: productsError, getProductsBySubcategory } = useProducts()
@@ -97,6 +102,9 @@ export default function TiendaPage() {
   const handleCategoryChange = (categoryId: number, subcategoryId: number) => {
     setSelectedCategory(categoryId)
     setSelectedSubcategory(subcategoryId)
+
+    // Limpiar filtro de marca cuando cambia la categoría
+    setSelectedBrand(null)
 
     // Manejar categorías especiales
     if (categoryId === CATEGORIES.NOVEDADES) {
@@ -122,17 +130,61 @@ export default function TiendaPage() {
     }
   }
 
+  // Función para obtener marcas disponibles según la categoría seleccionada
+  const getBrandsForCategory = (categoryId: number) => {
+    if (categoryId === CATEGORIES.OFERTAS) {
+      // Para ofertas, obtener marcas de productos con descuento
+      const brandIds = new Set(discountedProducts.map(p => p.id_marca).filter(Boolean))
+      return brands.filter(brand => brandIds.has(brand.id))
+    }
+
+    if (categoryId === CATEGORIES.NOVEDADES) {
+      // Para novedades, obtener marcas de productos nuevos
+      const brandIds = new Set(newProducts.map(p => p.id_marca).filter(Boolean))
+      return brands.filter(brand => brandIds.has(brand.id))
+    }
+
+    // Para categorías normales, obtener marcas de productos en la categoría actual
+    const currentProducts = getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
+    const brandIds = new Set(currentProducts.map(p => p.id_marca).filter(Boolean))
+    return brands.filter(brand => brandIds.has(brand.id))
+  }
+
+  // Función para filtrar productos por marca
+  const filterProductsByBrand = (products: ProductWithDetails[]) => {
+    if (!selectedBrand) return products
+    return products.filter(product => product.id_marca === selectedBrand)
+  }
+
   // Obtener productos actuales
   const currentProducts = getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
 
   // Determinar qué productos mostrar según la categoría seleccionada
-  const displayProducts = selectedCategory === CATEGORIES.OFERTAS
+  const baseProducts = selectedCategory === CATEGORIES.OFERTAS
     ? discountedProducts
     : selectedCategory === CATEGORIES.NOVEDADES
     ? newProducts
     : currentProducts.length > 0
     ? currentProducts
     : featuredProducts
+
+  // Aplicar filtro de marca si está seleccionado
+  const displayProducts = filterProductsByBrand(baseProducts)
+
+  // Efecto para actualizar marcas disponibles cuando cambia la categoría
+  useEffect(() => {
+    const brandsForCurrentCategory = getBrandsForCategory(selectedCategory)
+    setAvailableBrands(brandsForCurrentCategory)
+    // Resetear marca seleccionada si ya no está disponible en la nueva categoría
+    if (selectedBrand && !brandsForCurrentCategory.find(b => b.id === selectedBrand)) {
+      setSelectedBrand(null)
+    }
+  }, [selectedCategory, selectedSubcategory, products, discountedProducts, newProducts])
+
+  // Función para limpiar filtros
+  const clearFilters = () => {
+    setSelectedBrand(null)
+  }
 
   // Función para generar categorías dinámicamente
   const renderDynamicCategories = () => {
@@ -797,6 +849,16 @@ export default function TiendaPage() {
                       ))}
                     </div>
                     <h1 className="text-3xl font-black text-black">{currentTitle}</h1>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {displayProducts.length} producto{displayProducts.length !== 1 ? 's' : ''} encontrado{displayProducts.length !== 1 ? 's' : ''}
+                      {selectedBrand && (
+                        <span className="ml-2">
+                          • Filtrado por: <span className="font-medium text-[#196428]">
+                            {brands.find(b => b.id === selectedBrand)?.nombre_marca}
+                          </span>
+                        </span>
+                      )}
+                    </p>
                   </div>
 
                   {/* Filters - responsive layout */}
@@ -810,7 +872,33 @@ export default function TiendaPage() {
                     </div>
 
                     {/* Desktop/Tablet Filters */}
-                    <div className="hidden md:flex flex-wrap gap-3">
+                    <div className="hidden md:flex flex-wrap gap-3 items-center">
+                      {/* Filtro de marcas - disponible para todas las categorías */}
+                      {availableBrands.length > 0 && (
+                        <select
+                          value={selectedBrand || ""}
+                          onChange={(e) => setSelectedBrand(e.target.value ? parseInt(e.target.value) : null)}
+                          className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white"
+                        >
+                          <option value="">Todas las marcas</option>
+                          {availableBrands.map(brand => (
+                            <option key={brand.id} value={brand.id}>
+                              {brand.nombre_marca}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      {/* Botón para limpiar filtros */}
+                      {(selectedBrand) && (
+                        <button
+                          onClick={clearFilters}
+                          className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+                        >
+                          Limpiar filtros
+                        </button>
+                      )}
+
                       {selectedCategory === CATEGORIES.OFERTAS ? (
                         // Filtros para ofertas
                         <>

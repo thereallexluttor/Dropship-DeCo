@@ -62,19 +62,29 @@ export interface TamanoProducto {
   cantidad: number
 }
 
+// Tipos para el campo stocks (jsonb) que relaciona tamaño, precio y stock
+export interface ProductoStock {
+  id?: string  // identificador único para cada combinación
+  cantidad: number  // cantidad del tamaño
+  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB'
+  precio: number   // precio para este tamaño
+  stock: number    // stock disponible para este tamaño
+}
+
 // Tipos para la tabla productos
 export interface Producto {
   id?: number
   subcategorias_id: number
   nombre: string
   descripcion: string
-  stock: number | string
   imagen_url?: string | null
   descuento?: boolean
   descuento_valor?: number | string
   destacado?: boolean
   novedad?: boolean
   id_marca?: number | null
+  stocks?: ProductoStock[] | null  // Campo jsonb que contiene todas las combinaciones de tamaño, precio y stock
+  // Campos antiguos mantenidos para compatibilidad durante la transición
   tamano?: TamanoProducto[] | null
   precios?: number[] | null  // Array de precios que corresponden a cada tamaño
   created_at?: string

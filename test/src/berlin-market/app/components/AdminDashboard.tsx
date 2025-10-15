@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto } from '@/lib/supabase';
+import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto, ProductoStock } from '@/lib/supabase';
 
 // Tipos para formularios internos
 interface ProductoForm {
   subcategorias_id: number
   nombre: string
   descripcion: string
-  stock: string
   imagen_url: string
   descuento: boolean
   descuento_valor: string
   destacado: boolean
   novedad: boolean
   id_marca: number
+  stocks: ProductoStock[]  // Nuevo campo que combina tamaño, precio y stock
+  // Campos antiguos mantenidos para compatibilidad durante la transición
   tamano: TamanoProducto[]
   precios: number[]
 }
@@ -22,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -48,17 +49,22 @@ const AdminDashboard = () => {
     subcategorias_id: 0,
     nombre: '',
     descripcion: '',
-    stock: '',
     imagen_url: '',
     descuento: false,
     descuento_valor: '',
     destacado: false,
     novedad: false,
     id_marca: 0,
+    stocks: [],  // Nuevo campo stocks inicializado vacío
     tamano: [],
     precios: []
   });
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
+  const [newMarca, setNewMarca] = useState({ nombre_marca: '' });
+  const [editingMarca, setEditingMarca] = useState<Marca | null>(null);
+
+  // Forzar actualización de tipos
+  useEffect(() => {}, []);
 
   useEffect(() => {
     loadData();
@@ -123,26 +129,32 @@ const AdminDashboard = () => {
         setProductos(productosData || []);
 
         // Cargar marcas
+        console.log('🔄 Cargando marcas desde Supabase...');
         const { data: marcasData, error: marcasError } = await supabase
           .from('marcas')
           .select('*')
           .order('nombre_marca', { ascending: true });
 
         if (marcasError) {
-          console.error('Error cargando marcas:', marcasError);
+          console.error('❌ Error cargando marcas:', marcasError);
           if (marcasError.message.includes('relation "marcas" does not exist')) {
+            console.error('❌ La tabla "marcas" no existe en la base de datos');
             setTablesConfigured(false);
             setIsLoading(false);
             return;
           }
           throw marcasError;
         }
+
+        console.log('✅ Marcas cargadas exitosamente:', marcasData?.length || 0, 'marcas');
+        console.table(marcasData || []); // Mostrar todas las marcas en tabla
         setMarcas(marcasData || []);
     } catch (error: any) {
       console.error('Error cargando datos:', error);
       if (error?.message?.includes('relation "categories" does not exist') ||
           error?.message?.includes('relation "subcategories" does not exist') ||
           error?.message?.includes('relation "productos" does not exist') ||
+          error?.message?.includes('relation "usuarios" does not exist') ||
           error?.message?.includes('relation "marcas" does not exist')) {
         setTablesConfigured(false);
       } else if (error?.code === 'PGRST301') {
@@ -398,8 +410,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!newProducto.subcategorias_id ||
         !newProducto.nombre.trim() ||
-        !newProducto.descripcion.trim() ||
-        !newProducto.stock.trim()) {
+        !newProducto.descripcion.trim()) {
       alert('Por favor completa todos los campos obligatorios');
       return;
     }
@@ -433,13 +444,14 @@ const AdminDashboard = () => {
       subcategorias_id: newProducto.subcategorias_id,
       nombre: newProducto.nombre,
       descripcion: newProducto.descripcion,
-      stock: parseInt(newProducto.stock),
       imagen_url: newProducto.imagen_url || null,
       descuento: newProducto.descuento || false,
       descuento_valor: newProducto.descuento_valor ? parseFloat(newProducto.descuento_valor) : undefined,
       destacado: newProducto.destacado || false,
       novedad: newProducto.novedad || false,
       id_marca: newProducto.id_marca || null,
+      stocks: newProducto.stocks && newProducto.stocks.length > 0 ? newProducto.stocks : null,
+      // Campos antiguos mantenidos para compatibilidad durante la transición
       tamano: newProducto.tamano && newProducto.tamano.length > 0 ? newProducto.tamano : null,
       precios: newProducto.precios && newProducto.precios.length > 0 ? newProducto.precios : null
     };
@@ -458,13 +470,13 @@ const AdminDashboard = () => {
         subcategorias_id: 0,
         nombre: '',
         descripcion: '',
-        stock: '',
         imagen_url: '',
         descuento: false,
         descuento_valor: '',
         destacado: false,
         novedad: false,
         id_marca: 0,
+        stocks: [],
         tamano: [],
         precios: []
       } as ProductoForm);
@@ -489,18 +501,12 @@ const AdminDashboard = () => {
       alert('Por favor completa el nombre del producto');
       return;
     }
-    
+
     if (!producto.descripcion || !producto.descripcion.trim()) {
       alert('Por favor completa la descripción del producto');
       return;
     }
 
-    const stockNum = typeof producto.stock === 'string' ? parseInt(producto.stock) : producto.stock;
-
-    if (isNaN(stockNum) || stockNum < 0) {
-      alert('Por favor ingresa un stock válido');
-      return;
-    }
 
     // Validar tamaños
     if (producto.tamano && producto.tamano.length > 0) {
@@ -533,13 +539,14 @@ const AdminDashboard = () => {
           subcategorias_id: producto.subcategorias_id,
           nombre: producto.nombre,
           descripcion: producto.descripcion,
-          stock: parseInt(producto.stock.toString()),
           imagen_url: producto.imagen_url || null,
           descuento: producto.descuento || false,
           descuento_valor: producto.descuento_valor ? parseFloat(producto.descuento_valor.toString()) : null,
           destacado: producto.destacado || false,
           novedad: producto.novedad || false,
           id_marca: producto.id_marca || null,
+          stocks: producto.stocks && producto.stocks.length > 0 ? producto.stocks : null,
+          // Campos antiguos mantenidos para compatibilidad durante la transición
           tamano: producto.tamano && producto.tamano.length > 0 ? producto.tamano : null,
           precios: producto.precios && producto.precios.length > 0 ? producto.precios : null
         })
@@ -591,9 +598,124 @@ const AdminDashboard = () => {
     }
   };
 
+  // ========== FUNCIONES CRUD PARA MARCAS ==========
+
+  const handleCreateMarca = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMarca.nombre_marca.trim()) {
+      alert('Por favor ingresa el nombre de la marca');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('marcas')
+        .insert([{ nombre_marca: newMarca.nombre_marca.trim() }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMarcas([...marcas, data]);
+      setNewMarca({ nombre_marca: '' });
+      alert('Marca creada exitosamente');
+    } catch (error: any) {
+      console.error('Error creando marca:', error);
+      if (error?.message?.includes('relation "marcas" does not exist')) {
+        alert('La tabla "marcas" no existe en Supabase. Crea las tablas siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al crear la marca: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const handleUpdateMarca = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMarca || !editingMarca.nombre_marca.trim()) {
+      alert('Por favor ingresa el nombre de la marca');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('marcas')
+        .update({ nombre_marca: editingMarca.nombre_marca.trim() })
+        .eq('id', editingMarca.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMarcas(marcas.map(m => m.id === editingMarca.id ? data : m));
+      setEditingMarca(null);
+      alert('Marca actualizada exitosamente');
+    } catch (error: any) {
+      console.error('Error actualizando marca:', error);
+      if (error?.message?.includes('relation "marcas" does not exist')) {
+        alert('La tabla "marcas" no existe en Supabase. Crea las tablas siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al actualizar la marca: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const handleDeleteMarca = async (id: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta marca? Los productos asociados seguirán existiendo pero perderán la referencia a esta marca.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('marcas')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setMarcas(marcas.filter(m => m.id !== id));
+      alert('Marca eliminada exitosamente');
+    } catch (error: any) {
+      console.error('Error eliminando marca:', error);
+      if (error?.message?.includes('relation "marcas" does not exist')) {
+        alert('La tabla "marcas" no existe en Supabase. Crea las tablas siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al eliminar la marca: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const startEditMarca = (marca: Marca) => {
+    setEditingMarca({ ...marca });
+  };
+
+  const cancelEditMarca = () => {
+    setEditingMarca(null);
+  };
+
   const startEditProducto = (producto: Producto) => {
+    // Inicializar stocks si no existe o sincronizar con campos antiguos
+    let stocks = producto.stocks || [];
+
+    // Si no hay stocks pero sí tamaños y precios antiguos, crear stocks a partir de ellos
+    if (stocks.length === 0 && producto.tamano && producto.tamano.length > 0 && producto.precios) {
+      stocks = producto.tamano.map((tamano, index) => ({
+        id: `${producto.id}_${index}_${Date.now()}`,  // ID único basado en producto y posición
+        cantidad: tamano.cantidad,
+        unidad: tamano.unidad,
+        precio: producto.precios?.[index] || 0,
+        stock: 0  // Valor por defecto, se puede ajustar después
+      }));
+    }
+
     setEditingProducto({
       ...producto,
+      stocks: stocks,
       tamano: producto.tamano || [],
       precios: producto.precios || []
     });
@@ -605,27 +727,79 @@ const AdminDashboard = () => {
 
   // Funciones para manejar tamaños y precios de productos
   const agregarTamano = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void) => {
+    // Crear nuevo stock con valores por defecto
+    const nuevoStock: ProductoStock = {
+      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,  // ID único
+      cantidad: 0,
+      unidad: 'ML',
+      precio: 0,
+      stock: 0
+    };
+
+    const nuevosStocks = [...(producto.stocks || []), nuevoStock];
+
+    // Mantener compatibilidad con campos antiguos durante la transición
     const nuevosTamanos = [...(producto.tamano || []), { unidad: 'ML' as const, cantidad: 0 }];
     const nuevosPrecios = [...(producto.precios || []), 0];
-    setProducto({ ...producto, tamano: nuevosTamanos, precios: nuevosPrecios });
+
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks,
+      tamano: nuevosTamanos,
+      precios: nuevosPrecios
+    });
   };
 
   const eliminarTamano = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number) => {
+    const nuevosStocks = (producto.stocks || []).filter((_, i) => i !== index);
     const nuevosTamanos = (producto.tamano || []).filter((_, i) => i !== index);
     const nuevosPrecios = (producto.precios || []).filter((_, i) => i !== index);
-    setProducto({ ...producto, tamano: nuevosTamanos, precios: nuevosPrecios });
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks,
+      tamano: nuevosTamanos,
+      precios: nuevosPrecios
+    });
   };
 
   const actualizarTamano = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, campo: 'unidad' | 'cantidad', valor: string | number) => {
+    const nuevosStocks = [...(producto.stocks || [])];
     const nuevosTamanos = [...(producto.tamano || [])];
+
+    // Actualizar tanto stocks como tamano para mantener sincronización
     nuevosTamanos[index] = { ...nuevosTamanos[index], [campo]: valor } as TamanoProducto;
-    setProducto({ ...producto, tamano: nuevosTamanos });
+    nuevosStocks[index] = { ...nuevosStocks[index], [campo]: valor };
+
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks,
+      tamano: nuevosTamanos
+    });
   };
 
   const actualizarPrecio = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, valor: number) => {
+    const nuevosStocks = [...(producto.stocks || [])];
     const nuevosPrecios = [...(producto.precios || [])];
+
+    // Actualizar tanto stocks como precios para mantener sincronización
     nuevosPrecios[index] = valor;
-    setProducto({ ...producto, precios: nuevosPrecios });
+    nuevosStocks[index] = { ...nuevosStocks[index], precio: valor };
+
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks,
+      precios: nuevosPrecios
+    });
+  };
+
+  const actualizarStock = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, valor: number) => {
+    const nuevosStocks = [...(producto.stocks || [])];
+    nuevosStocks[index] = { ...nuevosStocks[index], stock: valor };
+
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks
+    });
   };
 
   // Función para subir imagen a Supabase Storage
@@ -777,11 +951,11 @@ const AdminDashboard = () => {
     <div className="space-y-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Panel de Administración</h2>
-        <p className="text-gray-600">Gestiona categorías y subcategorías del sistema</p>
+        <p className="text-gray-600">Gestiona categorías, subcategorías, productos y marcas del sistema</p>
       </div>
 
       <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto">
           <TabsTrigger value="categorias" className="flex items-center gap-2">
             <FolderPlus className="h-4 w-4" />
             Categorías
@@ -793,6 +967,10 @@ const AdminDashboard = () => {
           <TabsTrigger value="productos" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Productos
+          </TabsTrigger>
+          <TabsTrigger value="marcas" className="flex items-center gap-2">
+            <Tag className="h-4 w-4" />
+            Marcas
           </TabsTrigger>
         </TabsList>
 
@@ -1462,19 +1640,6 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Stock
-                    </label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={newProducto.stock}
-                      onChange={(e) => setNewProducto({ ...newProducto, stock: e.target.value })}
-                      placeholder="0"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Marca
                     </label>
                     <select
@@ -1508,10 +1673,7 @@ const AdminDashboard = () => {
                         Valor del descuento (%)
                       </label>
                       <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
+                        type="text"
                         value={newProducto.descuento_valor}
                         onChange={(e) => setNewProducto({ ...newProducto, descuento_valor: e.target.value })}
                         placeholder="10.50"
@@ -1606,9 +1768,7 @@ const AdminDashboard = () => {
                               Cantidad
                             </label>
                             <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
                               value={tamano.cantidad}
                               onChange={(e) => actualizarTamano(newProducto, setNewProducto as any, index, 'cantidad', parseFloat(e.target.value) || 0)}
                               placeholder="500"
@@ -1638,12 +1798,22 @@ const AdminDashboard = () => {
                               Precio ($)
                             </label>
                             <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
+                              type="text"
                               value={newProducto.precios?.[index] || 0}
                               onChange={(e) => actualizarPrecio(newProducto, setNewProducto as any, index, parseFloat(e.target.value) || 0)}
                               placeholder="0.00"
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Stock
+                            </label>
+                            <Input
+                              type="text"
+                              value={newProducto.stocks?.[index]?.stock || 0}
+                              onChange={(e) => actualizarStock(newProducto, setNewProducto as any, index, parseInt(e.target.value) || 0)}
+                              placeholder="0"
                               className="w-full"
                             />
                           </div>
@@ -1667,7 +1837,7 @@ const AdminDashboard = () => {
 
                   {newProducto.tamano && newProducto.tamano.length > 0 && (
                     <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                      <strong>Ejemplos:</strong> 500 ML - $15.000, 1.5 KG - $28.000, 250 G - $8.500
+                      <strong>Ejemplos:</strong> 500 ML - $15.000 (Stock: 50), 1.5 KG - $28.000 (Stock: 25), 250 G - $8.500 (Stock: 100)
                     </div>
                   )}
                 </div>
@@ -1739,16 +1909,6 @@ const AdminDashboard = () => {
                                   placeholder="Descripción"
                                   className="md:col-span-2"
                                 />
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={editingProducto?.stock || ''}
-                                  onChange={(e) => editingProducto && setEditingProducto({
-                                    ...editingProducto,
-                                    stock: e.target.value
-                                  })}
-                                  placeholder="Stock"
-                                />
                                 <select
                                   value={editingProducto?.id_marca?.toString() || ''}
                                   onChange={(e) => editingProducto && setEditingProducto({
@@ -1781,10 +1941,7 @@ const AdminDashboard = () => {
                                 </div>
                                 {editingProducto?.descuento && (
                                   <Input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="0.01"
+                                    type="text"
                                     value={editingProducto?.descuento_valor || ''}
                                     onChange={(e) => editingProducto && setEditingProducto({
                                       ...editingProducto,
@@ -1888,9 +2045,7 @@ const AdminDashboard = () => {
                                               Cantidad
                                             </label>
                                             <Input
-                                              type="number"
-                                              min="0"
-                                              step="0.01"
+                                              type="text"
                                               value={tamano.cantidad}
                                               onChange={(e) => editingProducto && actualizarTamano(editingProducto, setEditingProducto, index, 'cantidad', parseFloat(e.target.value) || 0)}
                                               placeholder="500"
@@ -1920,12 +2075,22 @@ const AdminDashboard = () => {
                                               Precio ($)
                                             </label>
                                             <Input
-                                              type="number"
-                                              min="0"
-                                              step="0.01"
+                                              type="text"
                                               value={editingProducto.precios?.[index] || 0}
                                               onChange={(e) => editingProducto && actualizarPrecio(editingProducto, setEditingProducto, index, parseFloat(e.target.value) || 0)}
                                               placeholder="0.00"
+                                              className="w-full"
+                                            />
+                                          </div>
+                                          <div className="flex-1">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                              Stock
+                                            </label>
+                                            <Input
+                                              type="text"
+                                              value={editingProducto.stocks?.[index]?.stock || 0}
+                                              onChange={(e) => editingProducto && actualizarStock(editingProducto, setEditingProducto, index, parseInt(e.target.value) || 0)}
+                                              placeholder="0"
                                               className="w-full"
                                             />
                                           </div>
@@ -1949,7 +2114,7 @@ const AdminDashboard = () => {
 
                                   {editingProducto?.tamano && editingProducto.tamano.length > 0 && (
                                     <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                                      <strong>Ejemplos:</strong> 500 ML - $15.000, 1.5 KG - $28.000, 250 G - $8.500
+                                      <strong>Ejemplos:</strong> 500 ML - $15.000 (Stock: 50), 1.5 KG - $28.000 (Stock: 25), 250 G - $8.500 (Stock: 100)
                                     </div>
                                   )}
                                 </div>
@@ -2006,7 +2171,9 @@ const AdminDashboard = () => {
                                       {producto.descripcion}
                                     </p>
                                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                                      <span>Stock: {producto.stock} unidades</span>
+                                      {producto.stocks && producto.stocks.length > 0 && (
+                                        <span>Stock total: {producto.stocks.reduce((total, item) => total + item.stock, 0)} unidades</span>
+                                      )}
                                       {producto.descuento && (
                                         <span className="text-green-600 font-medium">
                                           Descuento: {producto.descuento_valor}%
@@ -2025,13 +2192,16 @@ const AdminDashboard = () => {
                                     </div>
                                     {producto.tamano && producto.tamano.length > 0 && (
                                       <div className="mt-2">
-                                        <span className="text-sm font-medium text-gray-700">Tamaños y Precios: </span>
+                                        <span className="text-sm font-medium text-gray-700">Tamaños, Precios y Stock: </span>
                                         <div className="flex flex-wrap gap-2 mt-1">
-                                          {producto.tamano.map((tamano, index) => (
-                                            <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-800 font-medium">
-                                              {tamano.cantidad} {tamano.unidad} - ${producto.precios?.[index] ? producto.precios[index].toLocaleString('es-CO') : 'N/A'}
-                                            </span>
-                                          ))}
+                                          {producto.tamano.map((tamano, index) => {
+                                            const stock = producto.stocks?.[index]?.stock || 0;
+                                            return (
+                                              <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-800 font-medium">
+                                                {tamano.cantidad} {tamano.unidad} - ${producto.precios?.[index] ? producto.precios[index].toLocaleString('es-CO') : 'N/A'} (Stock: {stock})
+                                              </span>
+                                            );
+                                          })}
                                         </div>
                                       </div>
                                     )}
@@ -2063,6 +2233,108 @@ const AdminDashboard = () => {
                       </Card>
                     );
                   })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="marcas" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5" />
+                Crear Nueva Marca
+              </CardTitle>
+              <CardDescription>
+                Agrega una nueva marca al sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateMarca} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre de la Marca
+                  </label>
+                  <Input
+                    value={newMarca.nombre_marca}
+                    onChange={(e) => setNewMarca({ nombre_marca: e.target.value })}
+                    placeholder="Ej: Royal Canin, Purina, etc."
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Marca
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5" />
+                Marcas Existentes ({marcas.length})
+              </CardTitle>
+              <CardDescription>
+                Gestiona las marcas existentes en el sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {marcas.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  No hay marcas registradas aún. Crea la primera marca arriba.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {marcas.map((marca) => (
+                    <div key={marca.id} className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                      <div className="flex-1">
+                        {editingMarca && editingMarca.id === marca.id ? (
+                          <form onSubmit={handleUpdateMarca} className="flex items-center gap-3 w-full">
+                            <Input
+                              value={editingMarca.nombre_marca}
+                              onChange={(e) => setEditingMarca({ ...editingMarca, nombre_marca: e.target.value })}
+                              className="flex-1"
+                              required
+                            />
+                            <Button type="submit" size="sm">
+                              <Save className="h-4 w-4" />
+                            </Button>
+                            <Button type="button" onClick={cancelEditMarca} size="sm" variant="outline">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </form>
+                        ) : (
+                          <div>
+                            <h4 className="font-medium text-gray-900">{marca.nombre_marca}</h4>
+                            <p className="text-xs text-gray-400">
+                              ID: {marca.id} • Creado: {marca.created_at ? new Date(marca.created_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      {(!editingMarca || editingMarca.id !== marca.id) && (
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            onClick={() => startEditMarca(marca)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteMarca(marca.id || 0)}
+                            size="sm"
+                            variant="destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
