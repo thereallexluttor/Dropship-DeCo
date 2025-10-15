@@ -415,8 +415,14 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Validar tamaños
+    // Convertir y validar tamaños
     if (newProducto.tamano && newProducto.tamano.length > 0) {
+      // Convertir strings a números
+      newProducto.tamano = newProducto.tamano.map(t => ({
+        ...t,
+        cantidad: typeof t.cantidad === 'string' ? parseFloat(t.cantidad) || 0 : t.cantidad
+      }));
+
       const tamañosValidos = newProducto.tamano.filter(t => t.cantidad > 0);
       if (tamañosValidos.length === 0) {
         alert('Si defines tamaños, al menos uno debe tener una cantidad mayor a 0');
@@ -426,12 +432,18 @@ const AdminDashboard = () => {
       newProducto.tamano = tamañosValidos;
     }
 
-    // Validar que si hay tamaños, también haya precios correspondientes
+    // Convertir y validar precios
     if (newProducto.tamano && newProducto.tamano.length > 0) {
       if (!newProducto.precios || newProducto.precios.length !== newProducto.tamano.length) {
         alert('Debe haber un precio para cada tamaño definido');
         return;
       }
+      
+      // Convertir strings a números
+      newProducto.precios = newProducto.precios.map(p => 
+        typeof p === 'string' ? parseFloat(p) || 0 : p
+      );
+
       // Validar que todos los precios sean mayores a 0
       if (newProducto.precios.some(p => p <= 0)) {
         alert('Todos los precios deben ser mayores a 0');
@@ -508,8 +520,14 @@ const AdminDashboard = () => {
     }
 
 
-    // Validar tamaños
+    // Convertir y validar tamaños
     if (producto.tamano && producto.tamano.length > 0) {
+      // Convertir strings a números
+      producto.tamano = producto.tamano.map(t => ({
+        ...t,
+        cantidad: typeof t.cantidad === 'string' ? parseFloat(t.cantidad) || 0 : t.cantidad
+      }));
+
       const tamañosValidos = producto.tamano.filter(t => t.cantidad > 0);
       if (tamañosValidos.length === 0) {
         alert('Si defines tamaños, al menos uno debe tener una cantidad mayor a 0');
@@ -519,12 +537,18 @@ const AdminDashboard = () => {
       producto.tamano = tamañosValidos;
     }
 
-    // Validar que si hay tamaños, también haya precios correspondientes
+    // Convertir y validar precios
     if (producto.tamano && producto.tamano.length > 0) {
       if (!producto.precios || producto.precios.length !== producto.tamano.length) {
         alert('Debe haber un precio para cada tamaño definido');
         return;
       }
+      
+      // Convertir strings a números
+      producto.precios = producto.precios.map(p => 
+        typeof p === 'string' ? parseFloat(p) || 0 : p
+      );
+
       // Validar que todos los precios sean mayores a 0
       if (producto.precios.some(p => p <= 0)) {
         alert('Todos los precios deben ser mayores a 0');
@@ -766,9 +790,13 @@ const AdminDashboard = () => {
     const nuevosStocks = [...(producto.stocks || [])];
     const nuevosTamanos = [...(producto.tamano || [])];
 
+    // Si es cantidad y es string, permitir entrada libre (incluyendo punto decimal)
+    // Solo convertir a número cuando se guarde el producto
+    const valorFinal = campo === 'cantidad' && typeof valor === 'string' ? valor : valor;
+
     // Actualizar tanto stocks como tamano para mantener sincronización
-    nuevosTamanos[index] = { ...nuevosTamanos[index], [campo]: valor } as TamanoProducto;
-    nuevosStocks[index] = { ...nuevosStocks[index], [campo]: valor };
+    nuevosTamanos[index] = { ...nuevosTamanos[index], [campo]: valorFinal } as TamanoProducto;
+    nuevosStocks[index] = { ...nuevosStocks[index], [campo]: valorFinal };
 
     setProducto({
       ...producto,
@@ -777,13 +805,17 @@ const AdminDashboard = () => {
     });
   };
 
-  const actualizarPrecio = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, valor: number) => {
+  const actualizarPrecio = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, valor: string | number) => {
     const nuevosStocks = [...(producto.stocks || [])];
     const nuevosPrecios = [...(producto.precios || [])];
 
+    // Permitir entrada libre (incluyendo punto decimal)
+    // Solo convertir a número cuando se guarde el producto
+    const valorFinal = typeof valor === 'string' ? valor : valor;
+
     // Actualizar tanto stocks como precios para mantener sincronización
-    nuevosPrecios[index] = valor;
-    nuevosStocks[index] = { ...nuevosStocks[index], precio: valor };
+    nuevosPrecios[index] = valorFinal as any;
+    nuevosStocks[index] = { ...nuevosStocks[index], precio: valorFinal as any };
 
     setProducto({
       ...producto,
@@ -1770,7 +1802,7 @@ const AdminDashboard = () => {
                             <Input
                               type="text"
                               value={tamano.cantidad}
-                              onChange={(e) => actualizarTamano(newProducto, setNewProducto as any, index, 'cantidad', parseFloat(e.target.value) || 0)}
+                              onChange={(e) => actualizarTamano(newProducto, setNewProducto as any, index, 'cantidad', e.target.value)}
                               placeholder="500"
                               className="w-full"
                             />
@@ -1799,8 +1831,8 @@ const AdminDashboard = () => {
                             </label>
                             <Input
                               type="text"
-                              value={newProducto.precios?.[index] || 0}
-                              onChange={(e) => actualizarPrecio(newProducto, setNewProducto as any, index, parseFloat(e.target.value) || 0)}
+                              value={newProducto.precios?.[index] || ''}
+                              onChange={(e) => actualizarPrecio(newProducto, setNewProducto as any, index, e.target.value)}
                               placeholder="0.00"
                               className="w-full"
                             />
@@ -2047,7 +2079,7 @@ const AdminDashboard = () => {
                                             <Input
                                               type="text"
                                               value={tamano.cantidad}
-                                              onChange={(e) => editingProducto && actualizarTamano(editingProducto, setEditingProducto, index, 'cantidad', parseFloat(e.target.value) || 0)}
+                                              onChange={(e) => editingProducto && actualizarTamano(editingProducto, setEditingProducto, index, 'cantidad', e.target.value)}
                                               placeholder="500"
                                               className="w-full"
                                             />
@@ -2076,8 +2108,8 @@ const AdminDashboard = () => {
                                             </label>
                                             <Input
                                               type="text"
-                                              value={editingProducto.precios?.[index] || 0}
-                                              onChange={(e) => editingProducto && actualizarPrecio(editingProducto, setEditingProducto, index, parseFloat(e.target.value) || 0)}
+                                              value={editingProducto.precios?.[index] || ''}
+                                              onChange={(e) => editingProducto && actualizarPrecio(editingProducto, setEditingProducto, index, e.target.value)}
                                               placeholder="0.00"
                                               className="w-full"
                                             />
