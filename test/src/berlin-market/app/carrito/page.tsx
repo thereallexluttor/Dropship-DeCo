@@ -525,7 +525,7 @@ export default function CarritoPage() {
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div className="space-y-4">
                       {items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                        <div key={item.id!} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
                           {/* Imagen del producto */}
                           <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                             <Image
@@ -569,15 +569,15 @@ export default function CarritoPage() {
                               {item.descuento && item.descuento_valor ? (
                                 <>
                                   <span className="text-red-500 font-medium line-through">
-                                    $ {formatPrice(item.precio)}
+                                    $ {formatPrice(item.precios?.[0] || 0)}
                                   </span>
                                   <span className="text-[#196428] font-bold text-lg">
-                                    $ {formatPrice(Number(item.precio) * (1 - Number(item.descuento_valor) / 100))}
+                                    $ {formatPrice(Number(item.precios?.[0] || 0) * (1 - Number(item.descuento_valor) / 100))}
                                   </span>
                                 </>
                               ) : (
                                 <span className="text-[#196428] font-bold text-lg">
-                                  $ {formatPrice(item.precio)}
+                                  $ {formatPrice(item.precios?.[0] || 0)}
                                 </span>
                               )}
                             </div>
@@ -586,7 +586,7 @@ export default function CarritoPage() {
                           {/* Controles de cantidad */}
                           <div className="flex items-center gap-3">
                             <button
-                              onClick={() => updateQuantity(item.id, (item.quantity || 1) - 1)}
+                              onClick={() => updateQuantity(item.id!, (item.quantity || 1) - 1)}
                               className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
                             >
                               <Minus className="h-4 w-4" />
@@ -597,14 +597,14 @@ export default function CarritoPage() {
                             </span>
 
                             <button
-                              onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1)}
+                              onClick={() => updateQuantity(item.id!, (item.quantity || 1) + 1)}
                               className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
                             >
                               <Plus className="h-4 w-4" />
                             </button>
 
                             <button
-                              onClick={() => removeFromCart(item.id)}
+                              onClick={() => removeFromCart(item.id!)}
                               className="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-full flex items-center justify-center transition-colors ml-2"
                             >
                               <Trash2 className="h-4 w-4" />

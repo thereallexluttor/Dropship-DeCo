@@ -103,11 +103,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getTotalPrice = () => {
     return items.reduce((total, item) => {
-      const precio = typeof item.precio === 'string'
-        ? parseFloat(item.precio.replace(/\./g, '').replace(',', '.'))
-        : Number(item.precio)
+      const precio = item.precios?.[0] || 0
 
-      return total + (precio * item.quantity)
+      return total + (Number(precio) * item.quantity)
     }, 0)
   }
 
