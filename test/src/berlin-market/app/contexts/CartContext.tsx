@@ -32,6 +32,7 @@ export const useCart = () => {
       addToCart: () => {},
       removeFromCart: () => {},
       updateQuantity: () => {},
+      updateProductSize: () => {},
       clearCart: () => {},
       getTotalItems: () => 0,
       getTotalPrice: () => 0,
