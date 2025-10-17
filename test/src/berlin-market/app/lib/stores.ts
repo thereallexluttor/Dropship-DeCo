@@ -80,7 +80,7 @@ export const stores: Store[] = [
     city: "Saravena",
     phone: "3118478552",
     contact: "Alba Capacho Peñaloza",
-    coords: { lat: 6.9596, lng: -71.8765 }
+    coords: { lat: 6.95816, lng: -71.87576 }
   },
   {
     id: 9,
@@ -89,7 +89,7 @@ export const stores: Store[] = [
     city: "Saravena",
     phone: "3102544596",
     contact: "Juan Francisco Lozano",
-    coords: { lat: 6.9590, lng: -71.8771 }
+    coords: { lat: 6.958249, lng: -71.876493 }
   },
   {
     id: 10,
@@ -116,7 +116,8 @@ export const stores: Store[] = [
     city: "Fortul",
     phone: "3134068190",
     contact: "Anderson Daza",
-    coords: { lat: 6.7990, lng: -71.7679 }
+    //6.798995605787356, -71.7679353470464
+    coords: { lat: 6.798995, lng: -71.76793 }
   },
   {
     id: 13,
@@ -134,7 +135,8 @@ export const stores: Store[] = [
     city: "Tame",
     phone: "3123023124",
     contact: "Javier Abril Portilla",
-    coords: { lat: 6.4607, lng: -71.7304 }
+    //6.4606974422185175, -71.73043989434244
+    coords: { lat: 6.4606977, lng: -71.7304 }
   },
   {
     id: 15,
@@ -143,7 +145,8 @@ export const stores: Store[] = [
     city: "Tame",
     phone: "3118599045",
     contact: "Yimmy Brijaldo",
-    coords: { lat: 6.4602, lng: -71.7312 }
+    //6.460286108231305, -71.73121784316815
+    coords: { lat: 6.460286, lng: -71.73121 }
   }
 ]
 

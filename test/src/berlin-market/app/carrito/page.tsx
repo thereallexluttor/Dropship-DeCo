@@ -684,7 +684,7 @@ export default function CarritoPage() {
             <div className="flex flex-col md:grid md:grid-cols-4 lg:grid-cols-12 gap-8 md:gap-6 lg:gap-4">
               <div className="md:col-span-1 lg:col-span-2 flex flex-col items-center md:items-start">
                 <Image
-                  src="/unisantander.png"
+                  src="/unisantander_footer.png"
                   alt="Unisantander"
                   width={220}
                   height={30}

@@ -108,16 +108,7 @@ function MapController({
 }) {
   const map = useMap()
   
-  useEffect(() => {
-    if (selectedCity === 'all') {
-      // Vista de Colombia
-      map.setView([4.570868, -74.297333], 6)
-    } else {
-      // Vista cercana de la ciudad seleccionada
-      const cityCenter = getCityCenter(stores)
-      map.setView([cityCenter.lat, cityCenter.lng], 13)
-    }
-  }, [selectedCity, stores, map])
+  // Eliminado el ajuste automático de zoom/posición al cambiar de ciudad
 
   useEffect(() => {
     // Abrir el popup del marcador seleccionado

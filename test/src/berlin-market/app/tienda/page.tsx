@@ -1412,7 +1412,7 @@ export default function TiendaPage() {
               {/* Logo Section */}
               <div className="lg:col-span-2 flex flex-col items-center lg:items-start">
                 <Image
-                  src="/unisantander.png"
+                  src="/unisantander_footer.png"
                   alt="Unisantander"
                   width={220}
                   height={30}
