@@ -25,7 +25,7 @@ import {
   Check
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
-import { supabase, Producto } from '@/lib/supabase'
+import { supabase, Producto, UI } from '@/lib/supabase'
 import { useCategories } from './hooks/useCategories'
 import { useCart } from './contexts/CartContext'
 import CartCounter from './components/CartCounter'
@@ -63,6 +63,7 @@ import AccountPopoverContent from "./components/AccountPopoverContent"
 
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
+  const [activeHiddenSlide, setActiveHiddenSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeProductSlide, setActiveProductSlide] = useState(0)
   const [activeBrandSlide, setActiveBrandSlide] = useState(0)
@@ -75,6 +76,8 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [productosDestacados, setProductosDestacados] = useState<Producto[]>([])
   const [productosEnOferta, setProductosEnOferta] = useState<Producto[]>([])
+  const [uiElements, setUiElements] = useState<UI[]>([])
+  const [showPopup, setShowPopup] = useState(false)
   // Estado para manejar el tamaño seleccionado de cada producto
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
 
@@ -123,14 +126,90 @@ export default function Home() {
     cargarProductosEnOferta();
   }, []);
 
+  // Cargar elementos UI (banners, popups, etc.)
+  useEffect(() => {
+    const cargarElementosUI = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ui')
+          .select('*')
+          .order('id', { ascending: false }); // Ordenar por ID descendente para obtener el más reciente primero
+
+        if (error) throw error;
+        setUiElements(data || []);
+      } catch (error) {
+        console.error('Error cargando elementos UI:', error);
+      }
+    };
+
+    cargarElementosUI();
+  }, []);
+
+  // Mostrar popup en primera visita
+  useEffect(() => {
+    const hasVisited = sessionStorage.getItem('hasVisitedHome');
+    const hasPopup = uiElements.length > 0 && uiElements[0].popup;
+
+    if (!hasVisited && hasPopup) {
+      // Pequeño delay para asegurar que todo esté cargado
+      const timer = setTimeout(() => {
+        setShowPopup(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [uiElements]);
+
+
+  // Obtener los slides del carrusel (banners de UI o videos por defecto)
+  const getCarouselSlides = () => {
+    if (uiElements.length > 0 && uiElements[0].banner && uiElements[0].banner.length > 0) {
+      return uiElements[0].banner.map((url, index) => ({
+        url,
+        alt: `Banner promocional ${index + 1}`,
+        type: url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? 'video' : 'image'
+      }));
+    }
+    return [
+      { url: "/farm1.mp4", alt: "Video promocional 1", type: 'video' },
+      { url: "/farm2.mp4", alt: "Video promocional 2", type: 'video' },
+      { url: "/farm1.mp4", alt: "Video promocional 3", type: 'video' },
+      { url: "/farm2.mp4", alt: "Video promocional 4", type: 'video' }
+    ];
+  };
+
+  // Obtener el hidden banner si existe
+  const getHiddenBannerSlides = () => {
+    if (uiElements.length > 0 && uiElements[0].hiddenbanner && uiElements[0].hiddenbanner.length > 0) {
+      return uiElements[0].hiddenbanner.map((url, index) => ({
+        url,
+        alt: `Hidden Banner ${index + 1}`,
+        type: url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? 'video' : 'image'
+      }));
+    }
+    return [];
+  };
+
+  const carouselSlides = getCarouselSlides();
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveSlide((current) => (current === 3 ? 0 : current + 1));
+      setActiveSlide((current) => (current === carouselSlides.length - 1 ? 0 : current + 1));
     }, 5000); // Change slide every 5 seconds
 
     return () => clearInterval(timer);
-  }, []);
+  }, [carouselSlides.length]);
+
+  // Timer independiente para el hidden banner
+  useEffect(() => {
+    const hiddenSlides = getHiddenBannerSlides();
+    if (hiddenSlides.length > 0) {
+      const timer = setInterval(() => {
+        setActiveHiddenSlide((current) => (current === hiddenSlides.length - 1 ? 0 : current + 1));
+      }, 5000); // Change slide every 5 seconds
+
+      return () => clearInterval(timer);
+    }
+  }, [uiElements]);
 
   useEffect(() => {
     const brandTimer = setInterval(() => {
@@ -149,6 +228,11 @@ export default function Home() {
     addToCart(producto, 1)
     // Aquí podrías agregar una notificación o toast
     console.log(`Agregado al carrito: ${producto.nombre}`)
+  }
+
+  const closePopup = () => {
+    setShowPopup(false);
+    sessionStorage.setItem('hasVisitedHome', 'true');
   }
 
   // Categorías se cargan dinámicamente desde el hook useCategories
@@ -755,26 +839,29 @@ export default function Home() {
                 <div className="relative aspect-[16/6] w-full max-w-6xl mx-auto">
                 {/* Carousel */}
                 <div className="absolute inset-0">
-                  {[
-                    { video: "/farm1.mp4", alt: "Video promocional 1" },
-                    { video: "/farm2.mp4", alt: "Video promocional 2" },
-                    { video: "/farm1.mp4", alt: "Video promocional 3" },
-                    { video: "/farm2.mp4", alt: "Video promocional 4" }
-                  ].map((slide, index) => (
+                  {carouselSlides.map((slide, index) => (
                     <div
                       key={index}
                       className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
                         activeSlide === index ? "opacity-100" : "opacity-0"
                       }`}
                     >
-                      <video
-                        src={slide.video}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                      />
+                      {slide.type === 'video' ? (
+                        <video
+                          src={slide.url}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <img
+                          src={slide.url}
+                          alt={slide.alt}
+                          className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                        />
+                      )}
                       <div className="absolute inset-0 flex items-center">
                         <div className="container mx-auto px-2 xs:px-3 sm:px-4">
                           {/* Texto y botón a la izquierda */}
@@ -1009,6 +1096,43 @@ export default function Home() {
               </div>
             </div>
           </section>
+
+          {/* Hidden Banner Section - Solo se muestra si hay hidden banners */}
+          {getHiddenBannerSlides().length > 0 && (
+            <section className="relative w-full">
+              <div className="w-full">
+                <div className="relative aspect-[16/2] w-full">
+                  <div className="absolute inset-0">
+                    {getHiddenBannerSlides().map((slide, index) => (
+                      <div
+                        key={index}
+                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                          activeHiddenSlide === index ? "opacity-100" : "opacity-0"
+                        }`}
+                      >
+                        {slide.type === 'video' ? (
+                          <video
+                            src={slide.url}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <img
+                            src={slide.url}
+                            alt={slide.alt}
+                            className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Productos destacados */}
           <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
@@ -1410,6 +1534,41 @@ export default function Home() {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Popup - Solo se muestra en primera visita */}
+      {showPopup && uiElements.length > 0 && uiElements[0].popup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative max-w-sm mx-auto bg-white rounded-lg shadow-xl">
+            {/* Botón X para cerrar */}
+            <button
+              onClick={closePopup}
+              className="absolute top-2 right-2 z-10 bg-white hover:bg-gray-100 rounded-full p-1 shadow-md transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Contenido del popup */}
+            {uiElements[0].popup.includes('.mp4') || uiElements[0].popup.includes('.webm') || uiElements[0].popup.includes('.mov') ? (
+              <video
+                src={uiElements[0].popup}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-auto rounded-lg"
+              />
+            ) : (
+              <img
+                src={uiElements[0].popup}
+                alt="Popup"
+                className="w-full h-auto rounded-lg"
+              />
+            )}
+          </div>
+        </div>
+      )}
 
     </MainLayout>
   )

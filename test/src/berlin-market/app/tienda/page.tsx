@@ -24,7 +24,7 @@ import {
   EyeOff,
   Check
 } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import ProductCard from "../components/ProductCard"
 import FadeInOnScroll from '../components/FadeInOnScroll'
 import CategoryMenu from '../components/CategoryMenu'
@@ -60,6 +60,7 @@ import { useCategories } from "../hooks/useCategories"
 import { useProducts, ProductWithDetails } from "../hooks/useProducts"
 import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
+import { useCart } from "../contexts/CartContext"
 
 export default function TiendaPage() {
   const [activeSlide, setActiveSlide] = useState(0)
@@ -82,20 +83,42 @@ export default function TiendaPage() {
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null)
   const [availableBrands, setAvailableBrands] = useState<Marca[]>([])
 
+  // Estado para filtros avanzados (disponible para todas las categorías)
+  const [minPrice, setMinPrice] = useState<number | "">("")
+  const [maxPrice, setMaxPrice] = useState<number | "">("")
+  const [showOnlyOffers, setShowOnlyOffers] = useState(false)
+  const [showOnlyDiscounts, setShowOnlyDiscounts] = useState(false)
+  const [selectedProductCategory, setSelectedProductCategory] = useState<number | null>(null)
+  const [selectedProductSubcategory, setSelectedProductSubcategory] = useState<number | null>(null)
+  const [sortBy, setSortBy] = useState<string>("Más popular") // Estado para ordenamiento
+
   // Hooks para datos de Supabase
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
   const { products, productsByCategory, discountedProducts, featuredProducts, newProducts, brands, isLoading: productsLoading, error: productsError, getProductsBySubcategory } = useProducts()
 
+  // Hook para el carrito de compras
+  const { addToCart } = useCart()
+
+  // Función para agregar productos al carrito considerando el tamaño seleccionado
+  const handleAddToCart = (product: ProductWithDetails) => {
+    const selectedSizeIndex = selectedSizes[product.id!] || 0
+    addToCart(product, 1, selectedSizeIndex)
+  }
+
+  // Tipos para categorías
+  type CategoryType = typeof categories extends (infer T)[] ? T : never
+
   // Estado para la navegación de categorías
-  const [selectedCategory, setSelectedCategory] = useState<number>(999) // ID de categoría por defecto (ofertas)
-  const [selectedSubcategory, setSelectedSubcategory] = useState<number>(999) // ID de subcategoría por defecto (ofertas)
-  const [currentTitle, setCurrentTitle] = useState<string>("Productos con descuento")
-  const [currentBreadcrumbs, setCurrentBreadcrumbs] = useState<string[]>(["🏠", "Ofertas"])
+  const [selectedCategory, setSelectedCategory] = useState<number>(1000) // ID de categoría por defecto (todos los productos)
+  const [selectedSubcategory, setSelectedSubcategory] = useState<number>(1000) // ID de subcategoría por defecto (todos los productos)
+  const [currentTitle, setCurrentTitle] = useState<string>("Todos los productos")
+  const [currentBreadcrumbs, setCurrentBreadcrumbs] = useState<string[]>(["🏠", "Tienda"])
 
   // Constantes para categorías especiales
   const CATEGORIES = {
     OFERTAS: 999,
-    NOVEDADES: 998
+    NOVEDADES: 998,
+    TODOS_LOS_PRODUCTOS: 1000
   }
 
   // Función para manejar el cambio de categoría
@@ -107,6 +130,12 @@ export default function TiendaPage() {
     setSelectedBrand(null)
 
     // Manejar categorías especiales
+    if (categoryId === CATEGORIES.TODOS_LOS_PRODUCTOS) {
+      setCurrentTitle("Todos los productos")
+      setCurrentBreadcrumbs(["🏠", "Tienda"])
+      return
+    }
+
     if (categoryId === CATEGORIES.NOVEDADES) {
       setCurrentTitle("Novedades")
       setCurrentBreadcrumbs(["🏠", "Novedades"])
@@ -132,6 +161,12 @@ export default function TiendaPage() {
 
   // Función para obtener marcas disponibles según la categoría seleccionada
   const getBrandsForCategory = (categoryId: number) => {
+    if (categoryId === CATEGORIES.TODOS_LOS_PRODUCTOS) {
+      // Para todos los productos, obtener marcas de todos los productos disponibles
+      const brandIds = new Set(products.map(p => p.id_marca).filter(Boolean))
+      return brands.filter(brand => brandIds.has(brand.id))
+    }
+
     if (categoryId === CATEGORIES.OFERTAS) {
       // Para ofertas, obtener marcas de productos con descuento
       const brandIds = new Set(discountedProducts.map(p => p.id_marca).filter(Boolean))
@@ -156,11 +191,106 @@ export default function TiendaPage() {
     return products.filter(product => product.id_marca === selectedBrand)
   }
 
+  // Función para obtener el precio de un producto (para filtros de precio)
+  const getProductPrice = (product: ProductWithDetails): number => {
+    if (product.precios && product.precios.length > 0) {
+      return product.precios[0] // Tomar el primer precio disponible
+    }
+    if (product.stocks && product.stocks.length > 0) {
+      return product.stocks[0].precio // Tomar el precio del stock
+    }
+    return 0
+  }
+
+  // Función para filtrar productos con filtros avanzados (disponible para todas las categorías)
+  const filterProductsByAdvancedFilters = (products: ProductWithDetails[]) => {
+
+    let filteredProducts = [...products]
+
+    // Filtro por precio mínimo
+    if (minPrice !== "" && minPrice !== null) {
+      filteredProducts = filteredProducts.filter(product => {
+        const price = getProductPrice(product)
+        return price >= Number(minPrice)
+      })
+    }
+
+    // Filtro por precio máximo
+    if (maxPrice !== "" && maxPrice !== null) {
+      filteredProducts = filteredProducts.filter(product => {
+        const price = getProductPrice(product)
+        return price <= Number(maxPrice)
+      })
+    }
+
+    // Filtro para mostrar solo ofertas
+    if (showOnlyOffers) {
+      filteredProducts = filteredProducts.filter(product => product.destacado === true)
+    }
+
+    // Filtro para mostrar solo productos con descuento
+    if (showOnlyDiscounts) {
+      filteredProducts = filteredProducts.filter(product => product.descuento === true)
+    }
+
+    // Filtro por categoría específica
+    if (selectedProductCategory) {
+      filteredProducts = filteredProducts.filter(product => {
+        return product.subcategoria?.categories_id === selectedProductCategory
+      })
+    }
+
+    // Filtro por subcategoría específica
+    if (selectedProductSubcategory) {
+      filteredProducts = filteredProducts.filter(product => {
+        return product.subcategorias_id === selectedProductSubcategory
+      })
+    }
+
+    return filteredProducts
+  }
+
+  // Función para ordenar productos
+  const sortProducts = (products: ProductWithDetails[]) => {
+    const sortedProducts = [...products]
+
+    switch (sortBy) {
+      case "Precio: menor a mayor":
+        return sortedProducts.sort((a, b) => {
+          const priceA = getProductPrice(a)
+          const priceB = getProductPrice(b)
+          return priceA - priceB
+        })
+      case "Precio: mayor a menor":
+        return sortedProducts.sort((a, b) => {
+          const priceA = getProductPrice(a)
+          const priceB = getProductPrice(b)
+          return priceB - priceA
+        })
+      case "Nombre A-Z":
+        return sortedProducts.sort((a, b) => a.nombre.localeCompare(b.nombre))
+      case "Novedades":
+        return sortedProducts.sort((a, b) => {
+          // Ordenar por productos nuevos primero, luego por fecha de creación si está disponible
+          if (a.novedad && !b.novedad) return -1
+          if (!a.novedad && b.novedad) return 1
+          return 0
+        })
+      case "Más popular":
+      default:
+        // Para popular, mantenemos el orden original por ahora
+        // En el futuro podríamos implementar lógica basada en ventas o ratings
+        return sortedProducts
+    }
+  }
+
   // Obtener productos actuales
   const currentProducts = getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
 
   // Determinar qué productos mostrar según la categoría seleccionada
-  const baseProducts = selectedCategory === CATEGORIES.OFERTAS
+  const baseProducts = selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS
+    ? products // Todos los productos disponibles
+    : selectedCategory === CATEGORIES.OFERTAS
     ? discountedProducts
     : selectedCategory === CATEGORIES.NOVEDADES
     ? newProducts
@@ -168,8 +298,32 @@ export default function TiendaPage() {
     ? currentProducts
     : featuredProducts
 
-  // Aplicar filtro de marca si está seleccionado
-  const displayProducts = filterProductsByBrand(baseProducts)
+  // ✅ OPTIMIZACIÓN: Memoizar cálculo costoso de productos filtrados
+  const displayProducts = useMemo(() => {
+    let result = baseProducts
+
+    // Aplicar filtro de marca si está seleccionado
+    result = filterProductsByBrand(result)
+
+    // Aplicar filtros avanzados para todas las categorías
+    result = filterProductsByAdvancedFilters(result)
+
+    // Aplicar ordenamiento
+    result = sortProducts(result)
+
+    return result
+  }, [
+    baseProducts,
+    selectedBrand,
+    selectedCategory,
+    minPrice,
+    maxPrice,
+    showOnlyOffers,
+    showOnlyDiscounts,
+    selectedProductCategory,
+    selectedProductSubcategory,
+    sortBy
+  ])
 
   // Efecto para actualizar marcas disponibles cuando cambia la categoría
   useEffect(() => {
@@ -179,11 +333,32 @@ export default function TiendaPage() {
     if (selectedBrand && !brandsForCurrentCategory.find(b => b.id === selectedBrand)) {
       setSelectedBrand(null)
     }
+
+    // Los filtros avanzados ahora están disponibles para todas las categorías
+    // No necesitamos limpiar filtros avanzados cuando cambia la categoría
   }, [selectedCategory, selectedSubcategory, products, discountedProducts, newProducts])
 
-  // Función para limpiar filtros
+  // Función para limpiar filtros básicos
   const clearFilters = () => {
     setSelectedBrand(null)
+  }
+
+  // Función para limpiar filtros avanzados
+  const clearAdvancedFilters = () => {
+    setMinPrice("")
+    setMaxPrice("")
+    setShowOnlyOffers(false)
+    setShowOnlyDiscounts(false)
+    setSelectedProductCategory(null)
+    setSelectedProductSubcategory(null)
+    setSortBy("Más popular")
+    setSelectedBrand(null) // También limpiar la marca seleccionada
+  }
+
+  // Función para limpiar todos los filtros
+  const clearAllFilters = () => {
+    clearFilters()
+    clearAdvancedFilters()
   }
 
   // Función para generar categorías dinámicamente
@@ -766,6 +941,17 @@ export default function TiendaPage() {
                   <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm">
                     <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Categorías</h2>
 
+                    {/* Todos los productos section */}
+                    <div className="mb-4 md:mb-6">
+                      <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-3">Tienda</h3>
+                      <button
+                        onClick={() => handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS)}
+                        className={`block text-sm w-full text-left mb-1 ${selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && selectedSubcategory === CATEGORIES.TODOS_LOS_PRODUCTOS ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                      >
+                        Todos los productos
+                      </button>
+                    </div>
+
                     {/* Ofertas section */}
                     <div className="mb-4 md:mb-6">
                       <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-3">Ofertas %</h3>
@@ -805,13 +991,22 @@ export default function TiendaPage() {
                 <div className="flex-1">
                   {/* Mobile Categories Button */}
                   <div className="md:hidden mb-4">
-                    <button
-                      onClick={() => setIsCategoriesDrawerOpen(true)}
-                      className="flex items-center gap-2 bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200 w-full hover:bg-gray-50 transition-colors"
-                    >
-                      <Menu className="h-5 w-5 text-gray-600" />
-                      <span className="text-gray-800 font-medium">Ver Categorías</span>
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setIsCategoriesDrawerOpen(true)}
+                        className="flex items-center gap-2 bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200 flex-1 hover:bg-gray-50 transition-colors"
+                      >
+                        <Menu className="h-5 w-5 text-gray-600" />
+                        <span className="text-gray-800 font-medium">Ver Categorías</span>
+                      </button>
+                      <button
+                        onClick={() => handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS)}
+                        className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-sm border border-gray-200 flex-1 hover:bg-gray-50 transition-colors ${selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS ? "bg-green-50 border-[#196428] text-[#196428]" : "bg-white text-gray-800"}`}
+                      >
+                        <ShoppingBag className="h-5 w-5" />
+                        <span className="font-medium">Tienda</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Loading and Error States */}
@@ -865,92 +1060,214 @@ export default function TiendaPage() {
                   <div className="mb-6 md:mb-8">
                     {/* Mobile Filter Button */}
                     <div className="md:hidden mb-4">
-                      <button className="flex items-center gap-2 bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200 w-full hover:bg-gray-50 transition-colors">
-                        <Tag className="h-4 w-4 text-gray-600" />
-                        <span className="text-gray-800 font-medium">Filtros y ordenamiento</span>
+                      <button className="group flex items-center justify-center gap-3 bg-gradient-to-r from-[#196428] to-[#145020] px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl w-full transition-all duration-300 transform hover:scale-[1.02]">
+                        <Tag className="h-5 w-5 text-white group-hover:rotate-12 transition-transform duration-300" />
+                        <span className="text-white font-semibold text-base">Filtros y ordenamiento</span>
                       </button>
                     </div>
 
                     {/* Desktop/Tablet Filters */}
-                    <div className="hidden md:flex flex-wrap gap-3 items-center">
-                      {/* Filtro de marcas - disponible para todas las categorías */}
-                      {availableBrands.length > 0 && (
-                        <select
-                          value={selectedBrand || ""}
-                          onChange={(e) => setSelectedBrand(e.target.value ? parseInt(e.target.value) : null)}
-                          className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white"
-                        >
-                          <option value="">Todas las marcas</option>
-                          {availableBrands.map(brand => (
-                            <option key={brand.id} value={brand.id}>
-                              {brand.nombre_marca}
-                            </option>
-                          ))}
-                        </select>
-                      )}
+                    <div className="hidden md:block bg-white rounded-2xl shadow-lg border border-gray-100/50 backdrop-blur-sm p-4">
+                      <div className="flex flex-col gap-4">
+                        {/* Header elegante */}
+                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-gray-100">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gradient-to-br from-[#196428] to-[#145020] rounded-full flex items-center justify-center">
+                              <Tag className="h-3 w-3 text-white" />
+                            </div>
+                            <h3 className="text-base font-bold text-gray-800">Filtros de productos</h3>
+                          </div>
+                          {/* Botón para limpiar filtros avanzados - esquina superior derecha */}
+                          {(minPrice !== "" || maxPrice !== "" || showOnlyOffers || showOnlyDiscounts || selectedProductCategory || selectedProductSubcategory || selectedBrand) && (
+                            <button
+                              onClick={clearAdvancedFilters}
+                              className="group flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 hover:shadow-lg transform hover:scale-105 h-5"
+                            >
+                              <svg className="w-3 h-3 group-hover:rotate-90 transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Limpiar filtros avanzados
+                            </button>
+                          )}
+                        </div>
 
-                      {/* Botón para limpiar filtros */}
-                      {(selectedBrand) && (
-                        <button
-                          onClick={clearFilters}
-                          className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
-                        >
-                          Limpiar filtros
-                        </button>
-                      )}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                          {/* Sección de Marca */}
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                              <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
+                              Marca
+                            </label>
+                            <div className="relative">
+                              {availableBrands.length > 0 && (
+                                <select
+                                  value={selectedBrand || ""}
+                                  onChange={(e) => setSelectedBrand(e.target.value ? parseInt(e.target.value) : null)}
+                                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
+                                >
+                                  <option value="">Todas las marcas</option>
+                                  {availableBrands.map(brand => (
+                                    <option key={brand.id} value={brand.id}>
+                                      {brand.nombre_marca}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
 
-                      {selectedCategory === CATEGORIES.OFERTAS ? (
-                        // Filtros para ofertas
-                        <>
-                          <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
-                            <option>Tipo de oferta</option>
-                            <option>Descuento %</option>
-                            <option>2x1</option>
-                            <option>Liquidación</option>
-                          </select>
-                          <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
-                            <option>Categoría</option>
-                            {productsByCategory.map(cat => (
-                              <option key={cat.categoryId}>{cat.categoryName}</option>
-                            ))}
-                          </select>
-                        </>
-                      ) : selectedCategory === CATEGORIES.NOVEDADES ? (
-                        // Filtros para novedades
-                        <>
-                          <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
-                            <option>Categoría</option>
-                            {productsByCategory.map(cat => (
-                              <option key={cat.categoryId}>{cat.categoryName}</option>
-                            ))}
-                          </select>
-                          <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
-                            <option>Tipo de novedad</option>
-                            <option>Producto nuevo</option>
-                            <option>Lanzamiento reciente</option>
-                            <option>Temporada</option>
-                          </select>
-                        </>
-                      ) : (
-                        // Filtros generales
-                        <>
-                          <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
-                            <option>Precio</option>
-                            <option>$0 - $10.000</option>
-                            <option>$10.001 - $25.000</option>
-                            <option>$25.001 - $50.000</option>
-                            <option>$50.000+</option>
-                          </select>
-                          <select className="px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white">
-                            <option>Ordenar por</option>
-                            <option>Más popular</option>
-                            <option>Precio: menor a mayor</option>
-                            <option>Precio: mayor a menor</option>
-                            <option>Novedades</option>
-                          </select>
-                        </>
-                      )}
+                          {/* Sección de Precio */}
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                              <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
+                              Rango de precio
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
+                                <input
+                                  type="number"
+                                  placeholder="Mín"
+                                  value={minPrice}
+                                  onChange={(e) => setMinPrice(e.target.value ? Number(e.target.value) : "")}
+                                  className="w-full pl-6 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 hover:bg-white hover:shadow-sm"
+                                />
+                              </div>
+                              <div className="flex items-center justify-center w-6 h-px bg-gray-300">
+                                <span className="text-gray-400 text-sm font-medium">-</span>
+                              </div>
+                              <div className="relative flex-1">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
+                                <input
+                                  type="number"
+                                  placeholder="Máx"
+                                  value={maxPrice}
+                                  onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : "")}
+                                  className="w-full pl-6 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 hover:bg-white hover:shadow-sm"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Sección de Categorías y Subcategorías (solo para "todos los productos") */}
+                          {selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && (
+                            <>
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                  <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
+                                  Categoría específica
+                                </label>
+                                <div className="relative">
+                                  <select
+                                    value={selectedProductCategory || ""}
+                                    onChange={(e) => setSelectedProductCategory(e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
+                                  >
+                                    <option value="">Todas las categorías</option>
+                                    {categories.map((cat: CategoryType) => (
+                                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                  </select>
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                  <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
+                                  Subcategoría específica
+                                </label>
+                                <div className="relative">
+                                  <select
+                                    value={selectedProductSubcategory || ""}
+                                    onChange={(e) => setSelectedProductSubcategory(e.target.value ? Number(e.target.value) : null)}
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
+                                  >
+                                    <option value="">Todas las subcategorías</option>
+                                    {productsByCategory.map(cat =>
+                                      cat.subcategories.map(sub => (
+                                        <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
+                                      ))
+                                    )}
+                                  </select>
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Sección de Filtros Especiales */}
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                              <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
+                              Filtros especiales
+                            </label>
+                            <div className="space-y-2">
+                              <label className="flex items-center gap-3 cursor-pointer group">
+                                <input
+                                  type="checkbox"
+                                  checked={showOnlyOffers}
+                                  onChange={(e) => setShowOnlyOffers(e.target.checked)}
+                                  className="w-4 h-4 text-[#196428] bg-gray-100 border-gray-300 rounded focus:ring-[#196428] focus:ring-2"
+                                />
+                                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Solo ofertas destacadas</span>
+                              </label>
+
+                              <label className="flex items-center gap-3 cursor-pointer group">
+                                <input
+                                  type="checkbox"
+                                  checked={showOnlyDiscounts}
+                                  onChange={(e) => setShowOnlyDiscounts(e.target.checked)}
+                                  className="w-4 h-4 text-[#196428] bg-gray-100 border-gray-300 rounded focus:ring-[#196428] focus:ring-2"
+                                />
+                                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Solo con descuento</span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Sección de Ordenamiento */}
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                              <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
+                              Ordenar por
+                            </label>
+                            <div className="relative">
+                              <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
+                              >
+                                <option value="Más popular">Más popular</option>
+                                <option value="Precio: menor a mayor">Precio: menor a mayor</option>
+                                <option value="Precio: mayor a menor">Precio: mayor a menor</option>
+                                <option value="Novedades">Novedades</option>
+                                <option value="Nombre A-Z">Nombre A-Z</option>
+                              </select>
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
                     </div>
+
                   </div>
 
                   {/* Products Grid - responsive layout */}
@@ -980,7 +1297,10 @@ export default function TiendaPage() {
                             fill
                             className="object-contain p-3 sm:p-4"
                           />
-                          <button className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300">
+                          <button
+                            onClick={() => handleAddToCart(product)}
+                            className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300"
+                          >
                             <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                           </button>
                             {product.descuento && (
@@ -1208,6 +1528,20 @@ export default function TiendaPage() {
           </DrawerHeader>
           <div className="overflow-y-auto px-4 pb-6">
             <div className="space-y-4">
+              {/* Todos los productos section */}
+              <div>
+                <h3 className="text-base font-semibold text-gray-700 mb-2">Tienda</h3>
+                <button
+                  onClick={() => {
+                    handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS);
+                    setIsCategoriesDrawerOpen(false);
+                  }}
+                  className={`block text-sm w-full text-left px-2 py-2 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && selectedSubcategory === CATEGORIES.TODOS_LOS_PRODUCTOS ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                >
+                  Todos los productos
+                </button>
+              </div>
+
               {/* Ofertas section */}
               <div>
                 <h3 className="text-base font-semibold text-gray-700 mb-2">Ofertas %</h3>

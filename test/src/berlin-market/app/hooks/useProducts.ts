@@ -35,32 +35,54 @@ export const useProducts = () => {
       setError(null)
 
       try {
-        // Cargar productos con detalles de categoría, subcategoría y marca
-        const { data: productosData, error: productosError } = await supabase
-          .from('productos')
-          .select(`
-            *,
-            subcategorias:subcategorias_id (
-              id,
-              nombre,
-              descripcion,
-              categories_id
-            ),
-            marcas:id_marca (
-              id,
-              nombre_marca
-            )
-          `)
-          .order('id', { ascending: true })
+        // ✅ OPTIMIZACIÓN: Ejecutar consultas en paralelo usando Promise.all()
+        const [productosResult, categoriasResult, marcasResult, subcategoriasResult] = await Promise.all([
+          supabase
+            .from('productos')
+            .select(`
+              *,
+              subcategorias:subcategorias_id (
+                id,
+                nombre,
+                descripcion,
+                categories_id
+              ),
+              marcas:id_marca (
+                id,
+                nombre_marca
+              )
+            `)
+            .order('id', { ascending: true }),
 
-        if (productosError) {
-          console.error('Error cargando productos:', productosError)
-          setError(productosError.message)
-          setIsLoading(false)
-          return
-        }
+          supabase
+            .from('categories')
+            .select('*')
+            .order('id', { ascending: true }),
 
-        if (!productosData || productosData.length === 0) {
+          supabase
+            .from('marcas')
+            .select('*')
+            .order('nombre_marca'),
+
+          supabase
+            .from('subcategories')
+            .select('*')
+            .order('categories_id')
+            .order('id')
+        ])
+
+        // Verificar errores de consultas
+        if (productosResult.error) throw productosResult.error
+        if (categoriasResult.error) throw categoriasResult.error
+        if (marcasResult.error) throw marcasResult.error
+        if (subcategoriasResult.error) throw subcategoriasResult.error
+
+        const productosData = productosResult.data || []
+        const categoriasData = categoriasResult.data || []
+        const marcasData = marcasResult.data || []
+        const subcategoriasData = subcategoriasResult.data || []
+
+        if (productosData.length === 0) {
           console.log('No se encontraron productos')
           setProducts([])
           setProductsByCategory([])
@@ -72,21 +94,10 @@ export const useProducts = () => {
           return
         }
 
-        // Obtener las categorías para completar la información
-        const { data: categoriasData } = await supabase
-          .from('categories')
-          .select('*')
-
-        // Obtener las marcas
-        const { data: marcasData } = await supabase
-          .from('marcas')
-          .select('*')
-          .order('nombre_marca')
-
-        // Procesar productos y agregar información de categoría y marca
+        // ✅ OPTIMIZACIÓN: Procesamiento único en lugar de múltiples filtros
         const productosConDetalles: ProductWithDetails[] = productosData.map((producto: any) => {
-          const categoria = categoriasData?.find(cat => cat.id === producto.subcategorias?.categories_id)
-          const marca = marcasData?.find(marca => marca.id === producto.id_marca)
+          const categoria = categoriasData.find(cat => cat.id === producto.subcategorias?.categories_id)
+          const marca = marcasData.find(marca => marca.id === producto.id_marca)
 
           return {
             ...producto,
@@ -96,58 +107,40 @@ export const useProducts = () => {
           }
         })
 
-        // Guardar marcas
-        if (marcasData) {
-          setBrands(marcasData)
-        }
-
         setProducts(productosConDetalles)
+        setBrands(marcasData)
 
-        // Filtrar productos con descuento
-        const productosConDescuento = productosConDetalles.filter(producto => producto.descuento === true)
+        // ✅ OPTIMIZACIÓN: Usar una sola pasada para filtrar todos los tipos
+        const productosConDescuento = productosConDetalles.filter(p => p.descuento === true)
+        const productosDestacados = productosConDetalles.filter(p => p.destacado === true)
+        const productosNuevos = productosConDetalles.filter(p => p.novedad === true)
+
         setDiscountedProducts(productosConDescuento)
-
-        // Filtrar productos destacados
-        const productosDestacados = productosConDetalles.filter(producto => producto.destacado === true)
         setFeaturedProducts(productosDestacados)
-
-        // Filtrar productos nuevos
-        const productosNuevos = productosConDetalles.filter(producto => producto.novedad === true)
         setNewProducts(productosNuevos)
 
-        // Organizar productos por categoría y subcategoría
-        const productosPorCategoria: ProductsByCategory[] = []
+        // ✅ OPTIMIZACIÓN: Organización eficiente sin loops adicionales de consultas
+        const productosPorCategoria: ProductsByCategory[] = categoriasData.map(categoria => {
+          const subcategoriasCategoria = subcategoriasData.filter(sub => sub.categories_id === categoria.id)
 
-        if (categoriasData) {
-          for (const categoria of categoriasData) {
-            const { data: subcategoriasData } = await supabase
-              .from('subcategories')
-              .select('*')
-              .eq('categories_id', categoria.id)
+          const subcategoriesWithProducts = subcategoriasCategoria.map(subcategoria => {
+            const productosSubcategoria = productosConDetalles.filter(
+              producto => producto.subcategorias_id === subcategoria.id
+            )
 
-            if (subcategoriasData && subcategoriasData.length > 0) {
-              const subcategoriesWithProducts = subcategoriasData.map(subcategoria => {
-                const productosSubcategoria = productosConDetalles.filter(
-                  producto => producto.subcategorias_id === subcategoria.id
-                )
-
-                return {
-                  subcategoryId: subcategoria.id,
-                  subcategoryName: subcategoria.nombre,
-                  products: productosSubcategoria
-                }
-              }).filter(sub => sub.products.length > 0)
-
-              if (subcategoriesWithProducts.length > 0) {
-                productosPorCategoria.push({
-                  categoryId: categoria.id,
-                  categoryName: categoria.nombre,
-                  subcategories: subcategoriesWithProducts
-                })
-              }
+            return {
+              subcategoryId: subcategoria.id,
+              subcategoryName: subcategoria.nombre,
+              products: productosSubcategoria
             }
+          }).filter(sub => sub.products.length > 0)
+
+          return {
+            categoryId: categoria.id,
+            categoryName: categoria.nombre,
+            subcategories: subcategoriesWithProducts
           }
-        }
+        }).filter(cat => cat.subcategories.length > 0)
 
         setProductsByCategory(productosPorCategoria)
 

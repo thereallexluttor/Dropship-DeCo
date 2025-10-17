@@ -55,7 +55,7 @@ import CategoryDropdown from "../components/CategoryDropdown"
 import AccountPopover from "../components/AccountPopover"
 import AccountPopoverContent from "../components/AccountPopoverContent"
 import { useCategories } from "../hooks/useCategories"
-import { useCart } from "../contexts/CartContext"
+import { useCart, CartItemWithSize } from "../contexts/CartContext"
 import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
 
@@ -68,7 +68,7 @@ export default function CarritoPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Usar el contexto del carrito
-  const { items, updateQuantity, removeFromCart, getTotalItems, getTotalPrice, clearCart } = useCart()
+  const { items, updateQuantity, removeFromCart, updateProductSize, getTotalItems, getTotalPrice, clearCart } = useCart()
 
   // Usar el hook personalizado para cargar categorías dinámicamente
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
@@ -542,8 +542,18 @@ export default function CarritoPage() {
                             <h3 className="font-semibold text-lg text-gray-900 mb-1">{item.nombre}</h3>
                             <p className="text-sm text-gray-600 mb-2">{item.descripcion || 'Descripción del producto'}</p>
 
-                            {/* Mostrar tamaños del producto */}
-                            <ProductSizeBadges tamaños={item.tamano} size="sm" className="mb-2" />
+                            {/* Mostrar tamaños del producto con selección */}
+                            <div className="mb-2">
+                              <p className="text-xs text-gray-500 mb-1">Tamaño seleccionado:</p>
+                              <ProductSizeBadges
+                                tamaños={item.tamano}
+                                size="sm"
+                                selectedIndex={item.selectedSizeIndex}
+                                onSizeSelect={(newSizeIndex) => updateProductSize(item.id!, newSizeIndex)}
+                                interactive={true}
+                                className="mb-2"
+                              />
+                            </div>
 
                             {/* Indicadores */}
                             <div className="flex gap-2 mb-2">
@@ -566,18 +576,18 @@ export default function CarritoPage() {
 
                             {/* Precio */}
                             <div className="flex items-center gap-2">
-                              {item.descuento && item.descuento_valor ? (
+                              {item.discountApplied > 0 ? (
                                 <>
                                   <span className="text-red-500 font-medium line-through">
-                                    $ {formatPrice(item.precios?.[0] || 0)}
+                                    $ {formatPrice(item.unitPrice / (1 - item.discountApplied / 100))}
                                   </span>
                                   <span className="text-[#196428] font-bold text-lg">
-                                    $ {formatPrice(Number(item.precios?.[0] || 0) * (1 - Number(item.descuento_valor) / 100))}
+                                    $ {formatPrice(item.unitPrice)}
                                   </span>
                                 </>
                               ) : (
                                 <span className="text-[#196428] font-bold text-lg">
-                                  $ {formatPrice(item.precios?.[0] || 0)}
+                                  $ {formatPrice(item.unitPrice)}
                                 </span>
                               )}
                             </div>

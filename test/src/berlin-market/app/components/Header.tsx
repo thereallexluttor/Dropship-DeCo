@@ -49,11 +49,11 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
 
   const navLinks = [
     { name: "Inicio", icon: HomeIcon, href: "/" },
-    { name: "Tienda", icon: ShoppingBag, href: "#" },
-    { name: "Carrito", icon: ShoppingCart, href: "#" },
-    { name: "Cuenta", icon: User, href: "#" },
+    { name: "Tienda", icon: ShoppingBag, href: "/tienda" },
+    { name: "Carrito", icon: ShoppingCart, href: "/carrito" },
+    { name: "Cuenta", icon: User, href: "/cuenta" },
     { name: "Info", icon: Info, href: "/sobre-nosotros" },
-    { name: "Tiendas", icon: MapPin, href: "/#nuestras-tiendas" },
+    { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
   ]
 
   return (
@@ -190,18 +190,18 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   </div>
                   <span className={`text-xs font-light ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} mt-1 transition-colors`}>Inicio</span>
                 </Link>
-                <div className="group flex flex-col items-center justify-center cursor-pointer">
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingBag className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
-                </div>
-                <div className="group flex flex-col items-center justify-center cursor-pointer">
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                  <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Tienda</span>
+                </Link>
+                <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingCart className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                </div>
+                  <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Carrito</span>
+                </Link>
                 <AccountPopover />
               </div>
               <div className="w-[1px] h-6 bg-gray-200"></div>
@@ -264,18 +264,18 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   </div>
                   <span className={`text-xs font-light ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} mt-1 transition-colors`}>Inicio</span>
                 </Link>
-                <div className="group flex flex-col items-center justify-center cursor-pointer">
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingBag className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
-                </div>
-                <div className="group flex flex-col items-center justify-center cursor-pointer">
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                  <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Tienda</span>
+                </Link>
+                <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingCart className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                </div>
+                  <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Carrito</span>
+                </Link>
                 <AccountPopover />
               </div>
               <div className="w-[1px] h-6 bg-gray-200"></div>
@@ -338,18 +338,18 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   </div>
                   <span className={`text-xs font-light ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} mt-1 transition-colors`}>Inicio</span>
                 </Link>
-                <div className="group flex flex-col items-center justify-center cursor-pointer">
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingBag className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
-                </div>
-                <div className="group flex flex-col items-center justify-center cursor-pointer">
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                  <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Tienda</span>
+                </Link>
+                <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingCart className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                </div>
+                  <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Carrito</span>
+                </Link>
                 <AccountPopover />
               </div>
               <div className="w-[1.5px] h-5 bg-gray-200"></div>

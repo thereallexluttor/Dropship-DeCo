@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto, ProductoStock } from '@/lib/supabase';
+import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto, ProductoStock, UI } from '@/lib/supabase';
 
 // Tipos para formularios internos
 interface ProductoForm {
@@ -23,13 +23,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [subcategorias, setSubcategorias] = useState<Subcategoria[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [uiElements, setUiElements] = useState<UI[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
 
@@ -62,6 +63,13 @@ const AdminDashboard = () => {
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
   const [newMarca, setNewMarca] = useState({ nombre_marca: '' });
   const [editingMarca, setEditingMarca] = useState<Marca | null>(null);
+  const [newUI, setNewUI] = useState<UI>({
+    banner: [],
+    hiddenbanner: [],
+    popup: null
+  });
+  const [editingUI, setEditingUI] = useState<UI | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   // Forzar actualización de tipos
   useEffect(() => {}, []);
@@ -149,6 +157,28 @@ const AdminDashboard = () => {
         console.log('✅ Marcas cargadas exitosamente:', marcasData?.length || 0, 'marcas');
         console.table(marcasData || []); // Mostrar todas las marcas en tabla
         setMarcas(marcasData || []);
+
+        // Cargar elementos UI
+        console.log('🔄 Cargando elementos UI desde Supabase...');
+        const { data: uiData, error: uiError } = await supabase
+          .from('ui')
+          .select('*')
+          .order('id', { ascending: true });
+
+        if (uiError) {
+          console.error('❌ Error cargando elementos UI:', uiError);
+          if (uiError.message.includes('relation "ui" does not exist')) {
+            console.error('❌ La tabla "ui" no existe en la base de datos');
+            setTablesConfigured(false);
+            setIsLoading(false);
+            return;
+          }
+          throw uiError;
+        }
+
+        console.log('✅ Elementos UI cargados exitosamente:', uiData?.length || 0, 'elementos');
+        console.table(uiData || []); // Mostrar todos los elementos UI en tabla
+        setUiElements(uiData || []);
     } catch (error: any) {
       console.error('Error cargando datos:', error);
       if (error?.message?.includes('relation "categories" does not exist') ||
@@ -408,6 +438,10 @@ const AdminDashboard = () => {
 
   const handleCreateProducto = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (imageUploading) {
+      alert('Espera a que termine de subirse la imagen antes de guardar.');
+      return;
+    }
     if (!newProducto.subcategorias_id ||
         !newProducto.nombre.trim() ||
         !newProducto.descripcion.trim()) {
@@ -508,6 +542,10 @@ const AdminDashboard = () => {
   };
 
   const handleUpdateProducto = async (producto: Producto) => {
+    if (imageUploading) {
+      alert('Espera a que termine de subirse la imagen antes de guardar.');
+      return;
+    }
     // Validar campos obligatorios
     if (!producto.nombre || !producto.nombre.trim()) {
       alert('Por favor completa el nombre del producto');
@@ -866,6 +904,7 @@ const AdminDashboard = () => {
 
   // Función para manejar selección de archivo
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>, productName: string) => {
+    setImageUploading(true);
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -888,11 +927,14 @@ const AdminDashboard = () => {
       console.error('Error subiendo imagen:', error);
       alert('Error al subir la imagen. Inténtalo de nuevo.');
       return null;
+    } finally {
+      setImageUploading(false);
     }
   };
 
   // Función para manejar selección de archivo de marca
   const handleFileSelectMarca = async (event: React.ChangeEvent<HTMLInputElement>, marcaType: string) => {
+    setImageUploading(true);
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -915,11 +957,14 @@ const AdminDashboard = () => {
       console.error('Error subiendo imagen de marca:', error);
       alert('Error al subir la imagen. Inténtalo de nuevo.');
       return null;
+    } finally {
+      setImageUploading(false);
     }
   };
 
   // Función para manejar selección de archivo de categoría
   const handleFileSelectCategoria = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    setImageUploading(true);
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -942,7 +987,191 @@ const AdminDashboard = () => {
       console.error('Error subiendo imagen de categoría:', error);
       alert('Error al subir la imagen. Inténtalo de nuevo.');
       return null;
+    } finally {
+      setImageUploading(false);
     }
+  };
+
+  // ==================== FUNCIONES PARA UI ====================
+  
+  // Función para subir archivo (imagen o video) a Supabase Storage en carpeta UI
+  const uploadUIFileToStorage = async (file: File, folder: string): Promise<string> => {
+    try {
+      // Crear nombre único para el archivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${folder}_${Date.now()}.${fileExt}`;
+      const filePath = `UI/${fileName}`;
+
+      // Subir archivo al bucket 'images'
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
+
+      if (error) {
+        console.error('Error subiendo archivo:', error);
+        throw error;
+      }
+
+      // Obtener URL pública del archivo
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error en upload de archivo UI:', error);
+      throw error;
+    }
+  };
+
+  // Función para manejar selección de archivos UI (imágenes o videos)
+  const handleFileSelectUI = async (event: React.ChangeEvent<HTMLInputElement>, folder: string) => {
+    setImageUploading(true);
+    const file = event.target.files?.[0];
+    if (!file) {
+      setImageUploading(false);
+      return null;
+    }
+
+    // Validar que sea una imagen o video
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      alert('Por favor selecciona un archivo de imagen o video válido');
+      setImageUploading(false);
+      return null;
+    }
+
+    // Validar tamaño (máximo 50MB para videos, 5MB para imágenes)
+    const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert(`El archivo debe ser menor a ${file.type.startsWith('video/') ? '50MB' : '5MB'}`);
+      setImageUploading(false);
+      return null;
+    }
+
+    try {
+      const fileUrl = await uploadUIFileToStorage(file, folder);
+      return fileUrl;
+    } catch (error) {
+      console.error('Error subiendo archivo UI:', error);
+      alert('Error al subir el archivo. Inténtalo de nuevo.');
+      return null;
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  // Función para crear nuevo elemento UI
+  const handleCreateUI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase
+        .from('ui')
+        .insert([newUI])
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        setUiElements([...uiElements, data[0]]);
+        setNewUI({
+          banner: [],
+          hiddenbanner: [],
+          popup: null
+        });
+        alert('Elemento UI creado exitosamente');
+      }
+    } catch (error: any) {
+      console.error('Error creando elemento UI:', error);
+      alert(`Error al crear elemento UI: ${error?.message || 'Error desconocido'}`);
+    }
+  };
+
+  // Función para actualizar elemento UI
+  const handleUpdateUI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUI || !editingUI.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('ui')
+        .update({
+          banner: editingUI.banner,
+          hiddenbanner: editingUI.hiddenbanner,
+          popup: editingUI.popup
+        })
+        .eq('id', editingUI.id);
+
+      if (error) throw error;
+
+      setUiElements(uiElements.map(ui => ui.id === editingUI.id ? editingUI : ui));
+      setEditingUI(null);
+      alert('Elemento UI actualizado exitosamente');
+    } catch (error: any) {
+      console.error('Error actualizando elemento UI:', error);
+      alert(`Error al actualizar elemento UI: ${error?.message || 'Error desconocido'}`);
+    }
+  };
+
+  // Función para eliminar elemento UI
+  const handleDeleteUI = async (id: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este elemento UI?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('ui')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setUiElements(uiElements.filter(ui => ui.id !== id));
+      alert('Elemento UI eliminado exitosamente');
+    } catch (error: any) {
+      console.error('Error eliminando elemento UI:', error);
+      alert(`Error al eliminar elemento UI: ${error?.message || 'Error desconocido'}`);
+    }
+  };
+
+  const startEditUI = (ui: UI) => {
+    setEditingUI({ ...ui });
+  };
+
+  const cancelEditUI = () => {
+    setEditingUI(null);
+  };
+
+  // Funciones para cambiar el orden de elementos en arrays
+  const moveArrayItem = (array: any[], fromIndex: number, toIndex: number) => {
+    const newArray = [...array];
+    const item = newArray.splice(fromIndex, 1)[0];
+    newArray.splice(toIndex, 0, item);
+    return newArray;
+  };
+
+  const moveBannerUp = (index: number) => {
+    if (!editingUI || index === 0) return;
+    const newBanners = moveArrayItem(editingUI.banner || [], index, index - 1);
+    setEditingUI({ ...editingUI, banner: newBanners });
+  };
+
+  const moveBannerDown = (index: number) => {
+    if (!editingUI || !editingUI.banner || index === editingUI.banner.length - 1) return;
+    const newBanners = moveArrayItem(editingUI.banner, index, index + 1);
+    setEditingUI({ ...editingUI, banner: newBanners });
+  };
+
+  const moveHiddenBannerUp = (index: number) => {
+    if (!editingUI || index === 0) return;
+    const newHiddenBanners = moveArrayItem(editingUI.hiddenbanner || [], index, index - 1);
+    setEditingUI({ ...editingUI, hiddenbanner: newHiddenBanners });
+  };
+
+  const moveHiddenBannerDown = (index: number) => {
+    if (!editingUI || !editingUI.hiddenbanner || index === editingUI.hiddenbanner.length - 1) return;
+    const newHiddenBanners = moveArrayItem(editingUI.hiddenbanner, index, index + 1);
+    setEditingUI({ ...editingUI, hiddenbanner: newHiddenBanners });
   };
 
   if (isLoading) {
@@ -983,11 +1212,11 @@ const AdminDashboard = () => {
     <div className="space-y-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Panel de Administración</h2>
-        <p className="text-gray-600">Gestiona categorías, subcategorías, productos y marcas del sistema</p>
+        <p className="text-gray-600">Gestiona categorías, subcategorías, productos, marcas y elementos UI del sistema</p>
       </div>
 
       <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto">
+        <TabsList className="grid w-full grid-cols-5 max-w-3xl mx-auto">
           <TabsTrigger value="categorias" className="flex items-center gap-2">
             <FolderPlus className="h-4 w-4" />
             Categorías
@@ -1003,6 +1232,10 @@ const AdminDashboard = () => {
           <TabsTrigger value="marcas" className="flex items-center gap-2">
             <Tag className="h-4 w-4" />
             Marcas
+          </TabsTrigger>
+          <TabsTrigger value="ui" className="flex items-center gap-2">
+            <Layout className="h-4 w-4" />
+            UI
           </TabsTrigger>
         </TabsList>
 
@@ -1750,8 +1983,12 @@ const AdminDashboard = () => {
                             setNewProducto({ ...newProducto, imagen_url: imageUrl });
                           }
                         }}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                        disabled={imageUploading}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
                       />
+                      {imageUploading && (
+                        <p className="text-xs text-gray-500">Subiendo imagen...</p>
+                      )}
                       {newProducto.imagen_url && (
                         <div className="mt-2">
                           <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
@@ -1874,7 +2111,7 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
-                <Button type="submit" className="w-full bg-[#196428] hover:bg-[#145020] text-white">
+                <Button type="submit" disabled={imageUploading} className="w-full bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed">
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Producto
                 </Button>
@@ -2028,8 +2265,12 @@ const AdminDashboard = () => {
                                           }
                                         }
                                       }}
-                                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                      disabled={imageUploading}
+                                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
+                                    {imageUploading && (
+                                      <p className="text-xs text-gray-500">Subiendo imagen...</p>
+                                    )}
                                     {editingProducto?.imagen_url && (
                                       <div className="mt-2">
                                         <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
@@ -2159,7 +2400,8 @@ const AdminDashboard = () => {
                                     }
                                   }}
                                   size="sm"
-                                  className="bg-[#196428] hover:bg-[#145020] text-white"
+                                  disabled={imageUploading}
+                                  className="bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                   <Save className="h-4 w-4 mr-1" />
                                   Guardar
@@ -2365,6 +2607,386 @@ const AdminDashboard = () => {
                           </Button>
                         </div>
                       )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* PESTAÑA UI */}
+        <TabsContent value="ui" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layout className="h-5 w-5" />
+                Gestionar Elementos UI
+              </CardTitle>
+              <CardDescription>
+                Configura banners, banners ocultos y popups del sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={editingUI ? handleUpdateUI : handleCreateUI} className="space-y-6">
+                {/* Banner - Múltiples archivos */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Banner (Múltiples imágenes/videos)
+                  </label>
+                  <Input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={async (e) => {
+                      const url = await handleFileSelectUI(e, 'banner');
+                      if (url) {
+                        if (editingUI) {
+                          setEditingUI({
+                            ...editingUI,
+                            banner: [...(editingUI.banner || []), url]
+                          });
+                        } else {
+                          setNewUI({
+                            ...newUI,
+                            banner: [...(newUI.banner || []), url]
+                          });
+                        }
+                      }
+                    }}
+                    disabled={imageUploading}
+                    className="w-full"
+                  />
+                  {imageUploading && (
+                    <p className="text-sm text-blue-600">Subiendo archivo...</p>
+                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+                    {(editingUI ? editingUI.banner : newUI.banner)?.map((url, index) => (
+                      <div key={index} className="relative group">
+                        {url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? (
+                          <video src={url} className="w-full h-32 object-cover rounded-lg" controls />
+                        ) : (
+                          <img src={url} alt={`Banner ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                        )}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="bg-white/80 hover:bg-white"
+                            onClick={() => editingUI && moveBannerUp(index)}
+                            disabled={!editingUI || index === 0}
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="bg-white/80 hover:bg-white"
+                            onClick={() => editingUI && moveBannerDown(index)}
+                            disabled={!editingUI || !editingUI.banner || index === editingUI.banner.length - 1}
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              if (editingUI) {
+                                setEditingUI({
+                                  ...editingUI,
+                                  banner: editingUI.banner?.filter((_, i) => i !== index) || []
+                                });
+                              } else {
+                                setNewUI({
+                                  ...newUI,
+                                  banner: newUI.banner?.filter((_, i) => i !== index) || []
+                                });
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Hidden Banner - Múltiples archivos */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Banner Oculto (Múltiples imágenes/videos)
+                  </label>
+                  <Input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={async (e) => {
+                      const url = await handleFileSelectUI(e, 'hiddenbanner');
+                      if (url) {
+                        if (editingUI) {
+                          setEditingUI({
+                            ...editingUI,
+                            hiddenbanner: [...(editingUI.hiddenbanner || []), url]
+                          });
+                        } else {
+                          setNewUI({
+                            ...newUI,
+                            hiddenbanner: [...(newUI.hiddenbanner || []), url]
+                          });
+                        }
+                      }
+                    }}
+                    disabled={imageUploading}
+                    className="w-full"
+                  />
+                  {imageUploading && (
+                    <p className="text-sm text-blue-600">Subiendo archivo...</p>
+                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+                    {(editingUI ? editingUI.hiddenbanner : newUI.hiddenbanner)?.map((url, index) => (
+                      <div key={index} className="relative group">
+                        {url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? (
+                          <video src={url} className="w-full h-32 object-cover rounded-lg" controls />
+                        ) : (
+                          <img src={url} alt={`Hidden Banner ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                        )}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="bg-white/80 hover:bg-white"
+                            onClick={() => editingUI && moveHiddenBannerUp(index)}
+                            disabled={!editingUI || index === 0}
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="bg-white/80 hover:bg-white"
+                            onClick={() => editingUI && moveHiddenBannerDown(index)}
+                            disabled={!editingUI || !editingUI.hiddenbanner || index === editingUI.hiddenbanner.length - 1}
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              if (editingUI) {
+                                setEditingUI({
+                                  ...editingUI,
+                                  hiddenbanner: editingUI.hiddenbanner?.filter((_, i) => i !== index) || []
+                                });
+                              } else {
+                                setNewUI({
+                                  ...newUI,
+                                  hiddenbanner: newUI.hiddenbanner?.filter((_, i) => i !== index) || []
+                                });
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Popup - Un solo archivo */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Popup (Una imagen/video)
+                  </label>
+                  <Input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={async (e) => {
+                      const url = await handleFileSelectUI(e, 'popup');
+                      if (url) {
+                        if (editingUI) {
+                          setEditingUI({
+                            ...editingUI,
+                            popup: url
+                          });
+                        } else {
+                          setNewUI({
+                            ...newUI,
+                            popup: url
+                          });
+                        }
+                      }
+                    }}
+                    disabled={imageUploading}
+                    className="w-full"
+                  />
+                  {imageUploading && (
+                    <p className="text-sm text-blue-600">Subiendo archivo...</p>
+                  )}
+                  {(editingUI ? editingUI.popup : newUI.popup) && (
+                    <div className="relative group mt-3 max-w-md">
+                      {(editingUI ? editingUI.popup : newUI.popup)?.includes('.mp4') || 
+                       (editingUI ? editingUI.popup : newUI.popup)?.includes('.webm') || 
+                       (editingUI ? editingUI.popup : newUI.popup)?.includes('.mov') ? (
+                        <video src={editingUI ? editingUI.popup! : newUI.popup!} className="w-full h-48 object-cover rounded-lg" controls />
+                      ) : (
+                        <img src={editingUI ? editingUI.popup! : newUI.popup!} alt="Popup" className="w-full h-48 object-cover rounded-lg" />
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                          if (editingUI) {
+                            setEditingUI({
+                              ...editingUI,
+                              popup: null
+                            });
+                          } else {
+                            setNewUI({
+                              ...newUI,
+                              popup: null
+                            });
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button 
+                    type="submit" 
+                    disabled={imageUploading}
+                    className="bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {editingUI ? (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Actualizar UI
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Crear UI
+                      </>
+                    )}
+                  </Button>
+                  {editingUI && (
+                    <Button 
+                      type="button" 
+                      onClick={cancelEditUI}
+                      variant="outline"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Lista de elementos UI existentes */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Elementos UI Existentes</CardTitle>
+              <CardDescription>
+                {uiElements.length === 0 ? 'No hay elementos UI configurados' : `${uiElements.length} elemento(s) configurado(s)`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {uiElements.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No hay elementos UI. Crea uno usando el formulario arriba.</p>
+              ) : (
+                <div className="space-y-4">
+                  {uiElements.map((ui) => (
+                    <div key={ui.id} className="p-4 border rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h4 className="font-medium text-gray-900">Elemento UI #{ui.id}</h4>
+                          <p className="text-xs text-gray-400">
+                            Creado: {ui.created_at ? new Date(ui.created_at).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => startEditUI(ui)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteUI(ui.id || 0)}
+                            size="sm"
+                            variant="destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* Mostrar Banners */}
+                        {ui.banner && ui.banner.length > 0 && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Banners ({ui.banner.length})</h5>
+                            <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                              {ui.banner.map((url, index) => (
+                                <div key={index} className="relative">
+                                  {url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? (
+                                    <video src={url} className="w-full h-20 object-cover rounded" />
+                                  ) : (
+                                    <img src={url} alt={`Banner ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mostrar Hidden Banners */}
+                        {ui.hiddenbanner && ui.hiddenbanner.length > 0 && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Banners Ocultos ({ui.hiddenbanner.length})</h5>
+                            <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                              {ui.hiddenbanner.map((url, index) => (
+                                <div key={index} className="relative">
+                                  {url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? (
+                                    <video src={url} className="w-full h-20 object-cover rounded" />
+                                  ) : (
+                                    <img src={url} alt={`Hidden Banner ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mostrar Popup */}
+                        {ui.popup && (
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Popup</h5>
+                            <div className="max-w-xs">
+                              {ui.popup.includes('.mp4') || ui.popup.includes('.webm') || ui.popup.includes('.mov') ? (
+                                <video src={ui.popup} className="w-full h-32 object-cover rounded" controls />
+                              ) : (
+                                <img src={ui.popup} alt="Popup" className="w-full h-32 object-cover rounded" />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

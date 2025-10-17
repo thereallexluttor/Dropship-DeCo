@@ -91,4 +91,14 @@ export interface Producto {
   updated_at?: string
 }
 
+// Tipos para la tabla ui
+export interface UI {
+  id?: number
+  banner?: string[] | null  // Array de URLs de imágenes o videos
+  hiddenbanner?: string[] | null  // Array de URLs de imágenes o videos
+  popup?: string | null  // URL de una imagen o video
+  created_at?: string
+  updated_at?: string
+}
+
 export default supabase

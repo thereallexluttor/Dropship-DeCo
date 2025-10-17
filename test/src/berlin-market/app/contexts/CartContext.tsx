@@ -1,17 +1,21 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { Producto } from '@/lib/supabase'
+import { Producto, TamanoProducto } from '@/lib/supabase'
 
-export interface CartItem extends Producto {
+export interface CartItemWithSize extends Producto {
   quantity: number
+  selectedSizeIndex: number  // Índice del tamaño seleccionado (0-based)
+  unitPrice: number          // Precio unitario para el tamaño seleccionado
+  discountApplied: number    // Descuento aplicado en porcentaje (0 si no hay descuento)
 }
 
 interface CartContextType {
-  items: CartItem[]
-  addToCart: (product: Producto, quantity?: number) => void
+  items: CartItemWithSize[]
+  addToCart: (product: Producto, quantity?: number, selectedSizeIndex?: number) => void
   removeFromCart: (productId: number) => void
   updateQuantity: (productId: number, quantity: number) => void
+  updateProductSize: (productId: number, newSizeIndex: number) => void
   clearCart: () => void
   getTotalItems: () => number
   getTotalPrice: () => number
@@ -37,14 +41,34 @@ export const useCart = () => {
 }
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([])
+  const [items, setItems] = useState<CartItemWithSize[]>([])
 
   // Cargar carrito desde localStorage al montar el componente
   useEffect(() => {
     const savedCart = localStorage.getItem('cart')
     if (savedCart) {
       try {
-        setItems(JSON.parse(savedCart))
+        const parsedCart = JSON.parse(savedCart)
+        // Verificar que los items tengan la estructura correcta
+        if (Array.isArray(parsedCart)) {
+          // Migrar items antiguos que no tienen selectedSizeIndex
+          const migratedCart = parsedCart.map((item: any) => {
+            if (!item.selectedSizeIndex && item.selectedSizeIndex !== 0) {
+              return {
+                ...item,
+                selectedSizeIndex: 0,
+                unitPrice: calculateUnitPrice(item, 0),
+                discountApplied: item.descuento && item.descuento_valor
+                  ? (typeof item.descuento_valor === 'string'
+                      ? parseFloat(item.descuento_valor)
+                      : Number(item.descuento_valor))
+                  : 0
+              }
+            }
+            return item
+          })
+          setItems(migratedCart)
+        }
       } catch (error) {
         console.error('Error loading cart from localStorage:', error)
       }
@@ -56,20 +80,73 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('cart', JSON.stringify(items))
   }, [items])
 
-  const addToCart = (product: Producto, quantity: number = 1) => {
+  // Función helper para calcular el precio unitario correcto
+  const calculateUnitPrice = (product: Producto, selectedSizeIndex: number = 0): number => {
+    // Si el producto tiene precios definidos
+    if (product.precios && product.precios.length > 0) {
+      const basePrice = product.precios[selectedSizeIndex] || product.precios[0] || 0
+
+      // Aplicar descuento si existe
+      if (product.descuento && product.descuento_valor) {
+        const discountValue = typeof product.descuento_valor === 'string'
+          ? parseFloat(product.descuento_valor)
+          : Number(product.descuento_valor)
+        return basePrice * (1 - (discountValue / 100))
+      }
+
+      return basePrice
+    }
+
+    // Si el producto tiene stocks con precios
+    if (product.stocks && product.stocks.length > 0) {
+      const stock = product.stocks[selectedSizeIndex] || product.stocks[0]
+      if (stock) {
+        // Aplicar descuento si existe
+        if (product.descuento && product.descuento_valor) {
+          const discountValue = typeof product.descuento_valor === 'string'
+            ? parseFloat(product.descuento_valor)
+            : Number(product.descuento_valor)
+          return stock.precio * (1 - (discountValue / 100))
+        }
+
+        return stock.precio
+      }
+    }
+
+    return 0
+  }
+
+  const addToCart = (product: Producto, quantity: number = 1, selectedSizeIndex: number = 0) => {
     setItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id)
+      // Buscar si ya existe el mismo producto con el mismo tamaño
+      const existingItem = prevItems.find(item =>
+        item.id === product.id && item.selectedSizeIndex === selectedSizeIndex
+      )
+
+      const unitPrice = calculateUnitPrice(product, selectedSizeIndex)
+      const discountApplied = product.descuento && product.descuento_valor
+        ? (typeof product.descuento_valor === 'string'
+            ? parseFloat(product.descuento_valor)
+            : Number(product.descuento_valor))
+        : 0
 
       if (existingItem) {
-        // Si el producto ya existe, aumentar la cantidad
+        // Si el producto ya existe con el mismo tamaño, aumentar la cantidad
         return prevItems.map(item =>
-          item.id === product.id
+          item.id === product.id && item.selectedSizeIndex === selectedSizeIndex
             ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       } else {
-        // Si es un nuevo producto, agregarlo con la cantidad especificada
-        return [...prevItems, { ...product, quantity }]
+        // Si es un nuevo producto o diferente tamaño, agregarlo
+        const newItem: CartItemWithSize = {
+          ...product,
+          quantity,
+          selectedSizeIndex,
+          unitPrice,
+          discountApplied
+        }
+        return [...prevItems, newItem]
       }
     })
   }
@@ -93,6 +170,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     )
   }
 
+  const updateProductSize = (productId: number, newSizeIndex: number) => {
+    setItems(prevItems =>
+      prevItems.map(item => {
+        if (item.id === productId) {
+          const newUnitPrice = calculateUnitPrice(item, newSizeIndex)
+          return {
+            ...item,
+            selectedSizeIndex: newSizeIndex,
+            unitPrice: newUnitPrice
+          }
+        }
+        return item
+      })
+    )
+  }
+
   const clearCart = () => {
     setItems([])
   }
@@ -103,9 +196,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getTotalPrice = () => {
     return items.reduce((total, item) => {
-      const precio = item.precios?.[0] || 0
-
-      return total + (Number(precio) * item.quantity)
+      return total + (item.unitPrice * item.quantity)
     }, 0)
   }
 
@@ -114,6 +205,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     addToCart,
     removeFromCart,
     updateQuantity,
+    updateProductSize,
     clearCart,
     getTotalItems,
     getTotalPrice,
