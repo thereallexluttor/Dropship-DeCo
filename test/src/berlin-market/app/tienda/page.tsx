@@ -22,13 +22,15 @@ import {
   Sparkles,
   Eye,
   EyeOff,
-  Check
+  Check,
+  Briefcase
 } from "lucide-react"
 import { useState, useEffect, useRef, useMemo } from "react"
 import ProductCard from "../components/ProductCard"
 import FadeInOnScroll from '../components/FadeInOnScroll'
 import CategoryMenu from '../components/CategoryMenu'
 import StoreLocator from '../components/StoreLocator'
+import Footer from '../components/Footer'
 import {
   Sheet,
   SheetContent,
@@ -468,6 +470,7 @@ export default function TiendaPage() {
     { name: "Carrito", icon: ShoppingCart, href: "/carrito" },
     { name: "Cuenta", icon: User, href: "#" },
     { name: "Info", icon: Info, href: "/sobre-nosotros" },
+    { name: "Vacantes", icon: Briefcase, href: "/vacantes" },
     { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
   ];
 
@@ -670,25 +673,25 @@ export default function TiendaPage() {
                               </button>
                             );
                           }
-                          if (link.name === "Tiendas" || link.name === "Info") {
-                            return (
-                              <Link
-                                key={link.name}
-                                href={link.href}
-                                className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                              >
-                                <link.icon className="h-5 w-5 text-gray-600" />
-                                <span className="text-sm font-medium text-gray-800">{link.name === "Info" ? "Sobre Nosotros" : link.name}</span>
-                              </Link>
-                            );
-                          }
+                        if (link.name === "Tiendas" || link.name === "Info" || link.name === "Vacantes") {
                           return (
-                            <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Link
+                              key={link.name}
+                              href={link.href}
+                              className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
                               <link.icon className="h-5 w-5 text-gray-600" />
-                              <span className="text-sm font-medium text-gray-800">{link.name}</span>
+                              <span className="text-sm font-medium text-gray-800">{link.name === "Info" ? "Sobre Nosotros" : link.name}</span>
                             </Link>
                           );
+                        }
+                        return (
+                          <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                            <link.icon className="h-5 w-5 text-gray-600" />
+                            <span className="text-sm font-medium text-gray-800">{link.name}</span>
+                          </Link>
+                        );
                         })}
                       </nav>
                     </div>
@@ -762,6 +765,12 @@ export default function TiendaPage() {
                         <Info className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
+                    </Link>
+                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                        <Briefcase className="h-full w-full" />
+                      </div>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
                     </Link>
                     <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
@@ -840,6 +849,12 @@ export default function TiendaPage() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
                     </Link>
+                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                        <Briefcase className="h-full w-full" />
+                      </div>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
+                    </Link>
                     <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
@@ -916,6 +931,12 @@ export default function TiendaPage() {
                         <Info className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
+                    </Link>
+                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                        <Briefcase className="h-full w-full" />
+                      </div>
+                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
                     </Link>
                     <Link href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
@@ -1406,106 +1427,7 @@ export default function TiendaPage() {
           </section>
         </main>
 
-        <footer className="bg-[#196428] text-white py-4">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-4">
-              {/* Logo Section */}
-              <div className="lg:col-span-2 flex flex-col items-center lg:items-start">
-                <Image
-                  src="/unisantander_footer.png"
-                  alt="Unisantander"
-                  width={220}
-                  height={30}
-                  className="mb-4 lg:mb-1 w-40 sm:w-48 lg:w-full"
-                />
-              </div>
-
-              {/* Links Section */}
-              <div className="lg:col-span-7">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-4">
-                  {/* Servicio al cliente */}
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2 lg:mb-1.5">Servicio al cliente</h3>
-                    <ul className="space-y-1 lg:space-y-[2px] text-xs lg:text-[11px]">
-                      <li><Link href="#" className="hover:underline">Ayuda y preguntas frecuentes</Link></li>
-                      <li><Link href="#" className="hover:underline">Contacto</Link></li>
-                      <li><Link href="#" className="hover:underline">Mi cuenta</Link></li>
-                      <li><Link href="#" className="hover:underline">Solicitar contraseña</Link></li>
-                      <li><Link href="#" className="hover:underline">Mis órdenes</Link></li>
-                      <li><Link href="#" className="hover:underline">Mi lista de deseos</Link></li>
-                      <li><Link href="#" className="hover:underline">Entrega rápida</Link></li>
-                      <li><Link href="#" className="hover:underline">Pago seguro y métodos de pago</Link></li>
-                      <li><Link href="#" className="hover:underline">Política de devolución de 30 días</Link></li>
-                      <li><Link href="#" className="hover:underline">Newsletter</Link></li>
-                      <li><Link href="#" className="hover:underline">Haga clic y recople</Link></li>
-                      <li><Link href="#" className="hover:underline">Declaración de accesibilidad</Link></li>
-                    </ul>
-                  </div>
-
-                  {/* Nuestros mercados */}
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2 lg:mb-1.5">Nuestros mercados</h3>
-                    <ul className="space-y-1 lg:space-y-[2px] text-xs lg:text-[11px]">
-                      <li><Link href="#" className="hover:underline">Encuentra mercados</Link></li>
-                      <li><Link href="#" className="hover:underline">Servicios en el mercado</Link></li>
-                      <li><Link href="#" className="hover:underline">Tarjeta regalo</Link></li>
-                      <li><Link href="#" className="hover:underline">Salón Unisantander</Link></li>
-                      <li><Link href="#" className="hover:underline">Prácticas veterinarias activas</Link></li>
-                    </ul>
-                  </div>
-
-                  {/* Acerca de Unisantander */}
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2 lg:mb-1.5">Acerca de Unisantander</h3>
-                    <ul className="space-y-1 lg:space-y-[2px] text-xs lg:text-[11px]">
-                      <li><Link href="/sobre-nosotros" className="hover:underline">Sobre nosotros</Link></li>
-                      <li><Link href="#" className="hover:underline">Carreras</Link></li>
-                      <li><Link href="#" className="hover:underline">Responsabilidad</Link></li>
-                      <li><Link href="#" className="hover:underline">Animal comprometido</Link></li>
-                      <li><Link href="#" className="hover:underline">Cumplimiento</Link></li>
-                      <li><Link href="#" className="hover:underline">Convertirse en socio del mercado</Link></li>
-                      <li><Link href="#" className="hover:underline">Prensa</Link></li>
-                      <li><Link href="#" className="hover:underline">Indicaciones</Link></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer Rabbit and Social Media */}
-              <div className="lg:col-span-3 flex flex-col items-center lg:items-end mt-6 lg:mt-0">
-                {/* Footer Rabbit Image */}
-                <div className="relative w-full max-w-[200px] sm:max-w-[250px] h-[120px] sm:h-[150px] lg:w-[300px] lg:h-[200px] mb-4">
-                  <Image
-                    src="/footer_rabbit.png"
-                    alt="Footer Rabbit"
-                    fill
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-
-                {/* Social Media Icons */}
-                <div className="flex justify-center space-x-4 sm:space-x-6 lg:space-x-8">
-                  <Link href="#" className="text-white hover:text-gray-200 transition-colors">
-                    <Image src="/icons/facebook.png" alt="Facebook" width={24} height={24} className="sm:w-[30px] sm:h-[30px]" />
-                  </Link>
-                  <Link href="#" className="text-white hover:text-gray-200 transition-colors">
-                    <Image src="/icons/instagram.png" alt="Instagram" width={24} height={24} className="sm:w-[30px] sm:h-[30px]" />
-                  </Link>
-                  <Link href="#" className="text-white hover:text-gray-200 transition-colors">
-                    <Image src="/icons/youtube.png" alt="YouTube" width={24} height={24} className="sm:w-[30px] sm:h-[30px]" />
-                  </Link>
-                  <Link href="#" className="text-white hover:text-gray-200 transition-colors">
-                    <Image src="/icons/tiktok.png" alt="TikTok" width={24} height={24} className="sm:w-[30px] sm:h-[30px]" />
-                  </Link>
-                  <Link href="#" className="text-white hover:text-gray-200 transition-colors">
-                    <Image src="/icons/whatsapp.png" alt="WhatsApp" width={24} height={24} className="sm:w-[30px] sm:h-[30px]" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </div>
 
       {/* Account Drawer for Mobile */}

@@ -3,15 +3,16 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { 
-  Search, 
-  Home as HomeIcon, 
-  ShoppingBag, 
-  User, 
-  ShoppingCart, 
-  Info, 
+import {
+  Search,
+  Home as HomeIcon,
+  ShoppingBag,
+  User,
+  ShoppingCart,
+  Info,
   MapPin,
   Menu,
+  Briefcase,
 } from "lucide-react"
 import { useState } from "react"
 import {
@@ -53,6 +54,7 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
     { name: "Carrito", icon: ShoppingCart, href: "/carrito" },
     { name: "Cuenta", icon: User, href: "/cuenta" },
     { name: "Info", icon: Info, href: "/sobre-nosotros" },
+    { name: "Vacantes", icon: Briefcase, href: "/vacantes" },
     { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
   ]
 
@@ -121,12 +123,12 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                           </div>
                         );
                       }
-                      if (link.name === "Tiendas" || link.name === "Info") {
-                        const isActive = link.name === "Info" && pathname === "/sobre-nosotros";
+                      if (link.name === "Tiendas" || link.name === "Info" || link.name === "Vacantes") {
+                        const isActive = (link.name === "Info" && pathname === "/sobre-nosotros") || (link.name === "Vacantes" && pathname === "/vacantes");
                         return (
-                          <Link 
-                            key={link.name} 
-                            href={link.href} 
+                          <Link
+                            key={link.name}
+                            href={link.href}
                             className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
                             onClick={() => setIsMobileMenuOpen(false)}
                           >
@@ -212,6 +214,12 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   </div>
                   <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Info</span>
                 </Link>
+                <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
+                    <Briefcase className="h-full w-full" />
+                  </div>
+                  <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Vacantes</span>
+                </Link>
                 <Link href="/#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                   <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                     <MapPin className="h-full w-full" />
@@ -286,6 +294,12 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   </div>
                   <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Info</span>
                 </Link>
+                <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
+                    <Briefcase className="h-full w-full" />
+                  </div>
+                  <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Vacantes</span>
+                </Link>
                 <Link href="/#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                   <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                     <MapPin className="h-full w-full" />
@@ -359,6 +373,12 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                     <Info className="h-full w-full" />
                   </div>
                   <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Sobre Nosotros</span>
+                </Link>
+                <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <div className={`h-4 w-4 ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
+                    <Briefcase className="h-full w-full" />
+                  </div>
+                  <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Vacantes</span>
                 </Link>
                 <Link href="/#nuestras-tiendas" className="group flex flex-col items-center justify-center">
                   <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">

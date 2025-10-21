@@ -93,11 +93,6 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
     }
   }, [shouldClose, isOpen, closeAllCategories])
 
-  const hasManyPromotions = category.promotions && category.promotions.length > 2;
-  const menuHeightClass = hasManyPromotions
-    ? 'md:h-[440px] lg:h-[420px] xl:h-[400px]'
-    : 'md:h-[400px] lg:h-[380px] xl:h-[360px]';
-
   // Función para calcular la posición centrada del menú respecto al contenedor de categorías
   const getCenteredMenuPosition = useCallback(() => {
     if (!containerRef?.current) {
@@ -154,14 +149,21 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
           {/* Área invisible para el cursor */}
           <div className="absolute h-4 -top-4 left-1/2 transform -translate-x-1/2 w-full" />
           
-          <div className={`flex flex-col md:flex-row h-auto ${menuHeightClass} overflow-y-auto md:overflow-y-hidden`}>
+          <div className="flex flex-col md:flex-row h-auto min-h-[380px]">
             {/* Sección 1: Subcategorías */}
-            <div className="w-full md:w-1/5 p-4 md:p-6 md:border-r border-gray-100">
+            <div className="w-full md:w-1/5 p-4 md:p-6 md:border-r border-gray-100 flex flex-col min-h-[380px]">
               <h3 className="text-[11px] sm:text-xs lg:text-sm font-medium text-gray-900 pb-2 mb-4">
                 Todo en {category.name}
               </h3>
               {category.subcategories && (
-                <div className="space-y-2">
+                <div 
+                  className="space-y-2 flex-grow overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400" 
+                  style={{ 
+                    maxHeight: '320px',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#D1D5DB transparent'
+                  }}
+                >
                   {category.subcategories.map((subcategory) => (
                     <Link
                       key={subcategory.name}
@@ -174,11 +176,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                   ))}
                 </div>
               )}
-              <div
-                className={`md:absolute md:bottom-6 md:left-6 md:right-6 ${
-                  category.subcategories && category.subcategories.length > 6 ? 'mt-8 pt-4' : 'mt-4 pt-4'
-                }`}
-              >
+              <div className="mt-6 pt-4 border-t border-gray-100">
                 <Link 
                   href={category.href} 
                   className="text-[#196428] text-[10px] sm:text-xs lg:text-sm hover:underline"
@@ -189,7 +187,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
             </div>
 
             {/* Sección 2: Ofertas, Novedades y Marcas */}
-            <div className="w-full md:w-3/5 p-4 md:p-6 md:border-r border-gray-100 flex flex-col">
+            <div className="w-full md:w-3/5 p-4 md:p-6 md:border-r border-gray-100 flex flex-col min-h-[380px]">
               {/* Ofertas y Novedades */}
               {category.promotions && (
                 <div className="mb-8 md:mb-10 flex-grow">
@@ -254,13 +252,13 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
             </div>
 
             {/* Sección 3: Banner Vertical */}
-            <div className="w-full md:w-1/5 h-48 md:h-full">
+            <div className="w-full md:w-1/5 min-h-[200px] md:min-h-[380px] flex items-stretch overflow-hidden md:rounded-r-lg">
               {category.bannerImage && (
-                <Link href={category.bannerImage.href} className="block h-full">
+                <Link href={category.bannerImage.href} className="block w-full">
                   <img
                     src={category.bannerImage.src}
                     alt={category.bannerImage.alt}
-                    className="w-full h-full object-cover md:rounded-r-lg"
+                    className="w-full h-full min-h-[200px] md:min-h-[380px] object-cover object-center"
                   />
                 </Link>
               )}

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Megaphone } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -17,57 +18,66 @@ const Footer = () => {
               className="mb-4 md:mb-1 w-40 md:w-full"
             />
 
+            {/* Hiring Card - Desktop Only */}
+            <div className="hidden md:block w-full max-w-md mx-auto mt-8">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-4 text-white relative overflow-hidden shadow-lg">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full -translate-y-8 translate-x-8"></div>
+                  <div className="absolute bottom-0 left-0 w-12 h-12 bg-white rounded-full translate-y-6 -translate-x-6"></div>
+                </div>
+
+                <div className="relative z-10 flex items-center justify-between">
+                  {/* Content */}
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold mb-1">¡Hey, Espera!</h3>
+                    <p className="text-xs opacity-90">
+                      ¿Quieres trabajar con nosotros? <span className="font-semibold">¡Estamos contratando!</span>
+                    </p>
+                  </div>
+
+                  {/* Megaphone Icon */}
+                  <div className="flex-shrink-0 ml-3">
+                    <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                      <Megaphone className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Call to Action */}
+                <div className="absolute bottom-2 right-2">
+                  <Link href="/vacantes" className="text-white hover:text-gray-200 transition-colors text-xs underline">
+                    Entra aquí
+                  </Link>
+                </div>
+              </div>
+            </div>
+
           </div>
           <div className="md:col-span-2 lg:col-span-7 lg:pl-8 order-first md:order-none">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-4">
-              {/* Servicio al cliente */}
-              <div className="md:col-span-1">
-                <h3 className="text-sm font-semibold mb-1.5">Servicio al cliente</h3>
-                <ul className="space-y-[2px] text-[11px]">
-                  <li><Link href="#">Ayuda y preguntas frecuentes</Link></li>
-                  <li><Link href="#">Contacto</Link></li>
-                  <li><Link href="#">Mi cuenta</Link></li>
-                  <li><Link href="#">Solicitar contraseña</Link></li>
-                  <li><Link href="#">Mis órdenes</Link></li>
-                  <li><Link href="#">Mi lista de deseos</Link></li>
-                  <li><Link href="#">Entrega rápida</Link></li>
-                  <li><Link href="#">Pago seguro y métodos de pago</Link></li>
-                  <li><Link href="#">Política de devolución de 30 días</Link></li>
-                  <li><Link href="#">Newsletter</Link></li>
-                  <li><Link href="#">Haga clic y recople</Link></li>
-                  <li><Link href="#">Declaración de accesibilidad</Link></li>
-                </ul>
-              </div>
+            <div className="max-w-2xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Servicio al cliente */}
+                <div className="text-left">
+                  <h3 className="text-base font-semibold mb-3">Servicio al cliente</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li><Link href="#" className="hover:underline">Ayuda y preguntas frecuentes</Link></li>
+                    <li><Link href="#" className="hover:underline">Contacto</Link></li>
+                    <li><Link href="#" className="hover:underline">Mi cuenta</Link></li>
+                  </ul>
+                </div>
 
-              {/* Nuestros mercados */}
-              <div className="md:col-span-1">
-                <h3 className="text-sm font-semibold mb-1.5">Nuestros mercados</h3>
-                <ul className="space-y-[2px] text-[11px]">
-                  <li><Link href="#">Encuentra mercados</Link></li>
-                  <li><Link href="#">Servicios en el mercado</Link></li>
-                  <li><Link href="#">Tarjeta regalo</Link></li>
-                  <li><Link href="#">Salón Unisantander</Link></li>
-                  <li><Link href="#">Prácticas veterinarias activas</Link></li>
-                </ul>
-              </div>
-
-              {/* Acerca de Unisantander */}
-              <div className="col-span-2 sm:col-span-1">
-                <h3 className="text-sm font-semibold mb-1.5">Acerca de Unisantander</h3>
-                <ul className="space-y-[2px] text-[11px]">
-                  <li><Link href="/sobre-nosotros">Sobre nosotros</Link></li>
-                  <li><Link href="#">Carreras</Link></li>
-                  <li><Link href="#">Responsabilidad</Link></li>
-                  <li><Link href="#">Animal comprometido</Link></li>
-                  <li><Link href="#">Cumplimiento</Link></li>
-                  <li><Link href="#">Convertirse en socio del mercado</Link></li>
-                  <li><Link href="#">Prensa</Link></li>
-                  <li><Link href="#">Indicaciones</Link></li>
-                </ul>
-              </div>
-
-              <div className="hidden lg:block lg:col-span-1">
-                {/* Este div es para mantener el layout en 4 columnas en desktop, se rellena con el conejo */}
+                {/* Acerca de Unisantander */}
+                <div className="text-left">
+                  <h3 className="text-base font-semibold mb-3">Acerca de Unisantander</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li><Link href="/sobre-nosotros" className="hover:underline">Sobre nosotros</Link></li>
+                    <li><Link href="#" className="hover:underline">Carreras</Link></li>
+                    <li><Link href="#" className="hover:underline">Responsabilidad</Link></li>
+                    <li><Link href="#" className="hover:underline">Cumplimiento</Link></li>
+                    <li><Link href="#" className="hover:underline">Prensa</Link></li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>

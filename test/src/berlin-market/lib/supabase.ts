@@ -101,4 +101,38 @@ export interface UI {
   updated_at?: string
 }
 
+// Tipos para la tabla sobre_nosotros
+export interface SobreNosotros {
+  id?: number
+  // Banner principal
+  banner_texto?: string
+  // Misión
+  mision_titulo?: string
+  mision_parrafo1?: string
+  mision_parrafo2?: string
+  // Visión
+  vision_titulo?: string
+  vision_parrafo1?: string
+  vision_parrafo2?: string
+  // Identidad Corporativa
+  identidad_titulo?: string
+  identidad_banner_texto?: string
+  valores_titulo?: string
+  // Valores (6 valores)
+  valor1_titulo?: string
+  valor1_descripcion?: string
+  valor2_titulo?: string
+  valor2_descripcion?: string
+  valor3_titulo?: string
+  valor3_descripcion?: string
+  valor4_titulo?: string
+  valor4_descripcion?: string
+  valor5_titulo?: string
+  valor5_descripcion?: string
+  valor6_titulo?: string
+  valor6_descripcion?: string
+  created_at?: string
+  updated_at?: string
+}
+
 export default supabase
