@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Search, Clock, Package, Tag } from 'lucide-react'
-import { ProductWithDetails } from '@/hooks/useProducts'
+import { ProductWithDetails } from '../hooks/useProducts'
 
 interface SearchAutocompleteProps {
   isOpen: boolean
@@ -128,7 +128,7 @@ export default function SearchAutocomplete({
       {!isSearching && searchQuery.trim() && searchResults.length === 0 && (
         <div className="p-4 text-gray-500 text-center">
           <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p>No se encontraron productos para "{searchQuery}"</p>
+          <p>No se encontraron productos para &quot;{searchQuery}&quot;</p>
         </div>
       )}
 

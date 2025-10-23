@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import supabase, { Producto, Categoria, Subcategoria, Marca } from '@/lib/supabase'
+import supabase, { Producto, Categoria, Subcategoria, Marca } from '../../lib/supabase'
 import { useDebounce } from './useDebounce'
 
 export interface ProductWithDetails extends Producto {

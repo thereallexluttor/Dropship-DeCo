@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import supabase, { Categoria, Subcategoria } from '@/lib/supabase'
+import supabase, { Categoria, Subcategoria } from '../../lib/supabase'
 
 export interface CategoryWithSubcategories {
   id: number

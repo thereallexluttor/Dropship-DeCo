@@ -139,8 +139,8 @@ export default function TiendaPage() {
   // Actualizar título cuando hay búsqueda
   useEffect(() => {
     if (searchQueryParam) {
-      setCurrentTitle(`Resultados para "${searchQueryParam}"`)
-      setCurrentBreadcrumbs(["Inicio", "Tienda", `Búsqueda: ${searchQueryParam}`])
+      setCurrentTitle(`Resultados para &quot;${searchQueryParam}&quot;`)
+      setCurrentBreadcrumbs(["Inicio", "Tienda", `Búsqueda: &quot;${searchQueryParam}&quot;`])
     }
   }, [searchQueryParam])
 
@@ -1556,7 +1556,7 @@ export default function TiendaPage() {
                     <div className="text-center py-20">
                       <p className="text-gray-600 text-lg mb-4">
                         {searchQueryParam
-                          ? `No se encontraron productos para "${searchQueryParam}"`
+                          ? `No se encontraron productos para &quot;${searchQueryParam}&quot;`
                           : "No se encontraron productos en esta categoría."
                         }
                       </p>
