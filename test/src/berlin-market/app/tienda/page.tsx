@@ -26,7 +26,7 @@ import {
   Briefcase,
   ChevronRight
 } from "lucide-react"
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import ProductCard from "../components/ProductCard"
 import FadeInOnScroll from '../components/FadeInOnScroll'
@@ -67,7 +67,7 @@ import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
 import { useCart } from "../contexts/CartContext"
 
-export default function TiendaPage() {
+function TiendaPageContent() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [activeCardSlide, setActiveCardSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
@@ -1712,3 +1712,10 @@ export default function TiendaPage() {
   )
 }
 
+export default function TiendaPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428]"></div></div>}>
+      <TiendaPageContent />
+    </Suspense>
+  )
+}
