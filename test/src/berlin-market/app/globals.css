@@ -249,3 +249,70 @@ body {
     overflow-y: visible;
   }
 }
+
+/* Estilos personalizados para notificaciones de carrito */
+/* Animación de entrada suave para notificaciones */
+@keyframes slideInFromBottom {
+  0% {
+    transform: translateY(100%) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToBottom {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%) scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Responsive design para notificaciones */
+@media (max-width: 640px) {
+  .cart-notification {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    margin: 0;
+  }
+
+  .cart-notification .max-w-sm {
+    max-width: none;
+  }
+}
+
+/* Mejor visibilidad en dispositivos móviles */
+@media (max-width: 768px) {
+  .cart-notification {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Animaciones personalizadas para elementos de notificación */
+.cart-notification-enter {
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+.cart-notification-exit {
+  animation: slideOutToBottom 0.3s ease-in;
+}
+
+/* Estilos para badge de cantidad en productos */
+.quantity-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -89,6 +89,21 @@ export interface Producto {
   precios?: number[] | null  // Array de precios que corresponden a cada tamaño
   created_at?: string
   updated_at?: string
+  // Relaciones con joins
+  subcategorias?: {
+    id: number
+    nombre: string
+    descripcion: string
+    categories_id: number
+    categories?: {
+      id: number
+      nombre: string
+    }
+  } | null
+  marcas?: {
+    id: number
+    nombre_marca: string
+  } | null
 }
 
 // Tipos para la tabla ui
@@ -131,6 +146,20 @@ export interface SobreNosotros {
   valor5_descripcion?: string
   valor6_titulo?: string
   valor6_descripcion?: string
+  created_at?: string
+  updated_at?: string
+}
+
+// Tipos para la tabla tiendas
+export interface Tienda {
+  id?: number
+  nombre: string
+  direccion: string
+  ciudad: string
+  telefono: string
+  contacto: string
+  lat: number
+  lng: number
   created_at?: string
   updated_at?: string
 }

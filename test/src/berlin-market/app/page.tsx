@@ -28,6 +28,7 @@ import {
 import { useState, useEffect, useRef } from "react"
 import { supabase, Producto, UI } from '@/lib/supabase'
 import { useCategories } from './hooks/useCategories'
+import { useProducts } from './hooks/useProducts'
 import { useCart } from './contexts/CartContext'
 import CartCounter from './components/CartCounter'
 import ProductCard from "./components/ProductCard"
@@ -62,11 +63,13 @@ import MainLayout from "./components/MainLayout"
 import CategoryDropdown from "./components/CategoryDropdown"
 import AccountPopover from "./components/AccountPopover"
 import AccountPopoverContent from "./components/AccountPopoverContent"
+import SearchAutocomplete from "./components/SearchAutocomplete"
 
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [activeHiddenSlide, setActiveHiddenSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
+  const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false)
   const [activeProductSlide, setActiveProductSlide] = useState(0)
   const [activeBrandSlide, setActiveBrandSlide] = useState(0)
   const [openCategory, setOpenCategory] = useState<string | null>(null)
@@ -79,6 +82,7 @@ export default function Home() {
   const [productosDestacados, setProductosDestacados] = useState<Producto[]>([])
   const [productosEnOferta, setProductosEnOferta] = useState<Producto[]>([])
   const [uiElements, setUiElements] = useState<UI[]>([])
+  const [aliados, setAliados] = useState<{id: number, nombre: string, imagen_url: string}[]>([])
   const [showPopup, setShowPopup] = useState(false)
   // Estado para manejar el tamaño seleccionado de cada producto
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
@@ -88,6 +92,65 @@ export default function Home() {
 
   // Usar el hook personalizado para cargar categorías dinámicamente
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
+
+  // Usar el hook de productos para búsqueda
+  const { searchProducts, isSearching, liveSearchResults, isLiveSearching, updateLiveSearchQuery, clearLiveSearchResults } = useProducts()
+
+  // Función para cargar aliados
+  const cargarAliados = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('aliados')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) throw error;
+      setAliados(data || []);
+    } catch (error) {
+      console.error('Error cargando aliados:', error);
+    }
+  };
+
+  // Los aliados se cargan dinámicamente desde la base de datos
+  // Usar aliados de BD si existen, sino usar las marcas por defecto
+  const brands = aliados.length > 0 ? aliados.map(aliado => ({
+    src: aliado.imagen_url,
+    alt: aliado.nombre
+  })) : [
+    { src: "/brands/royal-canin.png", alt: "Royal Canin" },
+    { src: "/brands/real-nature.png", alt: "Real Nature" },
+    { src: "/brands/naturally-good.png", alt: "Naturally Good" },
+    { src: "/brands/select-gold.png", alt: "Select Gold" },
+    { src: "/brands/purina.png", alt: "Purina" },
+    { src: "/brands/hills.png", alt: "Hill's" },
+    { src: "/brands/acana.png", alt: "Acana" },
+    { src: "/brands/orijen.png", alt: "Orijen" },
+    { src: "/brands/eukanuba.png", alt: "Eukanuba" },
+    { src: "/brands/advance.png", alt: "Advance" },
+    { src: "/brands/crave.png", alt: "Crave" },
+    { src: "/brands/ultima.png", alt: "Ultima" },
+  ];
+
+  const brandsPerSlide = 6;
+  // Calcular el número correcto de slides necesarios
+  // Siempre debe haber al menos 1 slide, incluso si hay 0 aliados (usará los datos por defecto)
+  const totalBrandSlides = Math.max(1, Math.ceil(brands.length / brandsPerSlide));
+
+  const nextBrandSlide = () => {
+    setActiveBrandSlide((current) => (current + 1) % totalBrandSlides);
+  };
+
+  const prevBrandSlide = () => {
+    setActiveBrandSlide((current) => (current - 1 + totalBrandSlides) % totalBrandSlides);
+  };
+
+  // Exponer función para recargar aliados (para uso desde AdminDashboard)
+  useEffect(() => {
+    (window as any).recargarAliados = cargarAliados;
+    return () => {
+      delete (window as any).recargarAliados;
+    };
+  }, []);
 
   // Efecto para los carruseles de las cards
   // Cargar productos destacados
@@ -146,6 +209,19 @@ export default function Home() {
 
     cargarElementosUI();
   }, []);
+
+  // Cargar aliados iniciales
+  useEffect(() => {
+    cargarAliados();
+  }, []);
+
+  // Resetear el slide activo cuando cambie la cantidad de aliados o el total de slides
+  useEffect(() => {
+    // Resetear si el slide actual es mayor o igual al total de slides disponibles
+    if (activeBrandSlide >= totalBrandSlides && totalBrandSlides > 0) {
+      setActiveBrandSlide(0);
+    }
+  }, [aliados.length, totalBrandSlides, activeBrandSlide]);
 
   // Mostrar popup en primera visita
   useEffect(() => {
@@ -215,15 +291,64 @@ export default function Home() {
 
   useEffect(() => {
     const brandTimer = setInterval(() => {
-      setActiveBrandSlide(current => (current + 1) % 2); // Asumiendo 2 slides de 4 marcas cada uno
+      setActiveBrandSlide(current => (current + 1) % totalBrandSlides);
     }, 5000);
 
     return () => clearInterval(brandTimer);
-  }, []);
+  }, [totalBrandSlides]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Searching for:", searchQuery)
+    if (searchQuery.trim()) {
+      try {
+        const results = await searchProducts(searchQuery.trim())
+        if (results.length > 0) {
+          // Navegar a la página de tienda con los resultados de búsqueda
+          window.location.href = `/tienda?search=${encodeURIComponent(searchQuery.trim())}`
+        } else {
+          console.log("No se encontraron productos para:", searchQuery)
+        }
+      } catch (error) {
+        console.error("Error en la búsqueda:", error)
+      }
+    }
+  }
+
+  // Funciones para manejar el autocompletado
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchQuery(value)
+    updateLiveSearchQuery(value)
+
+    // Mostrar autocompletado si hay texto
+    if (value.trim()) {
+      setIsAutocompleteOpen(true)
+    } else {
+      setIsAutocompleteOpen(false)
+    }
+  }
+
+  const handleSearchInputFocus = () => {
+    if (searchQuery.trim()) {
+      setIsAutocompleteOpen(true)
+    }
+  }
+
+  const handleSearchInputBlur = () => {
+    // Pequeño delay para permitir clicks en el autocompletado
+    setTimeout(() => {
+      setIsAutocompleteOpen(false)
+    }, 200)
+  }
+
+  const handleCloseAutocomplete = () => {
+    setIsAutocompleteOpen(false)
+  }
+
+  const handleSelectProduct = (product: any) => {
+    setSearchQuery(product.nombre)
+    updateLiveSearchQuery(product.nombre)
+    window.location.href = `/tienda?search=${encodeURIComponent(product.nombre)}`
   }
 
   const handleAddToCart = (producto: Producto) => {
@@ -293,31 +418,6 @@ export default function Home() {
     tagColor: "bg-[#196428]",
   }));
 
-  const brands = [
-    { src: "/brands/royal-canin.png", alt: "Royal Canin" },
-    { src: "/brands/real-nature.png", alt: "Real Nature" },
-    { src: "/brands/naturally-good.png", alt: "Naturally Good" },
-    { src: "/brands/select-gold.png", alt: "Select Gold" },
-    { src: "/brands/purina.png", alt: "Purina" },
-    { src: "/brands/hills.png", alt: "Hill's" },
-    { src: "/brands/acana.png", alt: "Acana" },
-    { src: "/brands/orijen.png", alt: "Orijen" },
-    { src: "/brands/eukanuba.png", alt: "Eukanuba" },
-    { src: "/brands/advance.png", alt: "Advance" },
-    { src: "/brands/crave.png", alt: "Crave" },
-    { src: "/brands/ultima.png", alt: "Ultima" },
-  ];
-
-  const brandsPerSlide = 6;
-  const totalBrandSlides = Math.ceil(brands.length / brandsPerSlide);
-
-  const nextBrandSlide = () => {
-    setActiveBrandSlide((current) => (current + 1) % totalBrandSlides);
-  };
-
-  const prevBrandSlide = () => {
-    setActiveBrandSlide((current) => (current - 1 + totalBrandSlides) % totalBrandSlides);
-  };
 
 
   const totalProductSlides = Math.ceil(featuredProducts.length / 4);
@@ -495,12 +595,14 @@ export default function Home() {
                   />
                 </Link>
 
-                <div className="flex-1 w-full max-w-xs">
+                <div className="flex-1 w-full max-w-xs relative">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onFocus={handleSearchInputFocus}
+                      onBlur={handleSearchInputBlur}
                       placeholder="Buscar..."
                       className="w-full h-9 px-3 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
@@ -511,6 +613,14 @@ export default function Home() {
                       <Search className="h-4 w-4" />
                     </button>
                   </form>
+                  <SearchAutocomplete
+                    isOpen={isAutocompleteOpen}
+                    searchQuery={searchQuery}
+                    searchResults={liveSearchResults}
+                    isSearching={isLiveSearching}
+                    onClose={handleCloseAutocomplete}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
 
                 <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -605,12 +715,14 @@ export default function Home() {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-sm mx-4">
+                <div className="flex-1 max-w-sm mx-4 relative">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onFocus={handleSearchInputFocus}
+                      onBlur={handleSearchInputBlur}
                       placeholder="Buscar productos..."
                       className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
@@ -621,6 +733,14 @@ export default function Home() {
                       <Search className="h-5 w-5" />
                     </button>
                   </form>
+                  <SearchAutocomplete
+                    isOpen={isAutocompleteOpen}
+                    searchQuery={searchQuery}
+                    searchResults={liveSearchResults}
+                    isSearching={isLiveSearching}
+                    onClose={handleCloseAutocomplete}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
 
                 {/* Navigation Icons */}
@@ -688,12 +808,14 @@ export default function Home() {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-md mx-6">
+                <div className="flex-1 max-w-md mx-6 relative">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onFocus={handleSearchInputFocus}
+                      onBlur={handleSearchInputBlur}
                       placeholder="Buscar productos..."
                       className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
@@ -704,6 +826,14 @@ export default function Home() {
                       <Search className="h-5 w-5" />
                     </button>
                   </form>
+                  <SearchAutocomplete
+                    isOpen={isAutocompleteOpen}
+                    searchQuery={searchQuery}
+                    searchResults={liveSearchResults}
+                    isSearching={isLiveSearching}
+                    onClose={handleCloseAutocomplete}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
 
                 {/* Navigation Icons */}
@@ -771,12 +901,14 @@ export default function Home() {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-lg mx-8 ml-[70px]">
+                <div className="flex-1 max-w-lg mx-8 ml-[70px] relative">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onFocus={handleSearchInputFocus}
+                      onBlur={handleSearchInputBlur}
                       placeholder="Busca el producto o categoria de tu preferencia..."
                       className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
@@ -787,6 +919,14 @@ export default function Home() {
                       <Search className="h-5 w-5" />
                     </button>
                   </form>
+                  <SearchAutocomplete
+                    isOpen={isAutocompleteOpen}
+                    searchQuery={searchQuery}
+                    searchResults={liveSearchResults}
+                    isSearching={isLiveSearching}
+                    onClose={handleCloseAutocomplete}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
 
                 {/* Navigation Icons */}
@@ -916,7 +1056,7 @@ export default function Home() {
           <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
-              <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 overflow-x-auto pb-4 md:pb-0 md:overflow-x-hidden">
+              <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 md:pb-0 md:overflow-x-hidden">
                 <style jsx global>{`
                   @media (max-width: 768px) {
                     .scroll-container::-webkit-scrollbar {
@@ -944,20 +1084,21 @@ export default function Home() {
                     const currentPrice = getCurrentPrice();
 
                     return (
-                    <div key={producto.id} className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                      <div className="relative aspect-square">
-                        <Image
-                          src={producto.imagen_url || '/placeholder.jpg'}
-                          alt={producto.nombre}
-                          fill
-                          className="object-contain p-2 sm:p-3 md:p-4"
-                        />
-                        {/* Indicador de descuento */}
-                        <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                          OFERTA
+                    <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[160px] md:w-full block">
+                      <div className="bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                        <div className="relative aspect-square">
+                          <Image
+                            src={producto.imagen_url || '/placeholder.jpg'}
+                            alt={producto.nombre}
+                            fill
+                            className="object-contain p-1.5 sm:p-2 md:p-3"
+                          />
+                          {/* Indicador de descuento */}
+                          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                            OFERTA
+                          </div>
                         </div>
-                      </div>
-                      <div className="p-2 sm:p-3 md:p-4">
+                      <div className="p-2 sm:p-2.5 md:p-3">
                         <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">{producto.nombre}</h3>
                         <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{producto.descripcion || 'Producto en oferta especial'}</p>
 
@@ -1012,6 +1153,7 @@ export default function Home() {
                         <button
                           onClick={(e) => {
                             e.preventDefault()
+                            e.stopPropagation()
                             handleAddToCart(producto)
                           }}
                           className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
@@ -1019,23 +1161,24 @@ export default function Home() {
                           Agregar al carrito
                         </button>
                       </div>
-                    </div>
+                      </div>
+                    </Link>
                     );
                   })
                 ) : (
                   /* Productos hardcodeados como fallback si no hay productos en oferta */
                   <>
                     {/* Hill's */}
-                    <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                    <div className="flex-none w-[160px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
                       <div className="relative aspect-square">
                         <Image
                           src="/cap1.png"
                           alt="Plan científico Hill"
                           fill
-                          className="object-contain p-2 sm:p-3 md:p-4"
+                          className="object-contain p-1.5 sm:p-2 md:p-3"
                         />
                       </div>
-                      <div className="p-2 sm:p-3 md:p-4">
+                      <div className="p-2 sm:p-2.5 md:p-3">
                         <h3 className="text-sm sm:text-base md:text-lg font-medium mb-1 sm:mb-2">Plan científico Hill</h3>
                         <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Descubre comida de alta calidad para tus mascotas</p>
                         <Link
@@ -1048,16 +1191,16 @@ export default function Home() {
                     </div>
 
                     {/* Carny */}
-                    <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                    <div className="flex-none w-[160px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
                       <div className="relative aspect-square">
                         <Image
                           src="/cap2.png"
                           alt="Carny"
                           fill
-                          className="object-contain p-2 sm:p-3 md:p-4"
+                          className="object-contain p-1.5 sm:p-2 md:p-3"
                         />
                       </div>
-                      <div className="p-2 sm:p-3 md:p-4">
+                      <div className="p-2 sm:p-2.5 md:p-3">
                         <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Carny</h3>
                         <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Comida única e irresistible</p>
                         <Link
@@ -1070,16 +1213,16 @@ export default function Home() {
                     </div>
 
                     {/* Royal Canin */}
-                    <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                    <div className="flex-none w-[160px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
                       <div className="relative aspect-square">
                         <Image
                           src="/cap3.png"
                           alt="Royal canin"
                           fill
-                          className="object-contain p-2 sm:p-3 md:p-4"
+                          className="object-contain p-1.5 sm:p-2 md:p-3"
                         />
                       </div>
-                      <div className="p-2 sm:p-3 md:p-4">
+                      <div className="p-2 sm:p-2.5 md:p-3">
                         <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Royal canin</h3>
                         <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Para las necesidades especiales de tu gato</p>
                         <Link
@@ -1092,16 +1235,16 @@ export default function Home() {
                     </div>
 
                     {/* Felix */}
-                    <div className="flex-none w-[200px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
+                    <div className="flex-none w-[160px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
                       <div className="relative aspect-square">
                         <Image
                           src="/cap4.png"
                           alt="Felix"
                           fill
-                          className="object-contain p-2 sm:p-3 md:p-4"
+                          className="object-contain p-1.5 sm:p-2 md:p-3"
                         />
                       </div>
-                      <div className="p-2 sm:p-3 md:p-4">
+                      <div className="p-2 sm:p-2.5 md:p-3">
                         <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Felix</h3>
                         <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Ahorra en comida irresistible para tu gato</p>
                         <Link
@@ -1162,7 +1305,7 @@ export default function Home() {
               
               {/* Vista móvil: scroll horizontal */}
               <div className="md:hidden overflow-x-auto pb-4 scroll-container">
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   {productosDestacados.map((producto) => {
                     const selectedSizeIndex = selectedSizes[producto.id!] || 0;
                     const hasSizes = producto.tamano && producto.tamano.length > 0;
@@ -1178,23 +1321,25 @@ export default function Home() {
                     const currentPrice = getCurrentPrice();
 
                     return (
-                    <div key={producto.id} className="flex-none w-[200px] bg-white rounded-[15px] overflow-hidden shadow-sm border border-gray-200">
-                      <div className="relative aspect-square">
-                        <Image
-                          src={producto.imagen_url || '/placeholder.jpg'}
-                          alt={producto.nombre}
-                          fill
-                          className="object-contain p-2"
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            handleAddToCart(producto)
-                          }}
-                          className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300"
-                        >
-                          <ShoppingCart className="h-3 w-3" />
-                        </button>
+                    <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[160px] block">
+                      <div className="bg-white rounded-[15px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                        <div className="relative aspect-square">
+                          <Image
+                            src={producto.imagen_url || '/placeholder.jpg'}
+                            alt={producto.nombre}
+                            fill
+                            className="object-contain p-1.5"
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleAddToCart(producto)
+                            }}
+                            className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300"
+                          >
+                            <ShoppingCart className="h-3 w-3" />
+                          </button>
                         {producto.descuento && (
                           <div className="absolute top-2 left-2">
                             <span className="bg-green-600 text-white text-[10px] px-1.5 py-0.5 rounded">
@@ -1203,7 +1348,7 @@ export default function Home() {
                           </div>
                         )}
                       </div>
-                      <div className="p-2">
+                      <div className="p-1.5">
                         <h3 className="text-sm font-semibold mb-1">{producto.nombre}</h3>
                         <p className="text-xs text-gray-600 mb-1">{producto.descripcion}</p>
 
@@ -1249,7 +1394,8 @@ export default function Home() {
                           <p className="text-gray-400 text-xs italic">No disponible</p>
                         )}
                       </div>
-                    </div>
+                      </div>
+                    </Link>
                     );
                   })}
                 </div>
@@ -1275,7 +1421,7 @@ export default function Home() {
                   >
                     {Array.from({ length: Math.ceil(productosDestacados.length / 4) }).map((_, slideIndex) => (
                       <div key={slideIndex} className="w-full flex-shrink-0">
-                        <div className="grid grid-cols-4 gap-4 md:gap-5">
+                        <div className="grid grid-cols-4 gap-3 md:gap-4">
                           {productosDestacados.slice(slideIndex * 4, slideIndex * 4 + 4).map((producto) => {
                             const selectedSizeIndex = selectedSizes[producto.id!] || 0;
                             const hasSizes = producto.tamano && producto.tamano.length > 0;
@@ -1291,23 +1437,25 @@ export default function Home() {
                             const currentPrice = getCurrentPrice();
 
                             return (
-                            <div key={producto.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                              <div className="relative aspect-square">
-                                <Image
-                                  src={producto.imagen_url || '/placeholder.jpg'}
-                                  alt={producto.nombre}
-                                  fill
-                                  className="object-contain p-3 md:p-4"
-                                />
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    handleAddToCart(producto)
-                                  }}
-                                  className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300"
-                                >
-                                  <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
-                                </button>
+                            <Link key={producto.id} href={`/producto/${producto.id}`} className="block">
+                              <div className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                                <div className="relative aspect-square">
+                                  <Image
+                                    src={producto.imagen_url || '/placeholder.jpg'}
+                                    alt={producto.nombre}
+                                    fill
+                                    className="object-contain p-2 md:p-3"
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      handleAddToCart(producto)
+                                    }}
+                                    className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300"
+                                  >
+                                    <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
+                                  </button>
                                 {producto.descuento && (
                                   <div className="absolute top-3 md:top-4 left-3 md:left-4">
                                     <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
@@ -1316,7 +1464,7 @@ export default function Home() {
                                   </div>
                                 )}
                               </div>
-                              <div className="p-3 md:p-4">
+                              <div className="p-2.5 md:p-3">
                                 <h3 className="text-base md:text-lg font-semibold mb-2">{producto.nombre}</h3>
                                 <p className="text-sm text-gray-600 mb-2">{producto.descripcion}</p>
 
@@ -1362,7 +1510,8 @@ export default function Home() {
                                   <p className="text-gray-400 text-xs italic">Precio no disponible</p>
                                 )}
                               </div>
-                            </div>
+                              </div>
+                            </Link>
                             );
                           })}
                         </div>

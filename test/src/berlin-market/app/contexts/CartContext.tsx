@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Producto, TamanoProducto } from '@/lib/supabase'
+import { useCartNotification } from './CartNotificationContext'
 
 export interface CartItemWithSize extends Producto {
   quantity: number
@@ -43,6 +44,7 @@ export const useCart = () => {
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItemWithSize[]>([])
+  const { showNotification } = useCartNotification()
 
   // Cargar carrito desde localStorage al montar el componente
   useEffect(() => {
@@ -118,6 +120,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const addToCart = (product: Producto, quantity: number = 1, selectedSizeIndex: number = 0) => {
+    // Mostrar notificación ANTES de actualizar el estado
+    showNotification(product, quantity)
+    
     setItems(prevItems => {
       // Buscar si ya existe el mismo producto con el mismo tamaño
       const existingItem = prevItems.find(item =>
@@ -133,9 +138,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (existingItem) {
         // Si el producto ya existe con el mismo tamaño, aumentar la cantidad
+        const newQuantity = existingItem.quantity + quantity
         return prevItems.map(item =>
           item.id === product.id && item.selectedSizeIndex === selectedSizeIndex
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQuantity }
             : item
         )
       } else {

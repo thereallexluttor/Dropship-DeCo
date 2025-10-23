@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { CategoryProvider } from './contexts/CategoryContext'
 import { CartProvider } from './contexts/CartContext'
+import { CartNotificationProvider } from './contexts/CartNotificationContext'
 
 export const metadata: Metadata = {
   title: 'v0 App',
@@ -25,9 +26,11 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <CategoryProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
+          <CartNotificationProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </CartNotificationProvider>
         </CategoryProvider>
       </body>
     </html>

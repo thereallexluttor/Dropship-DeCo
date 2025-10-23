@@ -1,3 +1,5 @@
+import supabase from '@/lib/supabase'
+
 // Datos compartidos de las tiendas con información de contacto
 export interface Store {
   id: number
@@ -9,6 +11,37 @@ export interface Store {
   coords: { lat: number; lng: number }
 }
 
+// Función para cargar tiendas desde Supabase
+export const loadStoresFromSupabase = async (): Promise<Store[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('tiendas')
+      .select('*')
+      .order('ciudad', { ascending: true })
+      .order('nombre', { ascending: true })
+
+    if (error) {
+      console.error('Error cargando tiendas desde Supabase:', error)
+      return []
+    }
+
+    // Convertir formato de Supabase a formato Store
+    return (data || []).map((tienda: any) => ({
+      id: tienda.id || 0,
+      name: tienda.nombre,
+      address: tienda.direccion,
+      city: tienda.ciudad,
+      phone: tienda.telefono,
+      contact: tienda.contacto,
+      coords: { lat: tienda.lat, lng: tienda.lng }
+    }))
+  } catch (error) {
+    console.error('Error cargando tiendas:', error)
+    return []
+  }
+}
+
+// Datos iniciales de respaldo (fallback si Supabase no está disponible)
 export const stores: Store[] = [
   {
     id: 1,
@@ -116,7 +149,6 @@ export const stores: Store[] = [
     city: "Fortul",
     phone: "3134068190",
     contact: "Anderson Daza",
-    //6.798995605787356, -71.7679353470464
     coords: { lat: 6.798995, lng: -71.76793 }
   },
   {
@@ -135,7 +167,6 @@ export const stores: Store[] = [
     city: "Tame",
     phone: "3123023124",
     contact: "Javier Abril Portilla",
-    //6.4606974422185175, -71.73043989434244
     coords: { lat: 6.4606977, lng: -71.7304 }
   },
   {
@@ -145,7 +176,6 @@ export const stores: Store[] = [
     city: "Tame",
     phone: "3118599045",
     contact: "Yimmy Brijaldo",
-    //6.460286108231305, -71.73121784316815
     coords: { lat: 6.460286, lng: -71.73121 }
   }
 ]

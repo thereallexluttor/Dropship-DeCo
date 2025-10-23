@@ -30,9 +30,9 @@ const Footer = () => {
                 <div className="relative z-10 flex items-center justify-between">
                   {/* Content */}
                   <div className="flex-1">
-                    <h3 className="text-sm font-bold mb-1">¡Hey, Espera!</h3>
+                    <h3 className="text-sm font-normal mb-1">¡Hey, Espera!</h3>
                     <p className="text-xs opacity-90">
-                      ¿Quieres trabajar con nosotros? <span className="font-semibold">¡Estamos contratando!</span>
+                      ¿Quieres trabajar con nosotros? <span className="font-normal">¡Estamos contratando!</span>
                     </p>
                   </div>
 
@@ -59,7 +59,7 @@ const Footer = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Servicio al cliente */}
                 <div className="text-left">
-                  <h3 className="text-base font-semibold mb-3">Servicio al cliente</h3>
+                  <h3 className="text-base font-normal mb-3">Servicio al cliente</h3>
                   <ul className="space-y-2 text-sm">
                     <li><Link href="#" className="hover:underline">Ayuda y preguntas frecuentes</Link></li>
                     <li><Link href="#" className="hover:underline">Contacto</Link></li>
@@ -69,7 +69,7 @@ const Footer = () => {
 
                 {/* Acerca de Unisantander */}
                 <div className="text-left">
-                  <h3 className="text-base font-semibold mb-3">Acerca de Unisantander</h3>
+                  <h3 className="text-base font-normal mb-3">Acerca de Unisantander</h3>
                   <ul className="space-y-2 text-sm">
                     <li><Link href="/sobre-nosotros" className="hover:underline">Sobre nosotros</Link></li>
                     <li><Link href="#" className="hover:underline">Carreras</Link></li>

@@ -1,21 +1,36 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { stores, getUniqueCities, getStoresByCity, type Store } from '../lib/stores'
+import { stores, loadStoresFromSupabase, getUniqueCities, getStoresByCity, type Store } from '../lib/stores'
 
 // Dynamically import the Map component to avoid SSR issues
 const Map = dynamic(() => import('./Map'), { ssr: false })
 
 export default function StoreLocator() {
+  const [storesList, setStoresList] = useState<Store[]>(stores)
   const [selectedStore, setSelectedStore] = useState<Store>(stores[0])
   const [selectedCity, setSelectedCity] = useState<string | 'all'>('all')
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Cargar tiendas desde Supabase al montar el componente
+  useEffect(() => {
+    const loadStores = async () => {
+      const supabaseStores = await loadStoresFromSupabase()
+      if (supabaseStores.length > 0) {
+        setStoresList(supabaseStores)
+        setSelectedStore(supabaseStores[0])
+      }
+      setIsLoading(false)
+    }
+    loadStores()
+  }, [])
 
   // Get unique cities and filtered stores using shared functions
-  const cities = getUniqueCities()
+  const cities = Array.from(new Set(storesList.map(store => store.city)))
   const filteredStores = selectedCity === 'all'
-    ? stores
-    : getStoresByCity(selectedCity)
+    ? storesList
+    : storesList.filter(store => store.city === selectedCity)
 
   return (
     <div className="flex flex-col md:grid md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">

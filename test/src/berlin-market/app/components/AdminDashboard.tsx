@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto, ProductoStock, UI, SobreNosotros } from '@/lib/supabase';
+import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto, ProductoStock, UI, SobreNosotros, Tienda } from '@/lib/supabase';
 import { Trabajo, Aplicacion, actualizarEstadoAplicacion, crearTrabajo, editarTrabajo, obtenerTrabajos } from '@/lib/vacantes';
 
 interface AplicacionConTrabajo {
@@ -59,6 +59,8 @@ const AdminDashboard = () => {
   const [aplicaciones, setAplicaciones] = useState<any[]>([]);
   const [selectedTrabajo, setSelectedTrabajo] = useState<Trabajo | null>(null);
   const [trabajoAplicaciones, setTrabajoAplicaciones] = useState<any[]>([]);
+  const [tiendas, setTiendas] = useState<Tienda[]>([]);
+  const [aliados, setAliados] = useState<{id: number, nombre: string, imagen_url: string, created_at?: string}[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
@@ -133,6 +135,21 @@ const AdminDashboard = () => {
   const [editingSobreNosotros, setEditingSobreNosotros] = useState<SobreNosotros | null>(null);
   const [uiCategory, setUiCategory] = useState<'inicio' | 'sobre-nosotros'>('inicio');
   const [imageUploading, setImageUploading] = useState(false);
+  const [newTienda, setNewTienda] = useState<Omit<Tienda, 'id' | 'created_at' | 'updated_at'>>({
+    nombre: '',
+    direccion: '',
+    ciudad: '',
+    telefono: '',
+    contacto: '',
+    lat: 0,
+    lng: 0
+  });
+  const [editingTienda, setEditingTienda] = useState<Tienda | null>(null);
+  const [newAliado, setNewAliado] = useState<{ nombre: string; imagen_url: string }>({
+    nombre: '',
+    imagen_url: ''
+  });
+  const [editingAliado, setEditingAliado] = useState<{id: number, nombre: string, imagen_url: string} | null>(null);
 
   // Forzar actualización de tipos
   useEffect(() => {}, []);
@@ -317,13 +334,53 @@ const AdminDashboard = () => {
           console.table(aplicacionesData || []); // Debug: mostrar todas las aplicaciones
           setAplicaciones((aplicacionesData as AplicacionConTrabajo[]) || []);
         }
+
+        // Cargar tiendas
+        console.log('🔄 Cargando tiendas desde Supabase...');
+        const { data: tiendasData, error: tiendasError } = await supabase
+          .from('tiendas')
+          .select('*')
+          .order('ciudad', { ascending: true })
+          .order('nombre', { ascending: true });
+
+        if (tiendasError) {
+          console.error('❌ Error cargando tiendas:', tiendasError);
+          if (tiendasError.message.includes('relation "tiendas" does not exist')) {
+            console.error('❌ La tabla "tiendas" no existe en la base de datos');
+          }
+          // No lanzar error, continuar con tiendas vacías
+          setTiendas([]);
+        } else {
+          console.log('✅ Tiendas cargadas exitosamente:', tiendasData?.length || 0, 'tiendas');
+          setTiendas(tiendasData || []);
+        }
+
+        // Cargar aliados
+        console.log('🔄 Cargando aliados desde Supabase...');
+        const { data: aliadosData, error: aliadosError } = await supabase
+          .from('aliados')
+          .select('*')
+          .order('id', { ascending: true });
+
+        if (aliadosError) {
+          console.error('❌ Error cargando aliados:', aliadosError);
+          if (aliadosError.message.includes('relation "aliados" does not exist')) {
+            console.error('❌ La tabla "aliados" no existe en la base de datos');
+          }
+          // No lanzar error, continuar con aliados vacíos
+          setAliados([]);
+        } else {
+          console.log('✅ Aliados cargados exitosamente:', aliadosData?.length || 0, 'aliados');
+          setAliados(aliadosData || []);
+        }
     } catch (error: any) {
       console.error('Error cargando datos:', error);
       if (error?.message?.includes('relation "categories" does not exist') ||
           error?.message?.includes('relation "subcategories" does not exist') ||
           error?.message?.includes('relation "productos" does not exist') ||
           error?.message?.includes('relation "usuarios" does not exist') ||
-          error?.message?.includes('relation "marcas" does not exist')) {
+          error?.message?.includes('relation "marcas" does not exist') ||
+          error?.message?.includes('relation "aliados" does not exist')) {
         setTablesConfigured(false);
       } else if (error?.code === 'PGRST301') {
         alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
@@ -1619,6 +1676,304 @@ const AdminDashboard = () => {
     setEditingSobreNosotros(null);
   };
 
+  // ==================== FUNCIONES PARA TIENDAS ====================
+
+  const handleCreateTienda = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTienda.nombre.trim() || !newTienda.direccion.trim() || !newTienda.ciudad.trim() || 
+        !newTienda.telefono.trim() || !newTienda.contacto.trim()) {
+      alert('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    // Validar coordenadas
+    if (newTienda.lat === 0 || newTienda.lng === 0) {
+      alert('Por favor ingresa coordenadas GPS válidas');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('tiendas')
+        .insert([newTienda])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTiendas([...tiendas, data]);
+      setNewTienda({
+        nombre: '',
+        direccion: '',
+        ciudad: '',
+        telefono: '',
+        contacto: '',
+        lat: 0,
+        lng: 0
+      });
+      alert('Tienda creada exitosamente');
+    } catch (error: any) {
+      console.error('Error creando tienda:', error);
+      alert(`Error al crear la tienda: ${error?.message || 'Error desconocido'}`);
+    }
+  };
+
+  const handleUpdateTienda = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTienda) return;
+
+    if (!editingTienda.nombre.trim() || !editingTienda.direccion.trim() || !editingTienda.ciudad.trim() || 
+        !editingTienda.telefono.trim() || !editingTienda.contacto.trim()) {
+      alert('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    // Validar coordenadas
+    if (editingTienda.lat === 0 || editingTienda.lng === 0) {
+      alert('Por favor ingresa coordenadas GPS válidas');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('tiendas')
+        .update({
+          nombre: editingTienda.nombre,
+          direccion: editingTienda.direccion,
+          ciudad: editingTienda.ciudad,
+          telefono: editingTienda.telefono,
+          contacto: editingTienda.contacto,
+          lat: editingTienda.lat,
+          lng: editingTienda.lng
+        })
+        .eq('id', editingTienda.id);
+
+      if (error) throw error;
+
+      setTiendas(tiendas.map(t => t.id === editingTienda.id ? editingTienda : t));
+      setEditingTienda(null);
+      alert('Tienda actualizada exitosamente');
+    } catch (error: any) {
+      console.error('Error actualizando tienda:', error);
+      alert(`Error al actualizar la tienda: ${error?.message || 'Error desconocido'}`);
+    }
+  };
+
+  const handleDeleteTienda = async (id: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta tienda?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('tiendas')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTiendas(tiendas.filter(t => t.id !== id));
+      alert('Tienda eliminada exitosamente');
+    } catch (error: any) {
+      console.error('Error eliminando tienda:', error);
+      alert(`Error al eliminar la tienda: ${error?.message || 'Error desconocido'}`);
+    }
+  };
+
+  const startEditTienda = (tienda: Tienda) => {
+    setEditingTienda({ ...tienda });
+  };
+
+  const cancelEditTienda = () => {
+    setEditingTienda(null);
+  };
+
+  // ==================== FUNCIONES PARA ALIADOS ====================
+
+  const handleCreateAliado = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAliado.nombre.trim()) {
+      alert('Por favor ingresa el nombre del aliado');
+      return;
+    }
+    if (!newAliado.imagen_url) {
+      alert('Por favor selecciona una imagen para el aliado');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('aliados')
+        .insert([{ nombre: newAliado.nombre.trim(), imagen_url: newAliado.imagen_url }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAliados([...aliados, data]);
+      setNewAliado({ nombre: '', imagen_url: '' });
+      // Recargar aliados en la página principal
+      if ((window as any).recargarAliados) {
+        (window as any).recargarAliados();
+      }
+      alert('Aliado creado exitosamente');
+    } catch (error: any) {
+      console.error('Error creando aliado:', error);
+      if (error?.message?.includes('relation "aliados" does not exist')) {
+        alert('La tabla "aliados" no existe en Supabase. Crea la tabla siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al crear el aliado: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const handleUpdateAliado = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAliado || !editingAliado.nombre.trim()) {
+      alert('Por favor ingresa el nombre del aliado');
+      return;
+    }
+    if (!editingAliado.imagen_url) {
+      alert('Por favor selecciona una imagen para el aliado');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('aliados')
+        .update({ nombre: editingAliado.nombre.trim(), imagen_url: editingAliado.imagen_url })
+        .eq('id', editingAliado.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAliados(aliados.map(a => a.id === editingAliado.id ? data : a));
+      setEditingAliado(null);
+      // Recargar aliados en la página principal
+      if ((window as any).recargarAliados) {
+        (window as any).recargarAliados();
+      }
+      alert('Aliado actualizado exitosamente');
+    } catch (error: any) {
+      console.error('Error actualizando aliado:', error);
+      if (error?.message?.includes('relation "aliados" does not exist')) {
+        alert('La tabla "aliados" no existe en Supabase. Crea la tabla siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al actualizar el aliado: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const handleDeleteAliado = async (id: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este aliado?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('aliados')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setAliados(aliados.filter(a => a.id !== id));
+      // Recargar aliados en la página principal
+      if ((window as any).recargarAliados) {
+        (window as any).recargarAliados();
+      }
+      alert('Aliado eliminado exitosamente');
+    } catch (error: any) {
+      console.error('Error eliminando aliado:', error);
+      if (error?.message?.includes('relation "aliados" does not exist')) {
+        alert('La tabla "aliados" no existe en Supabase. Crea la tabla siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
+      } else if (error?.code === 'PGRST301') {
+        alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
+      } else {
+        alert(`Error al eliminar el aliado: ${error?.message || 'Error desconocido'}`);
+      }
+    }
+  };
+
+  const startEditAliado = (aliado: {id: number, nombre: string, imagen_url: string}) => {
+    setEditingAliado({ ...aliado });
+  };
+
+  const cancelEditAliado = () => {
+    setEditingAliado(null);
+  };
+
+  // Función para subir imagen de aliado a Supabase Storage
+  const uploadAliadoImageToStorage = async (file: File, aliadoName: string): Promise<string> => {
+    try {
+      // Crear nombre único para el archivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${aliadoName.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}.${fileExt}`;
+      const filePath = `aliados/${fileName}`;
+
+      // Subir archivo al bucket 'images'
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
+
+      if (error) {
+        console.error('Error subiendo imagen de aliado:', error);
+        throw error;
+      }
+
+      // Obtener URL pública de la imagen
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error en upload de imagen de aliado:', error);
+      throw error;
+    }
+  };
+
+  // Función para manejar selección de archivo de aliado
+  const handleFileSelectAliado = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    setImageUploading(true);
+    const file = event.target.files?.[0];
+    if (!file) {
+      setImageUploading(false);
+      return null;
+    }
+
+    // Validar que sea una imagen
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido');
+      setImageUploading(false);
+      return null;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen debe ser menor a 5MB');
+      setImageUploading(false);
+      return null;
+    }
+
+    try {
+      const aliadoName = editingAliado ? editingAliado.nombre : newAliado.nombre || 'aliado';
+      const imageUrl = await uploadAliadoImageToStorage(file, aliadoName);
+      return imageUrl;
+    } catch (error) {
+      console.error('Error subiendo imagen de aliado:', error);
+      alert('Error al subir la imagen. Inténtalo de nuevo.');
+      return null;
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-8">
@@ -1657,11 +2012,11 @@ const AdminDashboard = () => {
     <div className="space-y-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Panel de Administración</h2>
-        <p className="text-gray-600">Gestiona categorías, subcategorías, productos, marcas, elementos UI y vacantes del sistema</p>
+        <p className="text-gray-600">Gestiona categorías, subcategorías, productos, marcas, elementos UI, aliados y vacantes del sistema</p>
       </div>
 
       <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 max-w-4xl mx-auto">
+        <TabsList className="grid w-full grid-cols-8 max-w-5xl mx-auto">
           <TabsTrigger value="categorias" className="flex items-center gap-2">
             <FolderPlus className="h-4 w-4" />
             Categorías
@@ -1681,6 +2036,14 @@ const AdminDashboard = () => {
           <TabsTrigger value="ui" className="flex items-center gap-2">
             <Layout className="h-4 w-4" />
             UI
+          </TabsTrigger>
+          <TabsTrigger value="tiendas" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Tiendas
+          </TabsTrigger>
+          <TabsTrigger value="aliados" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Aliados
           </TabsTrigger>
           <TabsTrigger value="vacantes" className="flex items-center gap-2">
             <Briefcase className="h-4 w-4" />
@@ -3849,6 +4212,460 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="tiendas" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Crear Nueva Tienda
+              </CardTitle>
+              <CardDescription>
+                Agrega una nueva tienda al sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateTienda} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre de la Tienda *
+                    </label>
+                    <Input
+                      value={newTienda.nombre}
+                      onChange={(e) => setNewTienda({ ...newTienda, nombre: e.target.value })}
+                      placeholder="Ej: Veterinaria El Hato"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ciudad *
+                    </label>
+                    <Input
+                      value={newTienda.ciudad}
+                      onChange={(e) => setNewTienda({ ...newTienda, ciudad: e.target.value })}
+                      placeholder="Ej: Bucaramanga"
+                      required
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Dirección *
+                    </label>
+                    <Input
+                      value={newTienda.direccion}
+                      onChange={(e) => setNewTienda({ ...newTienda, direccion: e.target.value })}
+                      placeholder="Ej: Av. Q. seca 21 - 59"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Teléfono *
+                    </label>
+                    <Input
+                      value={newTienda.telefono}
+                      onChange={(e) => setNewTienda({ ...newTienda, telefono: e.target.value })}
+                      placeholder="Ej: 3112777907"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre de Contacto *
+                    </label>
+                    <Input
+                      value={newTienda.contacto}
+                      onChange={(e) => setNewTienda({ ...newTienda, contacto: e.target.value })}
+                      placeholder="Ej: Marsheri Lozano"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Latitud (GPS) *
+                    </label>
+                    <Input
+                      type="number"
+                      step="any"
+                      value={newTienda.lat}
+                      onChange={(e) => setNewTienda({ ...newTienda, lat: parseFloat(e.target.value) || 0 })}
+                      placeholder="Ej: 7.1249"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Longitud (GPS) *
+                    </label>
+                    <Input
+                      type="number"
+                      step="any"
+                      value={newTienda.lng}
+                      onChange={(e) => setNewTienda({ ...newTienda, lng: parseFloat(e.target.value) || 0 })}
+                      placeholder="Ej: -73.1229"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
+                  <strong>💡 Tip:</strong> Puedes obtener las coordenadas GPS desde Google Maps haciendo clic derecho en la ubicación y seleccionando las coordenadas que aparecen.
+                </div>
+                <Button type="submit" className="w-full bg-[#196428] hover:bg-[#145020] text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Tienda
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Tiendas Existentes ({tiendas.length})</CardTitle>
+              <CardDescription>
+                Gestiona las tiendas del sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {tiendas.length === 0 ? (
+                <div className="text-center py-8">
+                  <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No hay tiendas registradas</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {tiendas.map((tienda) => (
+                    <Card key={tienda.id} className="border-l-4 border-l-[#196428]">
+                      <CardContent className="p-4">
+                        {editingTienda?.id === tienda.id ? (
+                          <form onSubmit={handleUpdateTienda} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <Input
+                                value={editingTienda?.nombre || ''}
+                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, nombre: e.target.value })}
+                                placeholder="Nombre de la tienda"
+                                required
+                              />
+                              <Input
+                                value={editingTienda?.ciudad || ''}
+                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, ciudad: e.target.value })}
+                                placeholder="Ciudad"
+                                required
+                              />
+                              <Input
+                                value={editingTienda?.direccion || ''}
+                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, direccion: e.target.value })}
+                                placeholder="Dirección"
+                                className="md:col-span-2"
+                                required
+                              />
+                              <Input
+                                value={editingTienda?.telefono || ''}
+                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, telefono: e.target.value })}
+                                placeholder="Teléfono"
+                                required
+                              />
+                              <Input
+                                value={editingTienda?.contacto || ''}
+                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, contacto: e.target.value })}
+                                placeholder="Nombre de contacto"
+                                required
+                              />
+                              <Input
+                                type="number"
+                                step="any"
+                                value={editingTienda?.lat || 0}
+                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, lat: parseFloat(e.target.value) || 0 })}
+                                placeholder="Latitud"
+                                required
+                              />
+                              <Input
+                                type="number"
+                                step="any"
+                                value={editingTienda?.lng || 0}
+                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, lng: parseFloat(e.target.value) || 0 })}
+                                placeholder="Longitud"
+                                required
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                type="submit"
+                                size="sm"
+                                className="bg-[#196428] hover:bg-[#145020] text-white"
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Guardar
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={cancelEditTienda}
+                                variant="outline"
+                                size="sm"
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancelar
+                              </Button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-lg text-gray-900">
+                                  {tienda.nombre}
+                                </h3>
+                                <span className="text-sm font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                                  {tienda.ciudad}
+                                </span>
+                              </div>
+                              <div className="space-y-1 text-sm text-gray-600">
+                                <p className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4" />
+                                  {tienda.direccion}
+                                </p>
+                                <p>
+                                  <strong>Teléfono:</strong> {tienda.telefono}
+                                </p>
+                                <p>
+                                  <strong>Contacto:</strong> {tienda.contacto}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  <strong>GPS:</strong> {tienda.lat.toFixed(6)}, {tienda.lng.toFixed(6)}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-2">
+                                  ID: {tienda.id} • Creado: {new Date(tienda.created_at || '').toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                onClick={() => startEditTienda(tienda)}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteTienda(tienda.id || 0)}
+                                size="sm"
+                                variant="destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="aliados" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Crear Nuevo Aliado
+              </CardTitle>
+              <CardDescription>
+                Agrega una nueva imagen de aliado al sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateAliado} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre del Aliado
+                    </label>
+                    <Input
+                      value={newAliado.nombre}
+                      onChange={(e) => setNewAliado({ ...newAliado, nombre: e.target.value })}
+                      placeholder="Ej: Royal Canin, Purina, etc."
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Imagen del Aliado
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const imageUrl = await handleFileSelectAliado(e);
+                          if (imageUrl) {
+                            setNewAliado({ ...newAliado, imagen_url: imageUrl });
+                          }
+                        }}
+                        disabled={imageUploading}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
+                        required
+                      />
+                      {imageUploading && (
+                        <p className="text-xs text-gray-500">Subiendo imagen...</p>
+                      )}
+                      {newAliado.imagen_url && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
+                          <img
+                            src={newAliado.imagen_url}
+                            alt="Aliado Preview"
+                            className="w-32 h-20 object-contain rounded-lg border border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setNewAliado({ ...newAliado, imagen_url: '' })}
+                            className="ml-2 text-red-500 text-sm hover:text-red-700"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button type="submit" disabled={imageUploading} className="w-full bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Aliado
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Aliados Existentes ({aliados.length})</CardTitle>
+              <CardDescription>
+                Gestiona las imágenes de aliados del sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {aliados.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No hay aliados registrados</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {aliados.map((aliado) => (
+                    <Card key={aliado.id} className="border-l-4 border-l-[#196428]">
+                      <CardContent className="p-4">
+                        {editingAliado?.id === aliado.id ? (
+                          <form onSubmit={handleUpdateAliado} className="space-y-4">
+                            <Input
+                              value={editingAliado?.nombre || ''}
+                              onChange={(e) => editingAliado && setEditingAliado({ ...editingAliado, nombre: e.target.value })}
+                              placeholder="Nombre del aliado"
+                              required
+                            />
+                            <div className="space-y-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={async (e) => {
+                                  const imageUrl = await handleFileSelectAliado(e);
+                                  if (imageUrl && editingAliado) {
+                                    setEditingAliado({ ...editingAliado, imagen_url: imageUrl });
+                                  }
+                                }}
+                                disabled={imageUploading}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
+                              />
+                              {imageUploading && (
+                                <p className="text-xs text-gray-500">Subiendo imagen...</p>
+                              )}
+                              {editingAliado?.imagen_url && (
+                                <div className="mt-2">
+                                  <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                                  <img
+                                    src={editingAliado.imagen_url}
+                                    alt="Aliado Preview"
+                                    className="w-32 h-20 object-contain rounded-lg border border-gray-300"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => editingAliado && setEditingAliado({ ...editingAliado, imagen_url: '' })}
+                                    className="ml-2 text-red-500 text-sm hover:text-red-700"
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                type="submit"
+                                size="sm"
+                                disabled={imageUploading}
+                                className="bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                Guardar
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={cancelEditAliado}
+                                variant="outline"
+                                size="sm"
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancelar
+                              </Button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <img
+                                  src={aliado.imagen_url}
+                                  alt={aliado.nombre}
+                                  className="w-16 h-10 object-contain rounded-lg border border-gray-300"
+                                />
+                                <div>
+                                  <h3 className="font-semibold text-lg text-gray-900">
+                                    {aliado.nombre}
+                                  </h3>
+                                  <p className="text-xs text-gray-400">
+                                    ID: {aliado.id} • Creado: {new Date(aliado.created_at || '').toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                onClick={() => startEditAliado(aliado)}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteAliado(aliado.id)}
+                                size="sm"
+                                variant="destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="vacantes" className="space-y-6">

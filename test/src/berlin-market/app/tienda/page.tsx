@@ -23,9 +23,11 @@ import {
   Eye,
   EyeOff,
   Check,
-  Briefcase
+  Briefcase,
+  ChevronRight
 } from "lucide-react"
 import { useState, useEffect, useRef, useMemo } from "react"
+import { useSearchParams } from "next/navigation"
 import ProductCard from "../components/ProductCard"
 import FadeInOnScroll from '../components/FadeInOnScroll'
 import CategoryMenu from '../components/CategoryMenu'
@@ -56,7 +58,8 @@ import {
 import MainLayout from "../components/MainLayout"
 import CategoryDropdown from "../components/CategoryDropdown"
 import AccountPopover from "../components/AccountPopover"
-import AccountPopoverContent from "../components/AccountPopover"
+import AccountPopoverContent from "../components/AccountPopoverContent"
+import SearchAutocomplete from "../components/SearchAutocomplete"
 import { Marca } from "@/lib/supabase"
 import { useCategories } from "../hooks/useCategories"
 import { useProducts, ProductWithDetails } from "../hooks/useProducts"
@@ -78,6 +81,7 @@ export default function TiendaPage() {
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCategoriesDrawerOpen, setIsCategoriesDrawerOpen] = useState(false)
+  const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false)
   // Estado para manejar el tamaño seleccionado de cada producto
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
 
@@ -96,10 +100,26 @@ export default function TiendaPage() {
 
   // Hooks para datos de Supabase
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
-  const { products, productsByCategory, discountedProducts, featuredProducts, newProducts, brands, isLoading: productsLoading, error: productsError, getProductsBySubcategory } = useProducts()
+  const { products, productsByCategory, discountedProducts, featuredProducts, newProducts, brands, categories: productCategories, isLoading: productsLoading, error: productsError, getProductsBySubcategory, searchResults, isSearching, searchProducts, liveSearchResults, isLiveSearching, updateLiveSearchQuery, clearLiveSearchResults } = useProducts()
 
   // Hook para el carrito de compras
   const { addToCart } = useCart()
+
+  // Hook para leer parámetros de búsqueda de la URL
+  const searchParams = useSearchParams()
+  const searchQueryParam = searchParams.get('search')
+
+  // Estado para búsqueda desde URL
+  const [isSearchFromUrl, setIsSearchFromUrl] = useState(false)
+
+  // Efecto para manejar búsqueda desde URL
+  useEffect(() => {
+    if (searchQueryParam && !isSearchFromUrl) {
+      setIsSearchFromUrl(true)
+      setSearchQuery(searchQueryParam)
+      searchProducts(searchQueryParam)
+    }
+  }, [searchQueryParam, isSearchFromUrl, searchProducts])
 
   // Función para agregar productos al carrito considerando el tamaño seleccionado
   const handleAddToCart = (product: ProductWithDetails) => {
@@ -114,7 +134,15 @@ export default function TiendaPage() {
   const [selectedCategory, setSelectedCategory] = useState<number>(1000) // ID de categoría por defecto (todos los productos)
   const [selectedSubcategory, setSelectedSubcategory] = useState<number>(1000) // ID de subcategoría por defecto (todos los productos)
   const [currentTitle, setCurrentTitle] = useState<string>("Todos los productos")
-  const [currentBreadcrumbs, setCurrentBreadcrumbs] = useState<string[]>(["🏠", "Tienda"])
+  const [currentBreadcrumbs, setCurrentBreadcrumbs] = useState<string[]>(["Inicio", "Tienda"])
+
+  // Actualizar título cuando hay búsqueda
+  useEffect(() => {
+    if (searchQueryParam) {
+      setCurrentTitle(`Resultados para "${searchQueryParam}"`)
+      setCurrentBreadcrumbs(["Inicio", "Tienda", `Búsqueda: ${searchQueryParam}`])
+    }
+  }, [searchQueryParam])
 
   // Constantes para categorías especiales
   const CATEGORIES = {
@@ -134,19 +162,19 @@ export default function TiendaPage() {
     // Manejar categorías especiales
     if (categoryId === CATEGORIES.TODOS_LOS_PRODUCTOS) {
       setCurrentTitle("Todos los productos")
-      setCurrentBreadcrumbs(["🏠", "Tienda"])
+      setCurrentBreadcrumbs(["Inicio", "Tienda"])
       return
     }
 
     if (categoryId === CATEGORIES.NOVEDADES) {
       setCurrentTitle("Novedades")
-      setCurrentBreadcrumbs(["🏠", "Novedades"])
+      setCurrentBreadcrumbs(["Inicio", "Tienda", "Novedades"])
       return
     }
 
     if (categoryId === CATEGORIES.OFERTAS) {
       setCurrentTitle("Productos con descuento")
-      setCurrentBreadcrumbs(["🏠", "Ofertas"])
+      setCurrentBreadcrumbs(["Inicio", "Tienda", "Ofertas"])
       return
     }
 
@@ -157,7 +185,7 @@ export default function TiendaPage() {
 
     if (category && subcategoryData) {
       setCurrentTitle(subcategoryData.subcategoryName)
-      setCurrentBreadcrumbs(["🏠", category.name, subcategoryData.subcategoryName])
+      setCurrentBreadcrumbs(["Inicio", "Tienda", category.name, subcategoryData.subcategoryName])
     }
   }
 
@@ -289,8 +317,8 @@ export default function TiendaPage() {
   // Obtener productos actuales
   const currentProducts = getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
 
-  // Determinar qué productos mostrar según la categoría seleccionada
-  const baseProducts = selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS
+  // Determinar qué productos mostrar según la categoría seleccionada o búsqueda
+  let baseProducts = selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS
     ? products // Todos los productos disponibles
     : selectedCategory === CATEGORIES.OFERTAS
     ? discountedProducts
@@ -299,6 +327,11 @@ export default function TiendaPage() {
     : currentProducts.length > 0
     ? currentProducts
     : featuredProducts
+
+  // Si hay resultados de búsqueda, mostrar esos en lugar de los productos normales
+  if (searchResults.length > 0 || (searchQueryParam && isSearching)) {
+    baseProducts = searchResults.length > 0 ? searchResults : []
+  }
 
   // ✅ OPTIMIZACIÓN: Memoizar cálculo costoso de productos filtrados
   const displayProducts = useMemo(() => {
@@ -416,9 +449,56 @@ export default function TiendaPage() {
     return () => clearInterval(brandTimer);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Searching for:", searchQuery)
+    if (searchQuery.trim()) {
+      try {
+        await searchProducts(searchQuery.trim())
+        // Si estamos en la página de tienda, la búsqueda se maneja internamente
+        // No necesitamos navegar a una nueva página
+      } catch (error) {
+        console.error("Error en la búsqueda:", error)
+      }
+    }
+  }
+
+  // Funciones para manejar el autocompletado
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchQuery(value)
+    updateLiveSearchQuery(value)
+
+    // Mostrar autocompletado si hay texto
+    if (value.trim()) {
+      setIsAutocompleteOpen(true)
+    } else {
+      setIsAutocompleteOpen(false)
+    }
+  }
+
+  const handleSearchInputFocus = () => {
+    if (searchQuery.trim()) {
+      setIsAutocompleteOpen(true)
+    }
+  }
+
+  const handleSearchInputBlur = () => {
+    // Pequeño delay para permitir clicks en el autocompletado
+    setTimeout(() => {
+      setIsAutocompleteOpen(false)
+    }, 200)
+  }
+
+  const handleCloseAutocomplete = () => {
+    setIsAutocompleteOpen(false)
+  }
+
+  const handleSelectProduct = (product: ProductWithDetails) => {
+    setSearchQuery(product.nombre)
+    updateLiveSearchQuery(product.nombre)
+    // En la página de tienda, buscar el producto internamente
+    searchProducts(product.nombre)
+    setIsAutocompleteOpen(false)
   }
 
   // Crear categorías con datos reales de Supabase
@@ -599,12 +679,14 @@ export default function TiendaPage() {
                   />
                 </Link>
 
-                <div className="flex-1 w-full max-w-xs">
+                <div className="flex-1 w-full max-w-xs relative">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onFocus={handleSearchInputFocus}
+                      onBlur={handleSearchInputBlur}
                       placeholder="Buscar..."
                       className="w-full h-9 px-3 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
@@ -615,6 +697,14 @@ export default function TiendaPage() {
                       <Search className="h-4 w-4" />
                     </button>
                   </form>
+                  <SearchAutocomplete
+                    isOpen={isAutocompleteOpen}
+                    searchQuery={searchQuery}
+                    searchResults={liveSearchResults}
+                    isSearching={isLiveSearching}
+                    onClose={handleCloseAutocomplete}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
 
                 <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -717,12 +807,14 @@ export default function TiendaPage() {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-sm mx-4">
+                <div className="flex-1 max-w-sm mx-4 relative">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onFocus={handleSearchInputFocus}
+                      onBlur={handleSearchInputBlur}
                       placeholder="Buscar productos..."
                       className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
@@ -733,6 +825,14 @@ export default function TiendaPage() {
                       <Search className="h-5 w-5" />
                     </button>
                   </form>
+                  <SearchAutocomplete
+                    isOpen={isAutocompleteOpen}
+                    searchQuery={searchQuery}
+                    searchResults={liveSearchResults}
+                    isSearching={isLiveSearching}
+                    onClose={handleCloseAutocomplete}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
 
                 {/* Navigation Icons */}
@@ -800,12 +900,14 @@ export default function TiendaPage() {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-md mx-6">
+                <div className="flex-1 max-w-md mx-6 relative">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onFocus={handleSearchInputFocus}
+                      onBlur={handleSearchInputBlur}
                       placeholder="Buscar productos..."
                       className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
@@ -816,6 +918,14 @@ export default function TiendaPage() {
                       <Search className="h-5 w-5" />
                     </button>
                   </form>
+                  <SearchAutocomplete
+                    isOpen={isAutocompleteOpen}
+                    searchQuery={searchQuery}
+                    searchResults={liveSearchResults}
+                    isSearching={isLiveSearching}
+                    onClose={handleCloseAutocomplete}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
 
                 {/* Navigation Icons */}
@@ -883,12 +993,14 @@ export default function TiendaPage() {
                 </Link>
 
                 {/* Search Bar */}
-                <div className="flex-1 max-w-lg mx-8 ml-[70px]">
+                <div className="flex-1 max-w-lg mx-8 ml-[70px] relative">
                   <form onSubmit={handleSearch} className="relative">
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchInputChange}
+                      onFocus={handleSearchInputFocus}
+                      onBlur={handleSearchInputBlur}
                       placeholder="Busca el producto o categoria de tu preferencia..."
                       className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                     />
@@ -899,6 +1011,14 @@ export default function TiendaPage() {
                       <Search className="h-5 w-5" />
                     </button>
                   </form>
+                  <SearchAutocomplete
+                    isOpen={isAutocompleteOpen}
+                    searchQuery={searchQuery}
+                    searchResults={liveSearchResults}
+                    isSearching={isLiveSearching}
+                    onClose={handleCloseAutocomplete}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
 
                 {/* Navigation Icons */}
@@ -1050,29 +1170,53 @@ export default function TiendaPage() {
 
                   {/* Title */}
                   <div className="mb-6">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                      {currentBreadcrumbs.map((breadcrumb, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          {index > 0 && <span>&gt;</span>}
-                          {breadcrumb.startsWith('🏠') ? (
-                            <Link href="/" className="hover:text-[#196428]">{breadcrumb}</Link>
-                          ) : (
-                            <span className={index === currentBreadcrumbs.length - 1 ? "text-gray-800 font-medium" : "hover:text-[#196428]"}>
-                              {breadcrumb}
-                            </span>
-                          )}
+                    {/* Breadcrumbs - Estilo página de producto */}
+                    <div className="bg-white border-b border-gray-200 mb-6">
+                      <div className="container mx-auto px-4 py-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Link href="/" className="text-gray-600 hover:text-[#196428]">Inicio</Link>
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                          <Link href="/tienda" className="text-gray-600 hover:text-[#196428]">Tienda</Link>
+                          {currentBreadcrumbs.slice(2).map((breadcrumb, index) => {
+                            const isLast = index === currentBreadcrumbs.slice(2).length - 1;
+
+                            return (
+                              <div key={index} className="flex items-center gap-2">
+                                <ChevronRight className="h-4 w-4 text-gray-400" />
+                                {isLast ? (
+                                  <span className="text-gray-800 font-medium">{breadcrumb}</span>
+                                ) : (
+                                  <Link
+                                    href={breadcrumb === "Ofertas" ? "/tienda?category=999" : breadcrumb === "Novedades" ? "/tienda?category=998" : "#"}
+                                    className="text-gray-600 hover:text-[#196428]"
+                                  >
+                                    {breadcrumb}
+                                  </Link>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
+                      </div>
                     </div>
                     <h1 className="text-3xl font-black text-black">{currentTitle}</h1>
                     <p className="text-sm text-gray-600 mt-1">
-                      {displayProducts.length} producto{displayProducts.length !== 1 ? 's' : ''} encontrado{displayProducts.length !== 1 ? 's' : ''}
-                      {selectedBrand && (
-                        <span className="ml-2">
-                          • Filtrado por: <span className="font-medium text-[#196428]">
-                            {brands.find(b => b.id === selectedBrand)?.nombre_marca}
-                          </span>
+                      {isSearching ? (
+                        <span className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#196428]"></div>
+                          Buscando productos...
                         </span>
+                      ) : (
+                        <>
+                          {displayProducts.length} producto{displayProducts.length !== 1 ? 's' : ''} encontrado{displayProducts.length !== 1 ? 's' : ''}
+                          {selectedBrand && (
+                            <span className="ml-2">
+                              • Filtrado por: <span className="font-medium text-[#196428]">
+                                {brands.find(b => b.id === selectedBrand)?.nombre_marca}
+                              </span>
+                            </span>
+                          )}
+                        </>
                       )}
                     </p>
                   </div>
@@ -1310,20 +1454,25 @@ export default function TiendaPage() {
                         const currentPrice = getCurrentPrice();
 
                         return (
-                      <div key={product.id} className="bg-white rounded-[20px] sm:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-                        <div className="relative aspect-square">
-                          <Image
-                              src={product.imagen_url || "/placeholder.jpg"}
-                              alt={product.nombre}
-                            fill
-                            className="object-contain p-3 sm:p-4"
-                          />
-                          <button
-                            onClick={() => handleAddToCart(product)}
-                            className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300"
-                          >
-                            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                          </button>
+                       <Link key={product.id} href={`/producto/${product.id}`} className="block">
+                         <div className="bg-white rounded-[20px] sm:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                           <div className="relative aspect-square">
+                             <Image
+                                 src={product.imagen_url || "/placeholder.jpg"}
+                                 alt={product.nombre}
+                               fill
+                               className="object-contain p-3 sm:p-4"
+                             />
+                             <button
+                               onClick={(e) => {
+                                 e.preventDefault()
+                                 e.stopPropagation()
+                                 handleAddToCart(product)
+                               }}
+                               className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300"
+                             >
+                               <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                             </button>
                             {product.descuento && (
                             <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
                                 <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
@@ -1398,27 +1547,50 @@ export default function TiendaPage() {
                               </p>
                             )}
                         </div>
-                      </div>
+                         </div>
+                       </Link>
                         );
                       })}
                   </div>
                   ) : (
                     <div className="text-center py-20">
-                      <p className="text-gray-600 text-lg mb-4">No se encontraron productos en esta categoría.</p>
-                      <div className="flex gap-4 justify-center">
-                        <button
-                          onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
-                          className="bg-[#196428] hover:bg-[#145020] text-white px-6 py-3 rounded-full font-semibold transition-colors"
-                        >
-                          Ver productos con descuento
-                        </button>
-                        <button
-                          onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-semibold transition-colors"
-                        >
-                          Ver novedades
-                        </button>
-                      </div>
+                      <p className="text-gray-600 text-lg mb-4">
+                        {searchQueryParam
+                          ? `No se encontraron productos para "${searchQueryParam}"`
+                          : "No se encontraron productos en esta categoría."
+                        }
+                      </p>
+                      {searchQueryParam && (
+                        <div className="mb-6">
+                          <button
+                            onClick={() => {
+                              setSearchQuery("")
+                              setIsSearchFromUrl(false)
+                              // Limpiar búsqueda y volver a todos los productos
+                              window.location.href = "/tienda"
+                            }}
+                            className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-full font-semibold transition-colors"
+                          >
+                            Ver todos los productos
+                          </button>
+                        </div>
+                      )}
+                      {!searchQueryParam && (
+                        <div className="flex gap-4 justify-center">
+                          <button
+                            onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
+                            className="bg-[#196428] hover:bg-[#145020] text-white px-6 py-3 rounded-full font-semibold transition-colors"
+                          >
+                            Ver productos con descuento
+                          </button>
+                          <button
+                            onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-semibold transition-colors"
+                          >
+                            Ver novedades
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

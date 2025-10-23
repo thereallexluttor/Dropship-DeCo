@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import supabase, { Producto, Categoria, Subcategoria, Marca } from '@/lib/supabase'
+import { useDebounce } from './useDebounce'
 
 export interface ProductWithDetails extends Producto {
   categoria?: Categoria
@@ -26,8 +27,87 @@ export const useProducts = () => {
   const [featuredProducts, setFeaturedProducts] = useState<ProductWithDetails[]>([])
   const [newProducts, setNewProducts] = useState<ProductWithDetails[]>([])
   const [brands, setBrands] = useState<Marca[]>([])
+  const [categories, setCategories] = useState<Categoria[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Estado para búsqueda
+  const [searchResults, setSearchResults] = useState<ProductWithDetails[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [liveSearchResults, setLiveSearchResults] = useState<ProductWithDetails[]>([])
+  const [isLiveSearching, setIsLiveSearching] = useState(false)
+  const [liveSearchQuery, setLiveSearchQuery] = useState('')
+
+  // Debounced search query para optimizar rendimiento
+  const debouncedSearchQuery = useDebounce(liveSearchQuery, 300)
+
+  // Effect para ejecutar búsqueda cuando el query debounced cambia
+  useEffect(() => {
+    if (debouncedSearchQuery.trim()) {
+      performLiveSearch(debouncedSearchQuery)
+    } else {
+      setLiveSearchResults([])
+      setIsLiveSearching(false)
+    }
+  }, [debouncedSearchQuery])
+
+  // Función para ejecutar la búsqueda en tiempo real
+  const performLiveSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setLiveSearchResults([])
+      setIsLiveSearching(false)
+      return
+    }
+
+    setIsLiveSearching(true)
+
+    try {
+      // Buscar en nombre y descripción usando búsqueda de texto parcial
+      const { data, error } = await supabase
+        .from('productos')
+        .select(`
+          *,
+          subcategorias:subcategorias_id (
+            id,
+            nombre,
+            descripcion,
+            categories_id
+          ),
+          marcas:id_marca (
+            id,
+            nombre_marca
+          )
+        `)
+        .or(`nombre.ilike.%${query}%,descripcion.ilike.%${query}%`)
+        .order('nombre', { ascending: true })
+        .limit(8) // Limitar a 8 resultados para el autocompletado
+
+      if (error) throw error
+
+      const productosData = data || []
+
+      // Mapear productos con detalles de categorías y marcas
+      const productosConDetalles: ProductWithDetails[] = productosData.map((producto: any) => {
+        const categoria = categories.find(cat => cat.id === producto.subcategorias?.categories_id)
+        const marca = brands.find(marca => marca.id === producto.id_marca)
+
+        return {
+          ...producto,
+          categoria,
+          subcategoria: producto.subcategorias,
+          marca
+        }
+      })
+
+      setLiveSearchResults(productosConDetalles)
+      setIsLiveSearching(false)
+
+    } catch (error: any) {
+      console.error('Error in live search:', error)
+      setError(error.message || 'Error en la búsqueda en tiempo real')
+      setIsLiveSearching(false)
+    }
+  }, [categories, brands])
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -90,6 +170,7 @@ export const useProducts = () => {
           setFeaturedProducts([])
           setNewProducts([])
           setBrands([])
+          setCategories([])
           setIsLoading(false)
           return
         }
@@ -109,6 +190,7 @@ export const useProducts = () => {
 
         setProducts(productosConDetalles)
         setBrands(marcasData)
+        setCategories(categoriasData)
 
         // ✅ OPTIMIZACIÓN: Usar una sola pasada para filtrar todos los tipos
         const productosConDescuento = productosConDetalles.filter(p => p.descuento === true)
@@ -173,6 +255,83 @@ export const useProducts = () => {
     window.location.reload()
   }
 
+  // Función para buscar productos tipo Google
+  const searchProducts = async (query: string): Promise<ProductWithDetails[]> => {
+    if (!query.trim()) {
+      setSearchResults([])
+      setIsSearching(false)
+      return []
+    }
+
+    setIsSearching(true)
+
+    try {
+      // Buscar en nombre y descripción usando búsqueda de texto parcial (tipo Google)
+      const { data, error } = await supabase
+        .from('productos')
+        .select(`
+          *,
+          subcategorias:subcategorias_id (
+            id,
+            nombre,
+            descripcion,
+            categories_id
+          ),
+          marcas:id_marca (
+            id,
+            nombre_marca
+          )
+        `)
+        .or(`nombre.ilike.%${query}%,descripcion.ilike.%${query}%`)
+        .order('nombre', { ascending: true })
+
+      if (error) throw error
+
+      const productosData = data || []
+
+      // Mapear productos con detalles de categorías y marcas
+      const productosConDetalles: ProductWithDetails[] = productosData.map((producto: any) => {
+        const categoria = categories.find(cat => cat.id === producto.subcategorias?.categories_id)
+        const marca = brands.find(marca => marca.id === producto.id_marca)
+
+        return {
+          ...producto,
+          categoria,
+          subcategoria: producto.subcategorias,
+          marca
+        }
+      })
+
+      setSearchResults(productosConDetalles)
+      setIsSearching(false)
+      return productosConDetalles
+
+    } catch (error: any) {
+      console.error('Error searching products:', error)
+      setError(error.message || 'Error en la búsqueda')
+      setIsSearching(false)
+      return []
+    }
+  }
+
+  // Función para limpiar resultados de búsqueda
+  const clearSearchResults = () => {
+    setSearchResults([])
+    setIsSearching(false)
+  }
+
+  // Función para actualizar el query de búsqueda en tiempo real
+  const updateLiveSearchQuery = useCallback((query: string) => {
+    setLiveSearchQuery(query)
+  }, [])
+
+  // Función para limpiar resultados de búsqueda en tiempo real
+  const clearLiveSearchResults = useCallback(() => {
+    setLiveSearchResults([])
+    setIsLiveSearching(false)
+    setLiveSearchQuery('')
+  }, [])
+
   return {
     products,
     productsByCategory,
@@ -180,10 +339,21 @@ export const useProducts = () => {
     featuredProducts,
     newProducts,
     brands,
+    categories,
     isLoading,
     error,
     getProductsByCategory,
     getProductsBySubcategory,
-    refreshProducts
+    refreshProducts,
+    // Funcionalidades de búsqueda
+    searchResults,
+    isSearching,
+    searchProducts,
+    clearSearchResults,
+    // Funcionalidades de búsqueda en tiempo real
+    liveSearchResults,
+    isLiveSearching,
+    updateLiveSearchQuery,
+    clearLiveSearchResults
   }
 }
