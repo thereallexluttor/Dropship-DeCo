@@ -31,14 +31,20 @@ export const CartNotificationProvider: React.FC<{ children: React.ReactNode }> =
 
   const showNotification = useCallback((product: Producto, quantity: number) => {
     const now = Date.now()
-    
+
+    // Verificar que el producto tenga un id válido
+    if (!product.id) {
+      console.warn('Cannot show notification: product.id is undefined')
+      return
+    }
+
     // Prevenir duplicados: si es el mismo producto dentro de 100ms, ignorar
-    if (lastNotificationRef.current && 
-        lastNotificationRef.current.productId === product.id && 
+    if (lastNotificationRef.current &&
+        lastNotificationRef.current.productId === product.id &&
         now - lastNotificationRef.current.timestamp < 100) {
       return
     }
-    
+
     // Actualizar referencia
     lastNotificationRef.current = { productId: product.id, timestamp: now }
     
