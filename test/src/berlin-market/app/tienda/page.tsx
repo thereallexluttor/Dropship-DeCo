@@ -26,8 +26,8 @@ import {
   Briefcase,
   ChevronRight
 } from "lucide-react"
-import { useState, useEffect, useRef, useMemo, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect, useRef, useMemo, Suspense, useLayoutEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import ProductCard from "../components/ProductCard"
 import FadeInOnScroll from '../components/FadeInOnScroll'
 import CategoryMenu from '../components/CategoryMenu'
@@ -55,6 +55,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
+import { Slider } from "@/components/ui/slider"
 import MainLayout from "../components/MainLayout"
 import CategoryDropdown from "../components/CategoryDropdown"
 import AccountPopover from "../components/AccountPopover"
@@ -90,8 +91,6 @@ function TiendaPageContent() {
   const [availableBrands, setAvailableBrands] = useState<Marca[]>([])
 
   // Estado para filtros avanzados (disponible para todas las categorías)
-  const [minPrice, setMinPrice] = useState<number | "">("")
-  const [maxPrice, setMaxPrice] = useState<number | "">("")
   const [showOnlyOffers, setShowOnlyOffers] = useState(false)
   const [showOnlyDiscounts, setShowOnlyDiscounts] = useState(false)
   const [selectedProductCategory, setSelectedProductCategory] = useState<number | null>(null)
@@ -105,12 +104,18 @@ function TiendaPageContent() {
   // Hook para el carrito de compras
   const { addToCart } = useCart()
 
-  // Hook para leer parámetros de búsqueda de la URL
+  // Hooks para navegación y parámetros de URL
   const searchParams = useSearchParams()
+  const router = useRouter()
   const searchQueryParam = searchParams.get('search')
+  const categoryParam = searchParams.get('categoria')
+  const subcategoryParam = searchParams.get('subcategoria')
 
-  // Estado para búsqueda desde URL
+  // Estado para filtros desde URL
   const [isSearchFromUrl, setIsSearchFromUrl] = useState(false)
+  const [selectedCategoryFromUrl, setSelectedCategoryFromUrl] = useState<number | null>(null)
+  const [selectedSubcategoryFromUrl, setSelectedSubcategoryFromUrl] = useState<number | null>(null)
+  const [isUpdatingFromUrl, setIsUpdatingFromUrl] = useState(false)
 
   // Efecto para manejar búsqueda desde URL
   useEffect(() => {
@@ -120,6 +125,64 @@ function TiendaPageContent() {
       searchProducts(searchQueryParam)
     }
   }, [searchQueryParam, isSearchFromUrl, searchProducts])
+
+  // Efecto para manejar filtros de categoría y subcategoría desde URL (se ejecuta antes del paint)
+  useLayoutEffect(() => {
+    // Solo procesar si no estamos actualizando desde la página misma y si hay datos disponibles
+    if (!isUpdatingFromUrl && categories.length > 0 && productsByCategory.length > 0) {
+      if (categoryParam) {
+        const categoryId = parseInt(categoryParam)
+        if (!isNaN(categoryId)) {
+          console.log('Configurando categoría desde URL:', categoryId)
+          setSelectedCategoryFromUrl(categoryId)
+          setSelectedProductCategory(categoryId)
+
+          // Si también hay subcategoría, verificar que pertenece a la categoría
+          if (subcategoryParam) {
+            const subcategoryId = parseInt(subcategoryParam)
+            if (!isNaN(subcategoryId)) {
+              console.log('Configurando subcategoría desde URL:', subcategoryId)
+              setSelectedSubcategoryFromUrl(subcategoryId)
+
+              // Verificar que la subcategoría pertenece a la categoría
+              const categoryData = productsByCategory.find(cat => cat.categoryId === categoryId)
+              const subcategoryData = categoryData?.subcategories.find(sub => sub.subcategoryId === subcategoryId)
+
+              if (subcategoryData) {
+                // La subcategoría existe en la categoría, configurarla
+                setSelectedProductSubcategory(subcategoryId)
+
+                // Buscar información de la categoría y subcategoría
+                const category = categories.find(cat => cat.id === categoryId)
+                if (category && subcategoryData) {
+                  setCurrentTitle(subcategoryData.subcategoryName)
+                  setCurrentBreadcrumbs(["Inicio", "Tienda", category.name, subcategoryData.subcategoryName])
+                }
+              } else {
+                // La subcategoría no existe en la categoría, resetear a "Todas las subcategorías"
+                console.log('Subcategoría no encontrada en la categoría, reseteando')
+                setSelectedProductSubcategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
+
+                // Solo mostrar categoría
+                const category = categories.find(cat => cat.id === categoryId)
+                if (category) {
+                  setCurrentTitle(category.name)
+                  setCurrentBreadcrumbs(["Inicio", "Tienda", category.name])
+                }
+              }
+            }
+          } else {
+            // Solo categoría, mostrar todos los productos de esa categoría
+            const category = categories.find(cat => cat.id === categoryId)
+            if (category) {
+              setCurrentTitle(category.name)
+              setCurrentBreadcrumbs(["Inicio", "Tienda", category.name])
+            }
+          }
+        }
+      }
+    }
+  }, [categoryParam, subcategoryParam, categories, productsByCategory, isUpdatingFromUrl])
 
   // Función para agregar productos al carrito considerando el tamaño seleccionado
   const handleAddToCart = (product: ProductWithDetails) => {
@@ -153,6 +216,7 @@ function TiendaPageContent() {
 
   // Función para manejar el cambio de categoría
   const handleCategoryChange = (categoryId: number, subcategoryId: number) => {
+    setIsUpdatingFromUrl(true)
     setSelectedCategory(categoryId)
     setSelectedSubcategory(subcategoryId)
 
@@ -163,18 +227,27 @@ function TiendaPageContent() {
     if (categoryId === CATEGORIES.TODOS_LOS_PRODUCTOS) {
       setCurrentTitle("Todos los productos")
       setCurrentBreadcrumbs(["Inicio", "Tienda"])
+      // Actualizar URL
+      router.push('/tienda')
+      setTimeout(() => setIsUpdatingFromUrl(false), 100)
       return
     }
 
     if (categoryId === CATEGORIES.NOVEDADES) {
       setCurrentTitle("Novedades")
       setCurrentBreadcrumbs(["Inicio", "Tienda", "Novedades"])
+      // Actualizar URL
+      router.push('/tienda?categoria=998')
+      setTimeout(() => setIsUpdatingFromUrl(false), 100)
       return
     }
 
     if (categoryId === CATEGORIES.OFERTAS) {
       setCurrentTitle("Productos con descuento")
       setCurrentBreadcrumbs(["Inicio", "Tienda", "Ofertas"])
+      // Actualizar URL
+      router.push('/tienda?categoria=999')
+      setTimeout(() => setIsUpdatingFromUrl(false), 100)
       return
     }
 
@@ -186,7 +259,16 @@ function TiendaPageContent() {
     if (category && subcategoryData) {
       setCurrentTitle(subcategoryData.subcategoryName)
       setCurrentBreadcrumbs(["Inicio", "Tienda", category.name, subcategoryData.subcategoryName])
+      // Actualizar URL
+      router.push(`/tienda?categoria=${categoryId}&subcategoria=${subcategoryId}`)
+    } else if (category) {
+      // Solo categoría, sin subcategoría específica
+      setCurrentTitle(category.name)
+      setCurrentBreadcrumbs(["Inicio", "Tienda", category.name])
+      // Actualizar URL
+      router.push(`/tienda?categoria=${categoryId}`)
     }
+    setTimeout(() => setIsUpdatingFromUrl(false), 100)
   }
 
   // Función para obtener marcas disponibles según la categoría seleccionada
@@ -232,24 +314,44 @@ function TiendaPageContent() {
     return 0
   }
 
+  // Función para calcular el rango de precios de los productos actuales
+  const calculatePriceRange = (products: ProductWithDetails[]): { min: number, max: number } => {
+    if (products.length === 0) {
+      return { min: 0, max: 1000000 }
+    }
+
+    let minPrice = Infinity
+    let maxPrice = 0
+
+    products.forEach(product => {
+      const price = getProductPrice(product)
+      if (price > 0) {
+        minPrice = Math.min(minPrice, price)
+        maxPrice = Math.max(maxPrice, price)
+      }
+    })
+
+    // Si no se encontraron precios válidos, usar valores por defecto
+    if (minPrice === Infinity) {
+      minPrice = 0
+    }
+    if (maxPrice === 0) {
+      maxPrice = 1000000
+    }
+
+    return { min: minPrice, max: maxPrice }
+  }
+
   // Función para filtrar productos con filtros avanzados (disponible para todas las categorías)
   const filterProductsByAdvancedFilters = (products: ProductWithDetails[]) => {
 
     let filteredProducts = [...products]
 
-    // Filtro por precio mínimo
-    if (minPrice !== "" && minPrice !== null) {
+    // Filtro por rango de precio
+    if (priceRange[0] !== priceBounds.min || priceRange[1] !== priceBounds.max) {
       filteredProducts = filteredProducts.filter(product => {
         const price = getProductPrice(product)
-        return price >= Number(minPrice)
-      })
-    }
-
-    // Filtro por precio máximo
-    if (maxPrice !== "" && maxPrice !== null) {
-      filteredProducts = filteredProducts.filter(product => {
-        const price = getProductPrice(product)
-        return price <= Number(maxPrice)
+        return price >= priceRange[0] && price <= priceRange[1]
       })
     }
 
@@ -333,6 +435,22 @@ function TiendaPageContent() {
     baseProducts = searchResults.length > 0 ? searchResults : []
   }
 
+  // Calcular el rango de precios de los productos base usando useMemo
+  const priceBounds = useMemo(() => {
+    return calculatePriceRange(baseProducts)
+  }, [baseProducts])
+
+  // Estado para el rango de precio del slider
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000])
+
+  // Actualizar el rango del slider cuando cambie el rango de precios calculado
+  useEffect(() => {
+    const newMin = Math.max(0, priceBounds.min)
+    const newMax = Math.max(newMin + 1000, priceBounds.max) // Asegurar que max sea al menos 1000 más que min
+
+    setPriceRange([newMin, newMax])
+  }, [priceBounds.min, priceBounds.max])
+
   // ✅ OPTIMIZACIÓN: Memoizar cálculo costoso de productos filtrados
   const displayProducts = useMemo(() => {
     let result = baseProducts
@@ -351,8 +469,7 @@ function TiendaPageContent() {
     baseProducts,
     selectedBrand,
     selectedCategory,
-    minPrice,
-    maxPrice,
+    priceRange,
     showOnlyOffers,
     showOnlyDiscounts,
     selectedProductCategory,
@@ -380,8 +497,10 @@ function TiendaPageContent() {
 
   // Función para limpiar filtros avanzados
   const clearAdvancedFilters = () => {
-    setMinPrice("")
-    setMaxPrice("")
+    // Resetear al rango completo de precios disponibles
+    const newMin = Math.max(0, priceBounds.min)
+    const newMax = Math.max(newMin + 1000, priceBounds.max)
+    setPriceRange([newMin, newMax])
     setShowOnlyOffers(false)
     setShowOnlyDiscounts(false)
     setSelectedProductCategory(null)
@@ -404,8 +523,7 @@ function TiendaPageContent() {
 
       return (
         <div key={categoryData.categoryId} className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <span className="text-[#196428]">🐕</span>
+          <h3 className="text-lg font-semibold text-gray-700 mb-3">
             {category.name}
           </h3>
           <div className="space-y-1">
@@ -1079,7 +1197,7 @@ function TiendaPageContent() {
               <div className="flex gap-4 md:gap-8">
                 {/* Sidebar with categories - Hidden on mobile, shown on tablet and desktop */}
                 <aside className="hidden md:block md:w-64 lg:w-80 flex-shrink-0">
-                  <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm">
+                  <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
                     <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Categorías</h2>
 
                     {/* Todos los productos section */}
@@ -1232,7 +1350,7 @@ function TiendaPageContent() {
                     </div>
 
                     {/* Desktop/Tablet Filters */}
-                    <div className="hidden md:block bg-white rounded-2xl shadow-lg border border-gray-100/50 backdrop-blur-sm p-4">
+                    <div className="hidden md:block bg-white rounded-2xl  border border-gray-200 backdrop-blur-sm p-4">
                       <div className="flex flex-col gap-4">
                         {/* Header elegante */}
                         <div className="flex items-center justify-between gap-2 pb-3 border-b border-gray-100">
@@ -1243,7 +1361,7 @@ function TiendaPageContent() {
                             <h3 className="text-base font-bold text-gray-800">Filtros de productos</h3>
                           </div>
                           {/* Botón para limpiar filtros avanzados - esquina superior derecha */}
-                          {(minPrice !== "" || maxPrice !== "" || showOnlyOffers || showOnlyDiscounts || selectedProductCategory || selectedProductSubcategory || selectedBrand) && (
+                          {((priceRange[0] !== priceBounds.min || priceRange[1] !== priceBounds.max) || showOnlyOffers || showOnlyDiscounts || selectedProductCategory || selectedProductSubcategory || selectedBrand) && (
                             <button
                               onClick={clearAdvancedFilters}
                               className="group flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 hover:shadow-lg transform hover:scale-105 h-5"
@@ -1287,34 +1405,40 @@ function TiendaPageContent() {
                           </div>
 
                           {/* Sección de Precio */}
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                               <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
                               Rango de precio
                             </label>
-                            <div className="flex items-center gap-2">
-                              <div className="relative flex-1">
-                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
-                                <input
-                                  type="number"
-                                  placeholder="Mín"
-                                  value={minPrice}
-                                  onChange={(e) => setMinPrice(e.target.value ? Number(e.target.value) : "")}
-                                  className="w-full pl-6 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 hover:bg-white hover:shadow-sm"
+                            <div className="space-y-2">
+                              {/* Labels con valores actuales */}
+                              <div className="flex items-center justify-between text-xs text-gray-600">
+                                <span className="font-medium">
+                                  ${priceRange[0].toLocaleString('es-CO')}
+                                </span>
+                                <span className="font-medium">
+                                  ${priceRange[1].toLocaleString('es-CO')}
+                                </span>
+                              </div>
+                              {/* Range Slider */}
+                              <div className="px-1">
+                                <Slider
+                                  value={priceRange}
+                                  onValueChange={(value) => setPriceRange(value as [number, number])}
+                                  max={priceBounds.max}
+                                  min={priceBounds.min}
+                                  step={1000}
+                                  className="w-full"
                                 />
                               </div>
-                              <div className="flex items-center justify-center w-6 h-px bg-gray-300">
-                                <span className="text-gray-400 text-sm font-medium">-</span>
-                              </div>
-                              <div className="relative flex-1">
-                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
-                                <input
-                                  type="number"
-                                  placeholder="Máx"
-                                  value={maxPrice}
-                                  onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : "")}
-                                  className="w-full pl-6 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 hover:bg-white hover:shadow-sm"
-                                />
+                              {/* Información del rango total */}
+                              <div className="flex items-center justify-between text-xs text-gray-500">
+                                <span>
+                                  ${priceBounds.min.toLocaleString('es-CO')}
+                                </span>
+                                <span>
+                                  ${priceBounds.max.toLocaleString('es-CO')}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -1330,7 +1454,11 @@ function TiendaPageContent() {
                                 <div className="relative">
                                   <select
                                     value={selectedProductCategory || ""}
-                                    onChange={(e) => setSelectedProductCategory(e.target.value ? Number(e.target.value) : null)}
+                                    onChange={(e) => {
+                                      const categoryId = e.target.value ? Number(e.target.value) : CATEGORIES.TODOS_LOS_PRODUCTOS
+                                      // Si se cambia la categoría, resetear la subcategoría a "Todas" para evitar inconsistencias
+                                      handleCategoryChange(categoryId, CATEGORIES.TODOS_LOS_PRODUCTOS)
+                                    }}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
                                   >
                                     <option value="">Todas las categorías</option>
@@ -1354,15 +1482,31 @@ function TiendaPageContent() {
                                 <div className="relative">
                                   <select
                                     value={selectedProductSubcategory || ""}
-                                    onChange={(e) => setSelectedProductSubcategory(e.target.value ? Number(e.target.value) : null)}
+                                    onChange={(e) => {
+                                      const subcategoryId = e.target.value ? Number(e.target.value) : CATEGORIES.TODOS_LOS_PRODUCTOS
+                                      // Mantener la categoría actual cuando se cambie la subcategoría
+                                      handleCategoryChange(selectedProductCategory || CATEGORIES.TODOS_LOS_PRODUCTOS, subcategoryId)
+                                    }}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
                                   >
                                     <option value="">Todas las subcategorías</option>
-                                    {productsByCategory.map(cat =>
-                                      cat.subcategories.map(sub => (
-                                        <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
-                                      ))
-                                    )}
+                                    {(() => {
+                                      // Si hay una categoría seleccionada, mostrar solo sus subcategorías
+                                      if (selectedProductCategory) {
+                                        const categoryData = productsByCategory.find(cat => cat.categoryId === selectedProductCategory)
+                                        if (categoryData) {
+                                          return categoryData.subcategories.map(sub => (
+                                            <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
+                                          ))
+                                        }
+                                      }
+                                      // Si no hay categoría seleccionada, mostrar todas las subcategorías
+                                      return productsByCategory.map(cat =>
+                                        cat.subcategories.map(sub => (
+                                          <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
+                                        ))
+                                      )
+                                    })()}
                                   </select>
                                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                                     <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1454,101 +1598,107 @@ function TiendaPageContent() {
                         const currentPrice = getCurrentPrice();
 
                         return (
-                       <Link key={product.id} href={`/producto/${product.id}`} className="block">
-                         <div className="bg-white rounded-[20px] sm:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                           <div className="relative aspect-square">
-                             <Image
-                                 src={product.imagen_url || "/placeholder.jpg"}
-                                 alt={product.nombre}
-                               fill
-                               className="object-contain p-3 sm:p-4"
-                             />
-                             <button
-                               onClick={(e) => {
-                                 e.preventDefault()
-                                 e.stopPropagation()
-                                 handleAddToCart(product)
-                               }}
-                               className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300"
-                             >
-                               <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                             </button>
-                            {product.descuento && (
-                            <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-                                  Oferta
-                                </span>
-                              </div>
-                            )}
-                            {product.destacado && !product.descuento && (
-                              <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                                  Destacado
-                                </span>
-                              </div>
-                            )}
-                            {product.novedad && !product.descuento && !product.destacado && (
-                              <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                                <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
-                                  Nuevo
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-3 sm:p-4">
-                            <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">{product.nombre}</h3>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{product.descripcion || "Descripción del producto"}</p>
+                        <div key={product.id} className="bg-white rounded-[20px] sm:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                          <div className="relative aspect-square">
+                            <Link href={`/producto/${product.id}`} className="block">
+                              <Image
+                                  src={product.imagen_url || "/placeholder.jpg"}
+                                  alt={product.nombre}
+                                fill
+                                className="object-contain p-3 sm:p-4"
+                              />
+                            </Link>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleAddToCart(product)
+                              }}
+                              className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300"
+                            >
+                              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+                           {product.descuento && (
+                           <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                               <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
+                                 Oferta
+                               </span>
+                             </div>
+                           )}
+                           {product.destacado && !product.descuento && (
+                             <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                               <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                 Destacado
+                               </span>
+                             </div>
+                           )}
+                           {product.novedad && !product.descuento && !product.destacado && (
+                             <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                               <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
+                                 Nuevo
+                             </span>
+                           </div>
+                         )}
+                       </div>
+                       <div className="p-3 sm:p-4">
+                           <Link href={`/producto/${product.id}`} className="block">
+                             <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2 hover:text-[#196428] transition-colors">{product.nombre}</h3>
+                             <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{product.descripcion || "Descripción del producto"}</p>
+                           </Link>
 
-                            {/* Mostrar tamaños del producto - Seleccionables */}
-                            {hasSizes && (
-                              <div className="mb-3">
-                                <p className="text-xs text-gray-500 mb-1">Tamaños disponibles:</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {product.tamano!.map((tamano, index) => (
-                                    <button
-                                      key={index}
-                                      onClick={() => setSelectedSizes({...selectedSizes, [product.id!]: index})}
-                                      className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
-                                        selectedSizeIndex === index
-                                          ? 'bg-[#196428] text-white shadow-sm'
-                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                      }`}
-                                    >
-                                      {tamano.cantidad} {tamano.unidad}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                           {/* Mostrar tamaños del producto - Seleccionables */}
+                           {hasSizes && (
+                             <div className="mb-3">
+                               <p className="text-xs text-gray-500 mb-1">Tamaños disponibles:</p>
+                               <div className="flex flex-wrap gap-1.5">
+                                 {product.tamano!.map((tamano, index) => (
+                                   <button
+                                     key={index}
+                                     onClick={(e) => {
+                                       e.preventDefault()
+                                       e.stopPropagation()
+                                       setSelectedSizes({...selectedSizes, [product.id!]: index})
+                                     }}
+                                     className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                                       selectedSizeIndex === index
+                                         ? 'bg-[#196428] text-white shadow-sm'
+                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                     }`}
+                                   >
+                                     {tamano.cantidad} {tamano.unidad}
+                                   </button>
+                                 ))}
+                               </div>
+                             </div>
+                           )}
 
-                            {/* Mostrar precio según tamaño seleccionado */}
-                            {hasPrices && currentPrice > 0 ? (
-                              product.descuento && product.descuento_valor ? (
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                  <p className="text-red-500 font-medium text-xs sm:text-sm line-through">
-                                    $ {currentPrice.toLocaleString('es-CO')}
-                                  </p>
-                                  <p className="text-[#196428] font-medium text-sm sm:text-base">
-                                    $ {(() => {
-                                      const descuentoValor = typeof product.descuento_valor === 'string' ? parseFloat(product.descuento_valor) : Number(product.descuento_valor)
-                                      const precioConDescuento = currentPrice * (1 - (descuentoValor / 100))
-                                      return precioConDescuento.toLocaleString('es-CO')
-                                    })()}
-                                  </p>
-                                </div>
-                              ) : (
-                                <p className="text-[#196428] font-medium text-sm sm:text-base">
-                                  $ {currentPrice.toLocaleString('es-CO')}
-                                </p>
-                              )
-                            ) : (
-                              <p className="text-gray-400 text-xs sm:text-sm italic">
-                                Precio no disponible
-                              </p>
-                            )}
-                        </div>
-                         </div>
-                       </Link>
+                           {/* Mostrar precio según tamaño seleccionado */}
+                           {hasPrices && currentPrice > 0 ? (
+                             product.descuento && product.descuento_valor ? (
+                               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                 <p className="text-red-500 font-medium text-xs sm:text-sm line-through">
+                                   $ {currentPrice.toLocaleString('es-CO')}
+                                 </p>
+                                 <p className="text-[#196428] font-medium text-sm sm:text-base">
+                                   $ {(() => {
+                                     const descuentoValor = typeof product.descuento_valor === 'string' ? parseFloat(product.descuento_valor) : Number(product.descuento_valor)
+                                     const precioConDescuento = currentPrice * (1 - (descuentoValor / 100))
+                                     return precioConDescuento.toLocaleString('es-CO')
+                                   })()}
+                                 </p>
+                               </div>
+                             ) : (
+                               <p className="text-[#196428] font-medium text-sm sm:text-base">
+                                 $ {currentPrice.toLocaleString('es-CO')}
+                               </p>
+                             )
+                           ) : (
+                             <p className="text-gray-400 text-xs sm:text-sm italic">
+                               Precio no disponible
+                             </p>
+                           )}
+                       </div>
+                       </div>
                         );
                       })}
                   </div>
@@ -1657,8 +1807,7 @@ function TiendaPageContent() {
 
                 return (
                   <div key={categoryData.categoryId}>
-                    <h3 className="text-base font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                      <span className="text-[#196428]">🐕</span>
+                    <h3 className="text-base font-semibold text-gray-700 mb-2">
                       {category.name}
                     </h3>
                     <div className="space-y-1 ml-2">

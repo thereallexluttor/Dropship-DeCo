@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { ShoppingCart, Check } from 'lucide-react'
+import { ShoppingCart, Check, AlertTriangle, X } from 'lucide-react'
 import { Producto } from '@/lib/supabase'
+import { NotificationType, NOTIFICATION_TYPES } from '@/app/contexts/CartNotificationContext'
 
 // Hook personalizado para detectar si es móvil
 const useIsMobile = () => {
@@ -28,12 +29,52 @@ interface CartNotificationProps {
   onClose: () => void
   isVisible: boolean
   index?: number // Para manejar múltiples notificaciones
+  type?: NotificationType
+  message?: string
 }
 
-export default function CartNotification({ product, quantity, onClose, isVisible, index = 0 }: CartNotificationProps) {
+export default function CartNotification({ product, quantity, onClose, isVisible, index = 0, type = NOTIFICATION_TYPES.SUCCESS, message }: CartNotificationProps) {
   const [isAnimating, setIsAnimating] = useState(isVisible)
   const [shouldRender, setShouldRender] = useState(isVisible)
   const isMobile = useIsMobile()
+
+  // Configuración de estilos según el tipo de notificación
+  const getNotificationConfig = () => {
+    switch (type) {
+      case NOTIFICATION_TYPES.ERROR:
+        return {
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          iconBg: 'bg-red-100',
+          iconColor: 'text-red-600',
+          icon: <X className="w-3 h-3 sm:w-4 sm:h-4" />,
+          textColor: 'text-red-700',
+          message: message || 'No hay suficiente stock disponible'
+        }
+      case NOTIFICATION_TYPES.WARNING:
+        return {
+          bgColor: 'bg-yellow-50',
+          borderColor: 'border-yellow-200',
+          iconBg: 'bg-yellow-100',
+          iconColor: 'text-yellow-600',
+          icon: <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />,
+          textColor: 'text-yellow-700',
+          message: message || 'Stock limitado disponible'
+        }
+      default: // NOTIFICATION_TYPES.SUCCESS
+        return {
+          bgColor: 'bg-white',
+          borderColor: 'border-gray-200',
+          iconBg: 'bg-green-100',
+          iconColor: 'text-green-600',
+          icon: <Check className="w-3 h-3 sm:w-4 sm:h-4" />,
+          textColor: 'text-green-700',
+          message: message || 'Agregado al carrito'
+        }
+    }
+  }
+
+  const config = getNotificationConfig()
 
   useEffect(() => {
     if (isVisible && !shouldRender) {
@@ -94,7 +135,7 @@ export default function CartNotification({ product, quantity, onClose, isVisible
         })
       }}
     >
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 sm:p-4 max-w-sm w-full mx-4 sm:mx-0 backdrop-blur-sm">
+      <div className={`${config.bgColor} border ${config.borderColor} rounded-lg shadow-lg p-3 sm:p-4 max-w-sm w-full mx-4 sm:mx-0 backdrop-blur-sm`}>
         <div className="flex items-start space-x-3">
           {/* Product Image */}
           <div className="flex-shrink-0">
@@ -146,13 +187,15 @@ export default function CartNotification({ product, quantity, onClose, isVisible
               </button>
             </div>
 
-            {/* Success indicator */}
+            {/* Status indicator */}
             <div className="flex items-center mt-2">
-              <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 bg-green-100 rounded-full mr-2 animate-pulse">
-                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+              <div className={`flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 ${config.iconBg} rounded-full mr-2 animate-pulse`}>
+                <span className={config.iconColor}>
+                  {config.icon}
+                </span>
               </div>
-              <span className="text-xs sm:text-sm font-medium text-green-700">
-                Agregado al carrito
+              <span className={`text-xs sm:text-sm font-medium ${config.textColor}`}>
+                {config.message}
               </span>
             </div>
           </div>

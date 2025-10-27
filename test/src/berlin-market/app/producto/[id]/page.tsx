@@ -1209,33 +1209,136 @@ export default function ProductPage() {
           {relatedProducts.length > 0 && (
             <div className="mt-12">
               <h2 className="text-xl font-black text-gray-900 mb-4">Productos relacionados</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {relatedProducts.map((relatedProduct) => (
-                  <Link
-                    key={relatedProduct.id}
-                    href={`/producto/${relatedProduct.id}`}
-                    className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
-                  >
-                    <div className="relative aspect-[4/3]">
-                      <Image
-                        src={relatedProduct.imagen_url || '/placeholder.jpg'}
-                        alt={relatedProduct.nombre}
-                        fill
-                        className="object-contain p-1"
-                      />
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {relatedProducts.map((relatedProduct) => {
+                  const hasSizes = relatedProduct.tamano && relatedProduct.tamano.length > 0;
+                  const hasPrices = relatedProduct.precios && relatedProduct.precios.length > 0;
+                  const hasDiscount = relatedProduct.descuento && relatedProduct.descuento_valor;
+
+                  // Obtener el precio (para productos relacionados, usar el primer precio disponible)
+                  const getCurrentPrice = () => {
+                    if (hasPrices && relatedProduct.precios![0] !== undefined) {
+                      return relatedProduct.precios![0];
+                    }
+                    if (relatedProduct.stocks && relatedProduct.stocks.length > 0) {
+                      return relatedProduct.stocks[0].precio;
+                    }
+                    return 0;
+                  };
+
+                  const currentPrice = getCurrentPrice();
+
+                  // Calcular precio con descuento
+                  const getPriceWithDiscount = () => {
+                    if (hasDiscount) {
+                      const discount = typeof relatedProduct.descuento_valor === 'string'
+                        ? parseFloat(relatedProduct.descuento_valor)
+                        : Number(relatedProduct.descuento_valor);
+                      return currentPrice * (1 - discount / 100);
+                    }
+                    return currentPrice;
+                  };
+
+                  const finalPrice = getPriceWithDiscount();
+
+                  return (
+                    <div key={relatedProduct.id} className="bg-white rounded-[20px] sm:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                      <div className="relative aspect-square">
+                        <Link href={`/producto/${relatedProduct.id}`} className="block">
+                          <Image
+                            src={relatedProduct.imagen_url || "/placeholder.jpg"}
+                            alt={relatedProduct.nombre}
+                            fill
+                            className="object-contain p-3 sm:p-4"
+                          />
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            addToCart(relatedProduct, 1, 0)
+                          }}
+                          className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300"
+                        >
+                          <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </button>
+
+                        {/* Badges */}
+                        {relatedProduct.descuento && (
+                          <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
+                              -{relatedProduct.descuento_valor}% OFF
+                            </span>
+                          </div>
+                        )}
+                        {relatedProduct.destacado && !relatedProduct.descuento && (
+                          <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                              DESTACADO
+                            </span>
+                          </div>
+                        )}
+                        {relatedProduct.novedad && !relatedProduct.descuento && !relatedProduct.destacado && (
+                          <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
+                              NUEVO
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-3 sm:p-4">
+                        <Link href={`/producto/${relatedProduct.id}`} className="block">
+                          <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2 hover:text-[#196428] transition-colors">
+                            {relatedProduct.nombre}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
+                            {relatedProduct.descripcion || "Descripción del producto"}
+                          </p>
+                        </Link>
+
+                        {/* Mostrar tamaños si están disponibles */}
+                        {hasSizes && (
+                          <div className="mb-3">
+                            <p className="text-xs text-gray-500 mb-1">Tamaños disponibles:</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {relatedProduct.tamano!.map((tamano, index) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+                                >
+                                  {tamano.cantidad} {tamano.unidad}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mostrar precio */}
+                        {hasPrices && currentPrice > 0 ? (
+                          hasDiscount ? (
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <p className="text-red-500 font-medium text-xs sm:text-sm line-through">
+                                $ {currentPrice.toLocaleString('es-CO')}
+                              </p>
+                              <p className="text-[#196428] font-medium text-sm sm:text-base">
+                                $ {finalPrice.toLocaleString('es-CO')}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-[#196428] font-medium text-sm sm:text-base">
+                              $ {currentPrice.toLocaleString('es-CO')}
+                            </p>
+                          )
+                        ) : (
+                          <p className="text-gray-400 text-xs sm:text-sm italic">
+                            Precio no disponible
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="p-2">
-                      <h3 className="font-semibold text-gray-900 text-xs mb-1 line-clamp-2">
-                        {relatedProduct.nombre}
-                      </h3>
-                      {relatedProduct.precios && relatedProduct.precios.length > 0 && (
-                        <p className="text-[#196428] font-bold text-sm">
-                          ${relatedProduct.precios[0].toLocaleString('es-CO')}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

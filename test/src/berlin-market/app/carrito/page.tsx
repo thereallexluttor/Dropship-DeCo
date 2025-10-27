@@ -29,6 +29,7 @@ import {
   Briefcase
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import {
   Sheet,
   SheetContent,
@@ -51,6 +52,13 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import MainLayout from "../components/MainLayout"
 import CategoryDropdown from "../components/CategoryDropdown"
 import AccountPopover from "../components/AccountPopover"
@@ -60,14 +68,37 @@ import { useCategories } from "../hooks/useCategories"
 import { useCart, CartItemWithSize } from "../contexts/CartContext"
 import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
+import { supabase } from "../../lib/supabase"
 
 export default function CarritoPage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // Estado de autenticación
+  const [user, setUser] = useState<any>(null)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+
+  // Estados para el formulario de autenticación modal
+  const [modalShowPassword, setModalShowPassword] = useState(false)
+  const [modalShowConfirmPassword, setModalShowConfirmPassword] = useState(false)
+  const [modalIsRegistering, setModalIsRegistering] = useState(false)
+  const [modalIsLoading, setModalIsLoading] = useState(false)
+  const [modalEmail, setModalEmail] = useState("")
+  const [modalPassword, setModalPassword] = useState("")
+  const [modalRegisterEmail, setModalRegisterEmail] = useState("")
+  const [modalRegisterPassword, setModalRegisterPassword] = useState("")
+  const [modalConfirmPassword, setModalConfirmPassword] = useState("")
+  const [modalNombre, setModalNombre] = useState("")
+  const [modalTelefono, setModalTelefono] = useState("")
+  const [modalDireccion, setModalDireccion] = useState("")
+
+  // Estado para mostrar carga durante el procesamiento del pago
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
   // Usar el contexto del carrito
   const { items, updateQuantity, removeFromCart, updateProductSize, getTotalItems, getTotalPrice, clearCart } = useCart()
@@ -78,6 +109,272 @@ export default function CarritoPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     console.log("Searching for:", searchQuery)
+  }
+
+  // Efecto para verificar autenticación
+  useEffect(() => {
+    checkAuth()
+
+    // Escuchar cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+  }
+
+  // Función para manejar el pago
+  const handlePayment = async () => {
+    if (!user) {
+      // Si no está autenticado, mostrar modal de autenticación
+      setIsAuthModalOpen(true)
+    } else {
+      // Validar que el carrito no esté vacío
+      if (items.length === 0) {
+        alert('Tu carrito está vacío. Agrega algunos productos antes de proceder al pago.')
+        return
+      }
+
+      // Mostrar indicador de carga
+      setIsProcessingPayment(true)
+
+      try {
+        // Obtener información del usuario desde la tabla usuarios
+        const { data: userData, error: userError } = await supabase
+          .from('usuarios')
+          .select('id, nombre')
+          .eq('correo', user.email)
+          .single() as { data: { id: number; nombre: string } | null; error: any }
+
+        if (userError || !userData) {
+          alert('Error: No se pudo encontrar la información del usuario')
+          setIsProcessingPayment(false)
+          return
+        }
+
+        // Validar que todos los productos tienen IDs válidos
+        for (const item of items) {
+          if (!item.id || item.id <= 0) {
+            alert('Error: Uno o más productos en el carrito no tienen ID válido.')
+            setIsProcessingPayment(false)
+            return
+          }
+          if (!item.unitPrice || item.unitPrice <= 0) {
+            alert('Error: Uno o más productos en el carrito no tienen precio válido.')
+            setIsProcessingPayment(false)
+            return
+          }
+          if (!item.quantity || item.quantity <= 0) {
+            alert('Error: Uno o más productos en el carrito no tienen cantidad válida.')
+            setIsProcessingPayment(false)
+            return
+          }
+        }
+
+        // Preparar los items del carrito para el detalle del pedido
+        const orderItems = items.map(item => ({
+          producto_id: item.id!,
+          cantidad: item.quantity,
+          subtotal: item.unitPrice * item.quantity,
+          tamano_index: item.selectedSizeIndex || 0
+        }))
+
+        // Calcular el total del pedido
+        const totalAmount = getTotalPrice()
+
+        // Crear el pedido en la tabla pedidos
+        const { data: orderResult, error: orderError } = await supabase
+          .from('pedidos')
+          .insert([
+            {
+              usuario_id: userData.id,
+              fecha: new Date().toISOString(),
+              total: totalAmount,
+              estado: 'pendiente'
+            }
+          ])
+          .select()
+          .single()
+
+        if (orderError) {
+          console.error('Error creando pedido:', orderError)
+          alert('Error al procesar el pedido. Por favor, inténtalo de nuevo.')
+          setIsProcessingPayment(false)
+          return
+        }
+
+        // Crear los items del detalle del pedido
+        const { error: detailError } = await supabase
+          .from('detalle_pedido')
+          .insert(
+            orderItems.map(item => ({
+              pedido_id: orderResult.id,
+              producto_id: item.producto_id,
+              cantidad: item.cantidad,
+              subtotal: item.subtotal,
+              tamano_index: item.tamano_index
+            }))
+          )
+
+        if (detailError) {
+          console.error('Error creando detalle del pedido:', detailError)
+          alert('Error al procesar los productos del pedido. Por favor, inténtalo de nuevo.')
+          setIsProcessingPayment(false)
+          return
+        }
+
+        // Si el pedido se creó exitosamente, enviar correo de confirmación
+        try {
+          const userName = (userData as any).nombre || ''
+          const emailResponse = await fetch('/api/send-order-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userEmail: user.email,
+              userName: userName,
+              orderId: orderResult.id,
+              orderDate: orderResult.fecha,
+              totalAmount: totalAmount,
+              items: items,
+              orderStatus: orderResult.estado
+            })
+          })
+
+          if (!emailResponse.ok) {
+            console.error('Error al enviar el correo de confirmación')
+          }
+        } catch (emailError) {
+          console.error('Error al enviar el correo:', emailError)
+          // No detener el proceso si falla el envío del correo
+        }
+
+        // Limpiar el carrito
+        clearCart()
+
+        // Mostrar mensaje de éxito
+        alert(`¡Pedido creado exitosamente!
+
+📦 Número de pedido: ${orderResult.id}
+📊 Estado: ${orderResult.estado}
+💰 Total: $${totalAmount.toLocaleString('es-CO')}
+⏰ Fecha: ${new Date(orderResult.fecha).toLocaleDateString('es-CO')}
+📧 Te hemos enviado un correo de confirmación a ${user.email}
+
+Te notificaremos cuando tu pedido sea procesado.`)
+
+        // Finalizar el indicador de carga
+        setIsProcessingPayment(false)
+
+      } catch (error) {
+        console.error('Error en el proceso de pago:', error)
+        alert('Error inesperado al procesar el pedido. Por favor, inténtalo de nuevo.')
+        setIsProcessingPayment(false)
+      }
+    }
+  }
+
+  // Función para manejar registro en el modal
+  const handleModalRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (modalRegisterPassword !== modalConfirmPassword) {
+      alert("Las contraseñas no coinciden")
+      return
+    }
+
+    if (!modalRegisterEmail || !modalRegisterPassword || !modalNombre || !modalTelefono || !modalDireccion) {
+      alert("Por favor completa todos los campos")
+      return
+    }
+
+    setModalIsLoading(true)
+
+    try {
+      // Crear usuario en Supabase Auth con email confirmation
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: modalRegisterEmail,
+        password: modalRegisterPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            nombre: modalNombre,
+            telefono: modalTelefono,
+            direccion: modalDireccion
+          }
+        }
+      })
+
+      if (authError) throw authError
+
+      if (authData.user) {
+        // Guardar información adicional en la tabla usuarios
+        const { error: insertError } = await supabase
+          .from('usuarios')
+          .insert([
+            {
+              nombre: modalNombre,
+              correo: modalRegisterEmail,
+              telefono: modalTelefono,
+              direccion: modalDireccion,
+              rol: 'cliente',
+              password: modalRegisterPassword
+            }
+          ])
+
+        if (insertError) throw insertError
+
+        alert("¡Registro exitoso! Revisa tu email para confirmar tu cuenta.")
+        // Limpiar formulario
+        setModalRegisterEmail("")
+        setModalRegisterPassword("")
+        setModalConfirmPassword("")
+        setModalNombre("")
+        setModalTelefono("")
+        setModalDireccion("")
+        setModalIsRegistering(false)
+        setIsAuthModalOpen(false)
+      }
+    } catch (error) {
+      console.error('Error en registro:', error)
+      alert("Error en el registro. Inténtalo de nuevo.")
+    } finally {
+      setModalIsLoading(false)
+    }
+  }
+
+  // Función para manejar login en el modal
+  const handleModalLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setModalIsLoading(true)
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: modalEmail,
+        password: modalPassword,
+      })
+
+      if (error) throw error
+
+      if (data.user) {
+        alert("Inicio de sesión exitoso")
+        setIsAuthModalOpen(false)
+        // Limpiar formulario
+        setModalEmail("")
+        setModalPassword("")
+      }
+    } catch (error) {
+      console.error('Error en login:', error)
+      alert("Error en el inicio de sesión. Verifica tus credenciales.")
+    } finally {
+      setModalIsLoading(false)
+    }
   }
 
   // Crear categorías con datos reales de Supabase
@@ -669,8 +966,15 @@ export default function CarritoPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <button className="w-full bg-[#196428] hover:bg-[#145020] text-white py-3 px-6 rounded-full font-semibold transition-colors">
-                        Proceder al Pago
+                      <button
+                        onClick={handlePayment}
+                        disabled={isProcessingPayment}
+                        className="w-full bg-[#196428] hover:bg-[#145020] disabled:bg-gray-400 text-white py-3 px-6 rounded-full font-semibold transition-colors disabled:cursor-not-allowed"
+                      >
+                        {isProcessingPayment
+                          ? 'Procesando...'
+                          : (user ? 'Confirmar Pedido' : 'Proceder al Pago')
+                        }
                       </button>
 
                       <button
@@ -696,6 +1000,232 @@ export default function CarritoPage() {
 
         <Footer />
       </div>
+
+      {/* Modal de Autenticación para el Pago */}
+      <Dialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen}>
+        <DialogContent className="sm:max-w-sm mx-auto bg-[#FBFFE6] border-2 border-gray-200 shadow-2xl rounded-2xl">
+          <DialogHeader className="text-center border-b border-gray-200 pb-4 pt-2">
+            <DialogTitle className="text-xl font-bold text-gray-800">Iniciar Sesión o Registrarse</DialogTitle>
+            <DialogDescription className="text-sm text-gray-600 mt-1">
+              Para proceder con el pago, necesitas tener una cuenta
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-3 py-4 max-h-[55vh] overflow-y-auto">
+            {/* Formulario de Login/Registro para el Modal */}
+            <div className="w-full space-y-3">
+                {/* Ya soy cliente */}
+                {!modalIsRegistering && (
+                  <div className="space-y-3">
+                    <form className="space-y-3" onSubmit={handleModalLogin}>
+                      <div>
+                        <input
+                          type="email"
+                          placeholder="Email"
+                          value={modalEmail}
+                          onChange={(e) => setModalEmail(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                        />
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={modalShowPassword ? "text" : "password"}
+                          placeholder="Contraseña"
+                          value={modalPassword}
+                          onChange={(e) => setModalPassword(e.target.value)}
+                          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-12 transition-all duration-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setModalShowPassword(!modalShowPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                          {modalShowPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={modalIsLoading}
+                        className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg"
+                      >
+                        {modalIsLoading ? "Cargando..." : "Iniciar sesión"}
+                      </button>
+                    </form>
+
+                    <div className="flex flex-col space-y-2">
+                      <div className="text-center">
+                        <a href="#" className="text-[#196428] hover:underline text-xs font-medium transition-colors">
+                          Olvidé mi contraseña
+                        </a>
+                      </div>
+                      <div className="text-[10px] text-gray-600 text-center leading-tight">
+                        Protegido por reCAPTCHA - <a href="#" className="underline hover:text-[#196428] transition-colors">Privacidad</a> y{' '}
+                        <a href="#" className="underline hover:text-[#196428] transition-colors">Condiciones</a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Divider */}
+                <div className="border-t border-gray-300"></div>
+
+                {/* Nuevo aquí / Formulario de registro */}
+                <div className="space-y-3">
+                  {!modalIsRegistering ? (
+                    <>
+                      <div className="text-center">
+                        <h2 className="text-base font-bold text-gray-800 mb-2">
+                          ¿Nuevo aquí?
+                        </h2>
+                        <p className="text-xs text-gray-700 mb-3">
+                          ¡Disfruta de beneficios exclusivos!
+                        </p>
+                      </div>
+
+                      <ul className="space-y-2 mb-4">
+                        <li className="flex items-start gap-3">
+                          <Check className="h-4 w-4 text-[#196428] flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 leading-tight">
+                            Compras más <span className="font-bold">rápidas</span>
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <Check className="h-4 w-4 text-[#196428] flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 leading-tight">
+                            <span className="font-bold">Historial</span> de pedidos
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <Check className="h-4 w-4 text-[#196428] flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 leading-tight">
+                            <span className="font-bold">Descuentos</span> exclusivos
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <Check className="h-4 w-4 text-[#196428] flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 leading-tight">
+                            <span className="font-bold">Lista</span> de deseos
+                          </span>
+                        </li>
+                      </ul>
+
+                      <button
+                        type="button"
+                        onClick={() => setModalIsRegistering(true)}
+                        className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-2 rounded-lg transition-all duration-200 text-sm hover:shadow-lg"
+                      >
+                        Regístrate ahora
+                      </button>
+                    </>
+                  ) : (
+                    /* Formulario de registro */
+                    <div className="space-y-3">
+                      <div className="text-center mb-3">
+                        <h3 className="text-base font-bold text-gray-800">
+                          Crear cuenta
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Completa tus datos para registrarte
+                        </p>
+                      </div>
+
+                      <form className="space-y-3" onSubmit={handleModalRegister}>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Nombre completo"
+                            value={modalNombre}
+                            onChange={(e) => setModalNombre(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            value={modalRegisterEmail}
+                            onChange={(e) => setModalRegisterEmail(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="tel"
+                            placeholder="Teléfono"
+                            value={modalTelefono}
+                            onChange={(e) => setModalTelefono(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Dirección completa"
+                            value={modalDireccion}
+                            onChange={(e) => setModalDireccion(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type={modalShowPassword ? "text" : "password"}
+                            placeholder="Contraseña"
+                            value={modalRegisterPassword}
+                            onChange={(e) => setModalRegisterPassword(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 transition-all duration-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setModalShowPassword(!modalShowPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                          >
+                            {modalShowPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type={modalShowConfirmPassword ? "text" : "password"}
+                            placeholder="Confirmar contraseña"
+                            value={modalConfirmPassword}
+                            onChange={(e) => setModalConfirmPassword(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 transition-all duration-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setModalShowConfirmPassword(!modalShowConfirmPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                          >
+                            {modalShowConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={modalIsLoading}
+                          className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg"
+                        >
+                          {modalIsLoading ? "Registrando..." : "Crear cuenta"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setModalIsRegistering(false)}
+                          className="w-full text-[#196428] hover:underline text-xs font-medium transition-colors text-center"
+                        >
+                          ← Volver al inicio de sesión
+                        </button>
+                      </form>
+                    </div>
+                  )}
+                </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Account Drawer for Mobile */}
       <Drawer open={isAccountDrawerOpen} onOpenChange={setIsAccountDrawerOpen}>

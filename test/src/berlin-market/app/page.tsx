@@ -1156,8 +1156,9 @@ export default function Home() {
                             e.stopPropagation()
                             handleAddToCart(producto)
                           }}
-                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
+                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm flex items-center gap-1"
                         >
+                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
                           Agregar al carrito
                         </button>
                       </div>
@@ -1437,25 +1438,26 @@ export default function Home() {
                             const currentPrice = getCurrentPrice();
 
                             return (
-                            <Link key={producto.id} href={`/producto/${producto.id}`} className="block">
-                              <div className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                                <div className="relative aspect-square">
+                            <div key={producto.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                              <div className="relative aspect-square">
+                                <Link href={`/producto/${producto.id}`} className="block">
                                   <Image
                                     src={producto.imagen_url || '/placeholder.jpg'}
                                     alt={producto.nombre}
                                     fill
                                     className="object-contain p-2 md:p-3"
                                   />
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault()
-                                      e.stopPropagation()
-                                      handleAddToCart(producto)
-                                    }}
-                                    className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300"
-                                  >
-                                    <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
-                                  </button>
+                                </Link>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    handleAddToCart(producto)
+                                  }}
+                                  className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300"
+                                >
+                                  <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
+                                </button>
                                 {producto.descuento && (
                                   <div className="absolute top-3 md:top-4 left-3 md:left-4">
                                     <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
@@ -1465,8 +1467,10 @@ export default function Home() {
                                 )}
                               </div>
                               <div className="p-2.5 md:p-3">
-                                <h3 className="text-base md:text-lg font-semibold mb-2">{producto.nombre}</h3>
-                                <p className="text-sm text-gray-600 mb-2">{producto.descripcion}</p>
+                                <Link href={`/producto/${producto.id}`} className="block">
+                                  <h3 className="text-base md:text-lg font-semibold mb-2 hover:text-[#196428] transition-colors">{producto.nombre}</h3>
+                                  <p className="text-sm text-gray-600 mb-2">{producto.descripcion}</p>
+                                </Link>
 
                                 {/* Mostrar tamaños del producto - Seleccionables */}
                                 {hasSizes && (
@@ -1476,7 +1480,11 @@ export default function Home() {
                                       {producto.tamano!.map((tamano, index) => (
                                         <button
                                           key={index}
-                                          onClick={() => setSelectedSizes({...selectedSizes, [producto.id!]: index})}
+                                          onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            setSelectedSizes({...selectedSizes, [producto.id!]: index})
+                                          }}
                                           className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
                                             selectedSizeIndex === index
                                               ? 'bg-[#196428] text-white shadow-sm'
@@ -1510,8 +1518,7 @@ export default function Home() {
                                   <p className="text-gray-400 text-xs italic">Precio no disponible</p>
                                 )}
                               </div>
-                              </div>
-                            </Link>
+                            </div>
                             );
                           })}
                         </div>

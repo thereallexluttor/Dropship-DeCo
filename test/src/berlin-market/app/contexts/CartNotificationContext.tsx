@@ -4,15 +4,24 @@ import React, { createContext, useContext, useState, useCallback } from 'react'
 import { Producto } from '@/lib/supabase'
 import CartNotification from '@/app/components/CartNotification'
 
+export type NotificationType = 'success' | 'error' | 'warning'
+export const NOTIFICATION_TYPES = {
+  SUCCESS: 'success' as const,
+  ERROR: 'error' as const,
+  WARNING: 'warning' as const
+} as const
+
 interface NotificationItem {
   id: string
   product: Producto
   quantity: number
   timestamp: number
+  type: NotificationType
+  message?: string
 }
 
 interface CartNotificationContextType {
-  showNotification: (product: Producto, quantity: number) => void
+  showNotification: (product: Producto, quantity: number, type?: NotificationType, message?: string) => void
 }
 
 const CartNotificationContext = createContext<CartNotificationContextType | undefined>(undefined)
@@ -29,7 +38,7 @@ export const CartNotificationProvider: React.FC<{ children: React.ReactNode }> =
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const lastNotificationRef = React.useRef<{productId: number, timestamp: number} | null>(null)
 
-  const showNotification = useCallback((product: Producto, quantity: number) => {
+  const showNotification = useCallback((product: Producto, quantity: number, type: NotificationType = NOTIFICATION_TYPES.SUCCESS, message?: string) => {
     const now = Date.now()
 
     // Verificar que el producto tenga un id válido
@@ -47,14 +56,16 @@ export const CartNotificationProvider: React.FC<{ children: React.ReactNode }> =
 
     // Actualizar referencia
     lastNotificationRef.current = { productId: product.id, timestamp: now }
-    
+
     // Crear nueva notificación independiente
     const id = `notification-${now}-${Math.random()}`
     const newNotification: NotificationItem = {
       id,
       product,
-      quantity, // Solo la cantidad agregada, no acumulada
-      timestamp: now
+      quantity,
+      timestamp: now,
+      type,
+      message
     }
 
     setNotifications(prev => {
@@ -78,6 +89,8 @@ export const CartNotificationProvider: React.FC<{ children: React.ReactNode }> =
           isVisible={true} // Siempre visible mientras esté en el array
           index={index}
           onClose={() => removeNotification(notification.id)}
+          type={notification.type}
+          message={notification.message}
         />
       ))}
     </CartNotificationContext.Provider>

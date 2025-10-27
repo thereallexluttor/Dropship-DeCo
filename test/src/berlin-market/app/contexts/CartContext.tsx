@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Producto, TamanoProducto } from '@/lib/supabase'
-import { useCartNotification } from './CartNotificationContext'
+import { useCartNotification, NotificationType, NOTIFICATION_TYPES } from './CartNotificationContext'
 
 export interface CartItemWithSize extends Producto {
   quantity: number
@@ -83,6 +83,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('cart', JSON.stringify(items))
   }, [items])
 
+  // Función helper para verificar el stock disponible
+  const checkStockAvailability = (product: Producto, quantity: number, selectedSizeIndex: number = 0): { available: boolean, availableStock: number } => {
+    // Verificar si el producto tiene stock disponible
+    if (product.stocks && product.stocks.length > 0) {
+      const stock = product.stocks[selectedSizeIndex] || product.stocks[0]
+      if (stock && stock.stock !== undefined) {
+        // Buscar si ya existe el producto en el carrito con el mismo tamaño
+        const existingItem = items.find(item =>
+          item.id === product.id && item.selectedSizeIndex === selectedSizeIndex
+        )
+        const currentQuantity = existingItem ? existingItem.quantity : 0
+        const availableStock = stock.stock - currentQuantity
+
+        return {
+          available: availableStock >= quantity,
+          availableStock
+        }
+      }
+    }
+
+    // Si no hay información de stock, permitir agregar (comportamiento por defecto)
+    return { available: true, availableStock: Infinity }
+  }
+
   // Función helper para calcular el precio unitario correcto
   const calculateUnitPrice = (product: Producto, selectedSizeIndex: number = 0): number => {
     // Si el producto tiene precios definidos
@@ -120,9 +144,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const addToCart = (product: Producto, quantity: number = 1, selectedSizeIndex: number = 0) => {
-    // Mostrar notificación ANTES de actualizar el estado
-    showNotification(product, quantity)
-    
+    // Verificar stock disponible ANTES de agregar al carrito
+    const stockCheck = checkStockAvailability(product, quantity, selectedSizeIndex)
+
+    if (!stockCheck.available) {
+      // Mostrar notificación de error si no hay stock suficiente
+      showNotification(
+        product,
+        quantity,
+        NOTIFICATION_TYPES.ERROR,
+        `No hay suficiente stock. Disponible: ${stockCheck.availableStock}`
+      )
+      return // No agregar al carrito
+    }
+
+    // Mostrar notificación de éxito y agregar al carrito
+    showNotification(product, quantity, NOTIFICATION_TYPES.SUCCESS, 'Agregado al carrito')
+
     setItems(prevItems => {
       // Buscar si ya existe el mismo producto con el mismo tamaño
       const existingItem = prevItems.find(item =>
@@ -168,13 +206,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return
     }
 
-    setItems(prevItems =>
-      prevItems.map(item =>
+    setItems(prevItems => {
+      const itemToUpdate = prevItems.find(item => item.id === productId)
+      if (itemToUpdate) {
+        // Verificar stock disponible antes de actualizar
+        const stockCheck = checkStockAvailability(itemToUpdate, quantity - itemToUpdate.quantity, itemToUpdate.selectedSizeIndex)
+
+        if (!stockCheck.available) {
+          // Mostrar notificación de error si no hay stock suficiente
+          showNotification(
+            itemToUpdate,
+            quantity - itemToUpdate.quantity,
+            NOTIFICATION_TYPES.ERROR,
+            `No hay suficiente stock. Disponible: ${stockCheck.availableStock}`
+          )
+          return prevItems // No actualizar la cantidad
+        }
+      }
+
+      return prevItems.map(item =>
         item.id === productId
           ? { ...item, quantity }
           : item
       )
-    )
+    })
   }
 
   const updateProductSize = (productId: number, newSizeIndex: number) => {

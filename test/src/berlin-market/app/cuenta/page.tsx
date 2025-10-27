@@ -23,15 +23,24 @@ interface UserProfile {
 
 interface Order {
   id: string;
+  pedido_id: string;
   fecha: string;
   total: number;
   estado: string;
-  productos: Array<{
-    nombre: string;
+  detalles: Array<{
+    id: string;
+    producto_id: string;
+    producto_nombre: string;
     cantidad: number;
-    precio: number;
+    subtotal: number;
   }>;
 }
+
+// Función helper para formatear precios sin ceros decimales innecesarios
+const formatPrice = (price: number): string => {
+  const formatted = price.toFixed(2);
+  return formatted.endsWith('.00') ? price.toFixed(0) : formatted;
+};
 
 export default function CuentaPage() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -67,7 +76,7 @@ export default function CuentaPage() {
         setEditTelefono(userData.telefono);
         setEditDireccion(userData.direccion);
 
-        // Obtener historial de compras (simulado por ahora)
+        // Obtener historial de compras desde la base de datos
         await loadOrders(userData.id);
       }
     }
@@ -75,29 +84,75 @@ export default function CuentaPage() {
   };
 
   const loadOrders = async (userId: string) => {
-    // Simulación de datos de pedidos - en producción esto vendría de una tabla de pedidos
-    const mockOrders: Order[] = [
-      {
-        id: '001',
-        fecha: '2024-01-15',
-        total: 89.99,
-        estado: 'Entregado',
-        productos: [
-          { nombre: 'Alimento para perros premium', cantidad: 2, precio: 44.99 }
-        ]
-      },
-      {
-        id: '002',
-        fecha: '2024-01-10',
-        total: 156.50,
-        estado: 'En tránsito',
-        productos: [
-          { nombre: 'Juguete para gatos', cantidad: 1, precio: 25.99 },
-          { nombre: 'Arena sanitaria', cantidad: 3, precio: 43.50 }
-        ]
+    try {
+      // Obtener todos los pedidos del usuario
+      const { data: pedidosData, error: pedidosError } = await supabase
+        .from('pedidos')
+        .select('id, fecha, total, estado')
+        .eq('usuario_id', userId)
+        .order('fecha', { ascending: false });
+
+      if (pedidosError) {
+        console.error('Error fetching pedidos:', pedidosError);
+        return;
       }
-    ];
-    setOrders(mockOrders);
+
+      if (!pedidosData || pedidosData.length === 0) {
+        setOrders([]);
+        return;
+      }
+
+      // Para cada pedido, obtener sus detalles con los productos
+      const ordersWithDetails = await Promise.all(
+        pedidosData.map(async (pedido) => {
+          // Obtener detalles del pedido
+          const { data: detallesData, error: detallesError } = await supabase
+            .from('detalle_pedido')
+            .select('id, producto_id, cantidad, subtotal')
+            .eq('pedido_id', pedido.id);
+
+          if (detallesError) {
+            console.error('Error fetching detalles:', detallesError);
+            return null;
+          }
+
+          // Para cada detalle, obtener el nombre del producto
+          const detallesConProductos = await Promise.all(
+            (detallesData || []).map(async (detalle: any) => {
+              const { data: productoData } = await supabase
+                .from('productos')
+                .select('nombre')
+                .eq('id', detalle.producto_id)
+                .single();
+
+              return {
+                id: detalle.id,
+                producto_id: detalle.producto_id,
+                producto_nombre: productoData?.nombre || 'Producto desconocido',
+                cantidad: detalle.cantidad,
+                subtotal: detalle.subtotal
+              };
+            })
+          );
+
+          return {
+            id: pedido.id,
+            pedido_id: pedido.id,
+            fecha: pedido.fecha,
+            total: pedido.total,
+            estado: pedido.estado,
+            detalles: detallesConProductos
+          };
+        })
+      );
+
+      // Filtrar pedidos nulos (en caso de errores)
+      const validOrders = ordersWithDetails.filter((order): order is Order => order !== null);
+      setOrders(validOrders);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      setOrders([]);
+    }
   };
 
   const handleUpdateProfile = async () => {
@@ -371,48 +426,126 @@ export default function CuentaPage() {
                           <p className="text-gray-400 text-sm mt-2">Tus pedidos aparecerán aquí una vez que realices tu primera compra</p>
                         </div>
                       ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                           {orders.map((order) => (
-                            <Card key={order.id} className="border-l-4 border-l-[#196428] shadow-sm">
-                              <CardContent className="p-6">
-                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                            <Card key={order.pedido_id} className="border-l-4 border-l-[#196428] shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-white to-green-50/30">
+                              <CardContent className="p-8">
+                                {/* Header de la Card */}
+                                <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-6">
+                                  <div className="flex items-start gap-4">
+                                    <div className="bg-[#196428] text-white p-3 rounded-full">
+                                      <ShoppingBag className="h-6 w-6" />
+                                    </div>
                                   <div>
-                                    <p className="font-semibold text-xl text-gray-900 mb-1">Pedido #{order.id}</p>
+                                      <div className="flex items-center gap-3 mb-2">
+                                        <p className="font-bold text-2xl text-gray-900">Pedido #{order.pedido_id}</p>
+                                        <div className="h-2 w-2 bg-gray-300 rounded-full"></div>
+                                        <span className={`inline-flex px-4 py-2 text-sm font-semibold rounded-full shadow-sm ${
+                                          order.estado === 'completado' || order.estado === 'Entregado'
+                                            ? 'bg-green-100 text-green-800 border border-green-200'
+                                            : order.estado === 'en_transito' || order.estado === 'En tránsito'
+                                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                            : order.estado === 'pendiente'
+                                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                            : 'bg-gray-100 text-gray-800 border border-gray-200'
+                                        }`}>
+                                          {order.estado === 'completado' ? '✓ Completado' :
+                                           order.estado === 'en_transito' ? '🚚 En tránsito' :
+                                           order.estado === 'pendiente' ? '⏳ Pendiente' :
+                                           order.estado}
+                                        </span>
+                                      </div>
                                     <div className="flex items-center gap-2 text-sm text-gray-600">
-                                      <Calendar className="h-4 w-4" />
+                                        <Calendar className="h-4 w-4 text-[#196428]" />
+                                        <span className="font-medium">
                                       {new Date(order.fecha).toLocaleDateString('es-ES', {
                                         year: 'numeric',
                                         month: 'long',
-                                        day: 'numeric'
-                                      })}
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="font-semibold text-xl text-gray-900 mb-2">€{order.total.toFixed(2)}</p>
-                                    <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${
-                                      order.estado === 'Entregado'
-                                        ? 'bg-green-100 text-green-800'
-                                        : order.estado === 'En tránsito'
-                                        ? 'bg-blue-100 text-blue-800'
-                                        : 'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                      {order.estado}
-                                    </span>
+
+                                  <div className="text-right lg:text-center">
+                                    <div className="bg-[#196428] text-white px-4 py-2 rounded-xl shadow-lg">
+                                      <p className="text-xs font-medium text-green-100 mb-1">Total del Pedido</p>
+                                      <p className="font-black text-2xl">${formatPrice(order.total)}</p>
+                                    </div>
                                   </div>
                                 </div>
 
-                                <div className="border-t pt-4">
-                                  <p className="text-sm font-medium text-gray-700 mb-3">Productos incluidos:</p>
-                                  <div className="space-y-3">
-                                    {order.productos.map((producto, index) => (
-                                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                {/* Separador elegante */}
+                                <div className="relative mb-6">
+                                  <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-200"></div>
+                                  </div>
+                                  <div className="relative flex justify-center text-sm">
+                                    <span className="px-4 bg-white text-gray-500 font-medium">Detalles del Pedido</span>
+                                  </div>
+                                </div>
+
+                                {/* Lista de Productos */}
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <div className="bg-gray-100 p-2 rounded-lg">
+                                      <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M8 11h8l.64 5.12a2 2 0 01-1.96 2.38H9.32a2 2 0 01-1.96-2.38L8 11z" />
+                                      </svg>
+                                    </div>
+                                    <p className="text-lg font-semibold text-gray-800">Productos ({order.detalles.length})</p>
+                                  </div>
+
+                                  <div className="grid gap-3">
+                                    {order.detalles.map((detalle, index) => (
+                                      <div key={detalle.id} className="group relative bg-white border border-gray-200 rounded-xl p-4 hover:border-[#196428] hover:shadow-md transition-all duration-200">
+                                        <div className="flex justify-between items-center">
+                                          <div className="flex items-center gap-3">
+                                            <div className="bg-green-50 text-[#196428] p-2 rounded-lg group-hover:bg-[#196428] group-hover:text-white transition-colors duration-200">
+                                              <span className="text-sm font-bold">{index + 1}</span>
+                                            </div>
                                         <div>
-                                          <span className="font-medium text-gray-900">{producto.nombre}</span>
-                                          <span className="text-sm text-gray-600 ml-2">Cantidad: {producto.cantidad}</span>
+                                              <span className="font-semibold text-gray-900 text-lg block group-hover:text-[#196428] transition-colors duration-200">
+                                                {detalle.producto_nombre}
+                                              </span>
+                                              <div className="flex items-center gap-2 mt-1">
+                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                  Cantidad: {detalle.cantidad}
+                                                </span>
+                                                {detalle.cantidad > 1 && (
+                                                  <span className="text-xs text-gray-500">
+                                                    (${formatPrice(detalle.subtotal / detalle.cantidad)} c/u)
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="text-right">
+                                            <span className="font-bold text-[#196428] text-xl">${formatPrice(detalle.subtotal)}</span>
+                                          </div>
                                         </div>
-                                        <span className="font-semibold text-gray-900">€{(producto.precio * producto.cantidad).toFixed(2)}</span>
+
+                                        {/* Línea decorativa al final de cada producto */}
+                                        {index < order.detalles.length - 1 && (
+                                          <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+                                        )}
                                       </div>
                                     ))}
+                                  </div>
+                                </div>
+
+                                {/* Footer de la Card */}
+                                <div className="mt-6 pt-4 border-t border-gray-200">
+                                  <div className="flex justify-between items-center text-sm text-gray-600">
+                                    <span className="font-medium">
+                                      {order.detalles.length} producto{order.detalles.length !== 1 ? 's' : ''} en este pedido
+                                    </span>
+                                    <span className="font-medium">
+                                      ID: #{order.pedido_id}
+                                    </span>
                                   </div>
                                 </div>
                               </CardContent>

@@ -46,7 +46,14 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown, Briefcase, Users, FileText, Eye, Download, MapPin } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown, Briefcase, Users, FileText, Eye, Download, MapPin, ShoppingBag, ClipboardList } from 'lucide-react';
+
+// Función helper para formatear precios sin ceros decimales innecesarios
+const formatPrice = (price: number): string => {
+  const formatted = price.toFixed(2);
+  return formatted.endsWith('.00') ? price.toFixed(0) : formatted;
+};
 
 const AdminDashboard = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -61,6 +68,8 @@ const AdminDashboard = () => {
   const [trabajoAplicaciones, setTrabajoAplicaciones] = useState<any[]>([]);
   const [tiendas, setTiendas] = useState<Tienda[]>([]);
   const [aliados, setAliados] = useState<{id: number, nombre: string, imagen_url: string, created_at?: string}[]>([]);
+  const [pedidos, setPedidos] = useState<any[]>([]);
+  const [filtroEstadoPedidos, setFiltroEstadoPedidos] = useState<string>('todos');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
@@ -158,11 +167,276 @@ const AdminDashboard = () => {
     loadData();
   }, []);
 
+  // Función para cargar pedidos con detalles
+  const loadPedidos = async () => {
+    console.log('🔄 Cargando pedidos desde Supabase...');
+    try {
+      // Intentar usar función RPC primero (más eficiente)
+      const { data: pedidosData, error: pedidosError } = await supabase
+        .rpc('get_pedidos_with_details');
+
+      if (pedidosError) {
+        console.log('⚠️ RPC no disponible, usando consulta directa...');
+        
+        // Fallback: Consulta directa con joins
+        const { data: detallesData, error: detallesError } = await supabase
+          .from('detalle_pedido')
+          .select(`
+            id,
+            pedido_id,
+            producto_id,
+            cantidad,
+            subtotal,
+            tamano_index,
+            productos:producto_id (
+              nombre,
+              imagen_url
+            ),
+            pedidos:pedido_id (
+              id,
+              usuario_id,
+              fecha,
+              total,
+              estado,
+              usuarios:usuario_id (
+                nombre,
+                correo,
+                telefono,
+                direccion
+              )
+            )
+          `)
+          .order('pedido_id', { ascending: false });
+
+        if (detallesError) {
+          console.error('❌ Error cargando pedidos:', detallesError);
+          if (detallesError.message.includes('relation "pedidos" does not exist') ||
+              detallesError.message.includes('relation "detalle_pedido" does not exist')) {
+            console.error('❌ Las tablas de pedidos no existen en la base de datos');
+          }
+          setPedidos([]);
+          return;
+        }
+
+        // Transformar datos al formato esperado
+        const pedidosTransformados = (detallesData || []).map((detalle: any) => ({
+          id_detalle_pedido: detalle.id,
+          pedido_id: detalle.pedido_id,
+          nombre: detalle.pedidos?.usuarios?.nombre || '',
+          correo: detalle.pedidos?.usuarios?.correo || '',
+          telefono: detalle.pedidos?.usuarios?.telefono || '',
+          direccion: detalle.pedidos?.usuarios?.direccion || '',
+          producto_id: detalle.producto_id,
+          nombre_producto: detalle.productos?.nombre || '',
+          imagen_producto: detalle.productos?.imagen_url || '',
+          cantidad: detalle.cantidad,
+          subtotal: detalle.subtotal,
+          tamano_index: detalle.tamano_index || 0,
+          estado_pedido: detalle.pedidos?.estado || '',
+          fecha: detalle.pedidos?.fecha || '',
+          total: detalle.pedidos?.total || 0
+        }));
+
+        console.log('✅ Pedidos cargados exitosamente:', pedidosTransformados.length, 'detalles');
+        setPedidos(pedidosTransformados);
+      } else {
+        console.log('✅ Pedidos cargados desde RPC:', pedidosData?.length || 0, 'detalles');
+        setPedidos(pedidosData || []);
+      }
+    } catch (error) {
+      console.error('❌ Error inesperado cargando pedidos:', error);
+      setPedidos([]);
+    }
+  };
+
+  // Función auxiliar para actualizar stocks de un pedido
+  const actualizarStocksPedido = async (pedidoId: number, operacion: 'restar' | 'sumar') => {
+    // Obtener los detalles del pedido con los productos
+    const { data: detallesPedido, error: detallesError } = await supabase
+      .from('detalle_pedido')
+      .select('producto_id, cantidad, tamano_index')
+      .eq('pedido_id', pedidoId);
+
+    if (detallesError) {
+      console.error('Error obteniendo detalles del pedido:', detallesError);
+      throw new Error('Error al obtener los detalles del pedido');
+    }
+
+    if (!detallesPedido || detallesPedido.length === 0) {
+      console.error('No se encontraron productos en el pedido');
+      throw new Error('No se encontraron productos en el pedido');
+    }
+
+    // Actualizar el stock de cada producto
+    for (const detalle of detallesPedido) {
+      const { producto_id, cantidad, tamano_index } = detalle;
+      const sizeIndex = tamano_index || 0;
+
+      // Obtener el producto actual
+      const { data: producto, error: productoError } = await supabase
+        .from('productos')
+        .select('stocks')
+        .eq('id', producto_id)
+        .single();
+
+      if (productoError) {
+        console.error(`Error obteniendo producto ${producto_id}:`, productoError);
+        throw new Error(`Error al obtener el producto ID ${producto_id}`);
+      }
+
+      if (!producto || !producto.stocks || producto.stocks.length === 0) {
+        console.warn(`Producto ${producto_id} no tiene stocks definidos`);
+        continue;
+      }
+
+      // Actualizar el stock del tamaño específico
+      const stocksActualizados = [...producto.stocks];
+
+      if (sizeIndex >= 0 && sizeIndex < stocksActualizados.length) {
+        const stockActual = stocksActualizados[sizeIndex].stock || 0;
+        let nuevoStock;
+
+        if (operacion === 'restar') {
+          nuevoStock = Math.max(0, stockActual - cantidad);
+        } else {
+          nuevoStock = stockActual + cantidad;
+        }
+
+        stocksActualizados[sizeIndex] = {
+          ...stocksActualizados[sizeIndex],
+          stock: nuevoStock
+        };
+
+        // Actualizar en la base de datos
+        const { error: updateError } = await supabase
+          .from('productos')
+          .update({ stocks: stocksActualizados })
+          .eq('id', producto_id);
+
+        if (updateError) {
+          console.error(`Error actualizando stock del producto ${producto_id}:`, updateError);
+          throw new Error(`Error al actualizar el stock del producto ID ${producto_id}`);
+        }
+
+        const operacionTexto = operacion === 'restar' ? 'restado' : 'sumado';
+        console.log(`✅ Stock ${operacionTexto} para producto ${producto_id}, tamaño ${sizeIndex}: ${stockActual} -> ${nuevoStock}`);
+      } else {
+        console.warn(`Índice de tamaño ${sizeIndex} fuera de rango para producto ${producto_id}`);
+      }
+    }
+  };
+
+  // Función para actualizar el estado de un pedido
+  const handleUpdateEstadoPedido = async (pedidoId: number, nuevoEstado: string) => {
+    try {
+      // Obtener el estado actual del pedido
+      const pedidoActual = pedidos.find(p => p.pedido_id === pedidoId);
+      const estadoActual = pedidoActual?.estado_pedido;
+
+      if (!estadoActual) {
+        console.error('No se pudo encontrar el estado actual del pedido');
+        alert('Error: No se pudo determinar el estado actual del pedido');
+        return;
+      }
+
+      // Determinar si necesitamos actualizar stocks
+      const necesitaActualizarStock =
+        (estadoActual === 'pendiente' && nuevoEstado === 'pagado') || // Pago realizado
+        (estadoActual === 'pagado' && nuevoEstado === 'pendiente');   // Pago revertido
+
+      // Actualizar stocks si es necesario
+      if (necesitaActualizarStock) {
+        const operacion = nuevoEstado === 'pagado' ? 'restar' : 'sumar';
+        await actualizarStocksPedido(pedidoId, operacion);
+      }
+
+      // Actualizar el estado del pedido
+      const { error } = await supabase
+        .from('pedidos')
+        .update({ estado: nuevoEstado })
+        .eq('id', pedidoId);
+
+      if (error) {
+        console.error('Error actualizando estado del pedido:', error);
+        alert('Error al actualizar el estado del pedido');
+        return;
+      }
+
+      // Actualizar estado local
+      setPedidos(pedidos.map(p =>
+        p.pedido_id === pedidoId
+          ? { ...p, estado_pedido: nuevoEstado }
+          : p
+      ));
+
+      console.log(`✅ Pedido ${pedidoId} actualizado a: ${nuevoEstado}`);
+
+      // Mostrar mensajes según el tipo de cambio
+      if (nuevoEstado === 'pagado') {
+        alert('Pedido marcado como pagado y stocks actualizados correctamente');
+      } else if (nuevoEstado === 'pendiente' && estadoActual === 'pagado') {
+        alert('Estado cambiado a pendiente y stocks restituidos correctamente');
+      }
+    } catch (error) {
+      console.error('Error inesperado actualizando pedido:', error);
+      alert('Error al actualizar el pedido');
+    }
+  };
+
+  // Función para obtener el color del estado
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'pendiente': return 'text-yellow-600';
+      case 'pagado': return 'text-blue-600';
+      case 'enviado': return 'text-purple-600';
+      case 'entregado': return 'text-green-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  // Función para obtener el nombre del estado
+  const getEstadoNombre = (estado: string) => {
+    switch (estado) {
+      case 'pendiente': return 'Pendiente';
+      case 'pagado': return 'Pagado';
+      case 'enviado': return 'Enviado';
+      case 'entregado': return 'Entregado';
+      default: return estado;
+    }
+  };
+
+  // Función para obtener los pedidos filtrados por estado (únicos por pedido_id)
+  const getPedidosFiltrados = () => {
+    if (filtroEstadoPedidos === 'todos') {
+      return pedidos;
+    }
+    return pedidos.filter(pedido => pedido.estado_pedido === filtroEstadoPedidos);
+  };
+
+  // Función para obtener el contador de pedidos únicos por estado (no productos)
+  const getContadorPedidosPorEstado = (estado: string) => {
+    const pedidosUnicos = new Set();
+    pedidos.forEach(pedido => {
+      if (estado === 'todos' || pedido.estado_pedido === estado) {
+        pedidosUnicos.add(pedido.pedido_id);
+      }
+    });
+    return pedidosUnicos.size;
+  };
+
+  // Función para obtener el color del filtro activo
+  const getFiltroPedidosColor = (estado: string) => {
+    if (filtroEstadoPedidos === estado || (filtroEstadoPedidos === 'todos' && estado === 'todos')) {
+      return 'bg-[#196428] text-white hover:bg-[#145020]';
+    }
+    return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
       // Cargar categorías
-      const { data: categoriasData, error: categoriasError } = await supabase
+      const { data: categoriasData, error: categoriasError} = await supabase
         .from('categories')
         .select('*')
         .order('id', { ascending: true });
@@ -373,6 +647,9 @@ const AdminDashboard = () => {
           console.log('✅ Aliados cargados exitosamente:', aliadosData?.length || 0, 'aliados');
           setAliados(aliadosData || []);
         }
+
+        // Cargar pedidos
+        await loadPedidos();
     } catch (error: any) {
       console.error('Error cargando datos:', error);
       if (error?.message?.includes('relation "categories" does not exist') ||
@@ -2016,38 +2293,42 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8 max-w-5xl mx-auto">
-          <TabsTrigger value="categorias" className="flex items-center gap-2">
-            <FolderPlus className="h-4 w-4" />
+        <TabsList className="grid w-full grid-cols-9 max-w-6xl mx-auto rounded-full border border-green-200 bg-green-50 shadow-sm">
+          <TabsTrigger value="categorias" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            
             Categorías
           </TabsTrigger>
-          <TabsTrigger value="subcategorias" className="flex items-center gap-2">
-            <FolderOpen className="h-4 w-4" />
+          <TabsTrigger value="subcategorias" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+           
             Subcategorías
           </TabsTrigger>
-          <TabsTrigger value="productos" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
+          <TabsTrigger value="productos" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            
             Productos
           </TabsTrigger>
-          <TabsTrigger value="marcas" className="flex items-center gap-2">
-            <Tag className="h-4 w-4" />
+          <TabsTrigger value="marcas" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            
             Marcas
           </TabsTrigger>
-          <TabsTrigger value="ui" className="flex items-center gap-2">
-            <Layout className="h-4 w-4" />
+          <TabsTrigger value="ui" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            
             UI
           </TabsTrigger>
-          <TabsTrigger value="tiendas" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
+          <TabsTrigger value="tiendas" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+           
             Tiendas
           </TabsTrigger>
-          <TabsTrigger value="aliados" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
+          <TabsTrigger value="aliados" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            
             Aliados
           </TabsTrigger>
-          <TabsTrigger value="vacantes" className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4" />
+          <TabsTrigger value="vacantes" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            
             Vacantes
+          </TabsTrigger>
+          <TabsTrigger value="pedidos" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            
+            Pedidos
           </TabsTrigger>
         </TabsList>
 
@@ -3296,7 +3577,7 @@ const AdminDashboard = () => {
                                             const stock = producto.stocks?.[index]?.stock || 0;
                                             return (
                                               <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-800 font-medium">
-                                                {tamano.cantidad} {tamano.unidad} - ${producto.precios?.[index] ? producto.precios[index].toLocaleString('es-CO') : 'N/A'} (Stock: {stock})
+                                                {tamano.cantidad} {tamano.unidad} - ${producto.precios?.[index] ? formatPrice(producto.precios[index]) : 'N/A'} (Stock: {stock})
                                               </span>
                                             );
                                           })}
@@ -4913,6 +5194,308 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Nueva pestaña de Pedidos */}
+        <TabsContent value="pedidos" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5" />
+                    Gestión de Pedidos
+                  </CardTitle>
+                  <CardDescription>
+                    Visualiza y gestiona todos los pedidos de los clientes
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={loadPedidos}
+                  className="bg-[#196428] hover:bg-[#145020] text-white"
+                >
+                  Recargar Pedidos
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {pedidos.length === 0 ? (
+                <div className="text-center py-12">
+                  <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">No hay pedidos registrados</p>
+                  <p className="text-gray-400 text-sm mt-2">Los pedidos aparecerán aquí cuando los clientes realicen compras</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Filtros de Estado */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-sm font-medium text-gray-700">Filtrar por estado:</span>
+                      <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">
+                        Total: {getContadorPedidosPorEstado('todos')} pedido{getContadorPedidosPorEstado('todos') !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={() => setFiltroEstadoPedidos('todos')}
+                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('todos')}`}
+                      >
+                        📋 Todos ({getContadorPedidosPorEstado('todos')})
+                      </Button>
+
+                      <Button
+                        onClick={() => setFiltroEstadoPedidos('pendiente')}
+                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('pendiente')}`}
+                      >
+                        ⏳ Pendientes ({getContadorPedidosPorEstado('pendiente')})
+                      </Button>
+
+                      <Button
+                        onClick={() => setFiltroEstadoPedidos('pagado')}
+                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('pagado')}`}
+                      >
+                        💳 Pagados ({getContadorPedidosPorEstado('pagado')})
+                      </Button>
+
+                      <Button
+                        onClick={() => setFiltroEstadoPedidos('enviado')}
+                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('enviado')}`}
+                      >
+                        📦 Enviados ({getContadorPedidosPorEstado('enviado')})
+                      </Button>
+
+                      <Button
+                        onClick={() => setFiltroEstadoPedidos('entregado')}
+                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('entregado')}`}
+                      >
+                        ✅ Entregados ({getContadorPedidosPorEstado('entregado')})
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Mostrar mensaje si no hay pedidos para el filtro seleccionado */}
+                  {getPedidosFiltrados().length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className={`p-4 rounded-full mx-auto mb-4 w-fit ${
+                        filtroEstadoPedidos === 'pendiente' ? 'bg-yellow-100' :
+                        filtroEstadoPedidos === 'pagado' ? 'bg-blue-100' :
+                        filtroEstadoPedidos === 'enviado' ? 'bg-purple-100' :
+                        'bg-green-100'
+                      }`}>
+                        <span className="text-3xl">
+                          {filtroEstadoPedidos === 'pendiente' && '⏳'}
+                          {filtroEstadoPedidos === 'pagado' && '💳'}
+                          {filtroEstadoPedidos === 'enviado' && '📦'}
+                          {filtroEstadoPedidos === 'entregado' && '✅'}
+                          {filtroEstadoPedidos === 'todos' && '📋'}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-lg">
+                        No hay pedidos {filtroEstadoPedidos === 'todos' ? '' : getEstadoNombre(filtroEstadoPedidos).toLowerCase() + 's'}
+                      </p>
+                      <p className="text-gray-400 text-sm mt-2">
+                        Cambia el filtro para ver otros pedidos
+                      </p>
+                    </div>
+                  ) : (
+                    /* Agrupar pedidos por pedido_id */
+                    Object.entries(
+                    getPedidosFiltrados().reduce((acc: any, pedido: any) => {
+                      if (!acc[pedido.pedido_id]) {
+                        acc[pedido.pedido_id] = {
+                          pedido_id: pedido.pedido_id,
+                          nombre: pedido.nombre,
+                          correo: pedido.correo,
+                          telefono: pedido.telefono,
+                          direccion: pedido.direccion,
+                          estado_pedido: pedido.estado_pedido,
+                          fecha: pedido.fecha,
+                          total: pedido.total,
+                          productos: []
+                        };
+                      }
+                      acc[pedido.pedido_id].productos.push({
+                        id_detalle_pedido: pedido.id_detalle_pedido,
+                        producto_id: pedido.producto_id,
+                        nombre_producto: pedido.nombre_producto,
+                        imagen_producto: pedido.imagen_producto,
+                        cantidad: pedido.cantidad,
+                        subtotal: pedido.subtotal
+                      });
+                      return acc;
+                    }, {}))
+                  .map(([pedidoId, pedido]: [string, any], ordenIndex: number) => (
+                    <Card key={pedidoId} className="border-l-4 border-l-[#196428] shadow-lg">
+                      <CardContent className="p-6">
+                        {/* Header del Pedido */}
+                        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-6">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-4">
+                                
+
+                                
+                                <div>
+                                  <h3 className="text-2xl font-bold text-gray-900">Pedido #{pedido.pedido_id}</h3>
+                                  <p className="text-sm text-gray-600">
+                                    {new Date(pedido.fecha).toLocaleDateString('es-ES', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+
+                            {/* Información del Cliente */}
+                            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                              <h4 className="font-semibold text-gray-900 mb-3">Información del Cliente</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="text-gray-600">Nombre:</span>
+                                  <span className="ml-2 font-medium text-gray-900">{pedido.nombre}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Correo:</span>
+                                  <span className="ml-2 font-medium text-gray-900">{pedido.correo}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-600">Teléfono:</span>
+                                  <span className="ml-2 font-medium text-gray-900">{pedido.telefono}</span>
+                                </div>
+                                <div className="md:col-span-2">
+                                  <span className="text-gray-600">Dirección:</span>
+                                  <span className="ml-2 font-medium text-gray-900">{pedido.direccion}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Total y Estado */}
+                          <div className="text-center">
+                            <div className="bg-[#196428] text-white px-4 py-2 rounded-lg shadow-lg mb-4">
+                              <p className="text-xs font-medium text-green-100 mb-1">Total del Pedido</p>
+                              <p className="font-black text-2xl">${formatPrice(pedido.total || 0)}</p>
+                            </div>
+
+                            {/* Selector de Estado */}
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-gray-700 mb-2">Estado del Pedido:</p>
+                              <Select
+                                value={pedido.estado_pedido}
+                                onValueChange={(value) => handleUpdateEstadoPedido(pedido.pedido_id, value)}
+                              >
+                                <SelectTrigger className="w-full text-sm">
+                                  <SelectValue>
+                                    <span className={`font-semibold ${getEstadoColor(pedido.estado_pedido)}`}>
+                                      {pedido.estado_pedido === 'pendiente' && '⏳ '}
+                                      {pedido.estado_pedido === 'pagado' && '💳 '}
+                                      {pedido.estado_pedido === 'enviado' && '📦 '}
+                                      {pedido.estado_pedido === 'entregado' && '✅ '}
+                                      {getEstadoNombre(pedido.estado_pedido)}
+                                    </span>
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pendiente">
+                                    <span className="flex items-center gap-2">
+                                      ⏳ <span className="text-yellow-600 font-medium">Pendiente</span>
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="pagado">
+                                    <span className="flex items-center gap-2">
+                                      💳 <span className="text-blue-600 font-medium">Pagado</span>
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="enviado">
+                                    <span className="flex items-center gap-2">
+                                      📦 <span className="text-purple-600 font-medium">Enviado</span>
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="entregado">
+                                    <span className="flex items-center gap-2">
+                                      ✅ <span className="text-green-600 font-medium">Entregado</span>
+                                    </span>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Separador */}
+                        <div className="relative mb-6">
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-200"></div>
+                          </div>
+                          <div className="relative flex justify-center text-sm">
+                            <span className="px-4 bg-white text-gray-500 font-medium">Productos del Pedido</span>
+                          </div>
+                        </div>
+
+                        {/* Lista de Productos */}
+                        <div className="space-y-3">
+                          {pedido.productos.map((producto: any, index: number) => (
+                            <div
+                              key={producto.id_detalle_pedido}
+                              className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-4 hover:border-[#196428] hover:shadow-md transition-all duration-200"
+                            >
+                              <div className="bg-green-50 text-[#196428] p-2 rounded-lg font-bold text-sm">
+                                {index + 1}
+                              </div>
+                              
+                              {producto.imagen_producto && (
+                                <img
+                                  src={producto.imagen_producto}
+                                  alt={producto.nombre_producto}
+                                  className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                                />
+                              )}
+                              
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-gray-900">{producto.nombre_producto}</h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Cantidad: {producto.cantidad}
+                                  </span>
+                                  {producto.cantidad > 1 && (
+                                    <span className="text-xs text-gray-500">
+                                      (${formatPrice(producto.subtotal / producto.cantidad)} c/u)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="text-right">
+                                <span className="font-bold text-[#196428] text-lg">${formatPrice(producto.subtotal)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="mt-6 pt-4 border-t border-gray-200">
+                          <div className="flex justify-between items-center text-sm text-gray-600">
+                            <span className="font-medium">
+                              {pedido.productos.length} producto{pedido.productos.length !== 1 ? 's' : ''} en este pedido
+                            </span>
+                            <span className="font-medium">
+                              Estado: <span className={`font-bold ${getEstadoColor(pedido.estado_pedido)}`}>
+                                {getEstadoNombre(pedido.estado_pedido)}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Modal para mostrar CV */}
@@ -5135,3 +5718,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
