@@ -110,6 +110,8 @@ export default function ProductPage() {
   const [uiElements, setUiElements] = useState<UI[]>([])
   const [aliados, setAliados] = useState<{id: number, nombre: string, imagen_url: string}[]>([])
   const [showPopup, setShowPopup] = useState(false)
+  const popupVideoRef = useRef<HTMLVideoElement | null>(null)
+  const [popupMuted, setPopupMuted] = useState(false)
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
 
   // Product states
@@ -181,6 +183,36 @@ export default function ProductPage() {
     setShowPopup(false);
     sessionStorage.setItem('hasVisitedHome', 'true');
   }
+
+  const togglePopupMute = () => {
+    const video = popupVideoRef.current
+    if (!video) return
+    const nextMuted = !popupMuted
+    setPopupMuted(nextMuted)
+    video.muted = nextMuted
+    if (!nextMuted) {
+      video.volume = 1
+      const playPromise = video.play()
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.catch(() => {})
+      }
+    }
+  }
+
+  // Intentar reproducir con sonido cuando el popup aparece
+  useEffect(() => {
+    if (showPopup && popupVideoRef.current) {
+      const video = popupVideoRef.current
+      video.muted = popupMuted
+      if (!popupMuted) {
+        video.volume = 1
+        const playPromise = video.play()
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.catch(() => {})
+        }
+      }
+    }
+  }, [showPopup, popupMuted])
 
   // Header useEffects
   useEffect(() => {
@@ -1382,14 +1414,23 @@ export default function ProductPage() {
 
             {/* Contenido del popup */}
             {uiElements[0].popup.includes('.mp4') || uiElements[0].popup.includes('.webm') || uiElements[0].popup.includes('.mov') ? (
-              <video
-                src={uiElements[0].popup}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-auto rounded-lg"
-              />
+              <div className="relative">
+                <video
+                  ref={popupVideoRef}
+                  src={uiElements[0].popup}
+                  autoPlay
+                  muted={popupMuted}
+                  loop
+                  playsInline
+                  className="w-full h-auto rounded-lg"
+                />
+                <button
+                  onClick={togglePopupMute}
+                  className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full shadow"
+                >
+                  {popupMuted ? 'Activar sonido' : 'Silenciar'}
+                </button>
+              </div>
             ) : (
               <img
                 src={uiElements[0].popup}
