@@ -117,6 +117,13 @@ function TiendaPageContent() {
   const [selectedSubcategoryFromUrl, setSelectedSubcategoryFromUrl] = useState<number | null>(null)
   const [isUpdatingFromUrl, setIsUpdatingFromUrl] = useState(false)
 
+  // Constantes para categorías especiales
+  const CATEGORIES = {
+    OFERTAS: 999,
+    NOVEDADES: 998,
+    TODOS_LOS_PRODUCTOS: 1000
+  }
+
   // Efecto para manejar búsqueda desde URL
   useEffect(() => {
     if (searchQueryParam && !isSearchFromUrl) {
@@ -128,14 +135,14 @@ function TiendaPageContent() {
 
   // Efecto para manejar filtros de categoría y subcategoría desde URL (se ejecuta antes del paint)
   useLayoutEffect(() => {
-    // Solo procesar si no estamos actualizando desde la página misma y si hay datos disponibles
-    if (!isUpdatingFromUrl && categories.length > 0 && productsByCategory.length > 0) {
+    // Solo procesar si hay datos disponibles
+    if (categories.length > 0 && productsByCategory.length > 0) {
       if (categoryParam) {
         const categoryId = parseInt(categoryParam)
-        if (!isNaN(categoryId)) {
+        if (!isNaN(categoryId) && selectedCategoryFromUrl !== categoryId) {
           console.log('Configurando categoría desde URL:', categoryId)
           setSelectedCategoryFromUrl(categoryId)
-          setSelectedProductCategory(categoryId)
+          setSelectedCategory(categoryId)
 
           // Si también hay subcategoría, verificar que pertenece a la categoría
           if (subcategoryParam) {
@@ -143,6 +150,7 @@ function TiendaPageContent() {
             if (!isNaN(subcategoryId)) {
               console.log('Configurando subcategoría desde URL:', subcategoryId)
               setSelectedSubcategoryFromUrl(subcategoryId)
+              setSelectedSubcategory(subcategoryId)
 
               // Verificar que la subcategoría pertenece a la categoría
               const categoryData = productsByCategory.find(cat => cat.categoryId === categoryId)
@@ -150,8 +158,6 @@ function TiendaPageContent() {
 
               if (subcategoryData) {
                 // La subcategoría existe en la categoría, configurarla
-                setSelectedProductSubcategory(subcategoryId)
-
                 // Buscar información de la categoría y subcategoría
                 const category = categories.find(cat => cat.id === categoryId)
                 if (category && subcategoryData) {
@@ -161,7 +167,7 @@ function TiendaPageContent() {
               } else {
                 // La subcategoría no existe en la categoría, resetear a "Todas las subcategorías"
                 console.log('Subcategoría no encontrada en la categoría, reseteando')
-                setSelectedProductSubcategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
+                setSelectedSubcategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
 
                 // Solo mostrar categoría
                 const category = categories.find(cat => cat.id === categoryId)
@@ -173,6 +179,7 @@ function TiendaPageContent() {
             }
           } else {
             // Solo categoría, mostrar todos los productos de esa categoría
+            setSelectedSubcategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
             const category = categories.find(cat => cat.id === categoryId)
             if (category) {
               setCurrentTitle(category.name)
@@ -180,9 +187,24 @@ function TiendaPageContent() {
             }
           }
         }
+      } else if (!categoryParam && selectedCategoryFromUrl === null) {
+        // No hay parámetros de URL, mostrar todos los productos (solo la primera vez)
+        console.log('Sin parámetros de URL, mostrando todos los productos')
+        setSelectedCategoryFromUrl(CATEGORIES.TODOS_LOS_PRODUCTOS)
+        setSelectedCategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
+        setSelectedSubcategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
+        setCurrentTitle("Todos los productos")
+        setCurrentBreadcrumbs(["Inicio", "Tienda"])
+        // Limpiar filtros avanzados
+        setSelectedProductCategory(null)
+        setSelectedProductSubcategory(null)
+        setShowOnlyOffers(false)
+        setShowOnlyDiscounts(false)
+        setSelectedBrand(null)
       }
     }
-  }, [categoryParam, subcategoryParam, categories, productsByCategory, isUpdatingFromUrl])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryParam, subcategoryParam, categories, productsByCategory])
 
   // Función para agregar productos al carrito considerando el tamaño seleccionado
   const handleAddToCart = (product: ProductWithDetails) => {
@@ -207,47 +229,41 @@ function TiendaPageContent() {
     }
   }, [searchQueryParam])
 
-  // Constantes para categorías especiales
-  const CATEGORIES = {
-    OFERTAS: 999,
-    NOVEDADES: 998,
-    TODOS_LOS_PRODUCTOS: 1000
-  }
-
   // Función para manejar el cambio de categoría
   const handleCategoryChange = (categoryId: number, subcategoryId: number) => {
-    setIsUpdatingFromUrl(true)
+    // Actualizar estados inmediatamente
     setSelectedCategory(categoryId)
     setSelectedSubcategory(subcategoryId)
 
-    // Limpiar filtro de marca cuando cambia la categoría
+    // Limpiar filtros cuando cambia la categoría desde el sidebar
     setSelectedBrand(null)
+    setSelectedProductCategory(null)
+    setSelectedProductSubcategory(null)
+    setShowOnlyOffers(false)
+    setShowOnlyDiscounts(false)
 
     // Manejar categorías especiales
     if (categoryId === CATEGORIES.TODOS_LOS_PRODUCTOS) {
       setCurrentTitle("Todos los productos")
       setCurrentBreadcrumbs(["Inicio", "Tienda"])
-      // Actualizar URL
+      // Actualizar URL sin esperar
       router.push('/tienda')
-      setTimeout(() => setIsUpdatingFromUrl(false), 100)
       return
     }
 
     if (categoryId === CATEGORIES.NOVEDADES) {
       setCurrentTitle("Novedades")
       setCurrentBreadcrumbs(["Inicio", "Tienda", "Novedades"])
-      // Actualizar URL
+      // Actualizar URL sin esperar
       router.push('/tienda?categoria=998')
-      setTimeout(() => setIsUpdatingFromUrl(false), 100)
       return
     }
 
     if (categoryId === CATEGORIES.OFERTAS) {
       setCurrentTitle("Productos con descuento")
       setCurrentBreadcrumbs(["Inicio", "Tienda", "Ofertas"])
-      // Actualizar URL
+      // Actualizar URL sin esperar
       router.push('/tienda?categoria=999')
-      setTimeout(() => setIsUpdatingFromUrl(false), 100)
       return
     }
 
@@ -259,16 +275,15 @@ function TiendaPageContent() {
     if (category && subcategoryData) {
       setCurrentTitle(subcategoryData.subcategoryName)
       setCurrentBreadcrumbs(["Inicio", "Tienda", category.name, subcategoryData.subcategoryName])
-      // Actualizar URL
+      // Actualizar URL sin esperar
       router.push(`/tienda?categoria=${categoryId}&subcategoria=${subcategoryId}`)
     } else if (category) {
       // Solo categoría, sin subcategoría específica
       setCurrentTitle(category.name)
       setCurrentBreadcrumbs(["Inicio", "Tienda", category.name])
-      // Actualizar URL
+      // Actualizar URL sin esperar
       router.push(`/tienda?categoria=${categoryId}`)
     }
-    setTimeout(() => setIsUpdatingFromUrl(false), 100)
   }
 
   // Función para obtener marcas disponibles según la categoría seleccionada
@@ -436,6 +451,7 @@ function TiendaPageContent() {
   }
 
   // Calcular el rango de precios de los productos base usando useMemo
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const priceBounds = useMemo(() => {
     return calculatePriceRange(baseProducts)
   }, [baseProducts])
@@ -452,6 +468,7 @@ function TiendaPageContent() {
   }, [priceBounds.min, priceBounds.max])
 
   // ✅ OPTIMIZACIÓN: Memoizar cálculo costoso de productos filtrados
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const displayProducts = useMemo(() => {
     let result = baseProducts
 
@@ -478,6 +495,7 @@ function TiendaPageContent() {
   ])
 
   // Efecto para actualizar marcas disponibles cuando cambia la categoría
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const brandsForCurrentCategory = getBrandsForCategory(selectedCategory)
     setAvailableBrands(brandsForCurrentCategory)
@@ -489,6 +507,20 @@ function TiendaPageContent() {
     // Los filtros avanzados ahora están disponibles para todas las categorías
     // No necesitamos limpiar filtros avanzados cuando cambia la categoría
   }, [selectedCategory, selectedSubcategory, products, discountedProducts, newProducts])
+
+  // Efecto para limpiar filtros avanzados cuando cambia la categoría desde el sidebar (no para categorías específicas)
+  useEffect(() => {
+    // Si estamos en una categoría específica (no "Todos los productos", Ofertas o Novedades), limpiar filtros avanzados
+    if (selectedCategory !== CATEGORIES.TODOS_LOS_PRODUCTOS && 
+        selectedCategory !== CATEGORIES.OFERTAS && 
+        selectedCategory !== CATEGORIES.NOVEDADES) {
+      // Los filtros de categoría/subcategoría específica solo aplican en "Todos los productos"
+      // Así que los limpiamos cuando cambias a una categoría específica
+      setSelectedProductCategory(null)
+      setSelectedProductSubcategory(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory])
 
   // Función para limpiar filtros básicos
   const clearFilters = () => {
@@ -536,6 +568,28 @@ function TiendaPageContent() {
                 {subcategory.subcategoryName}
               </button>
             ))}
+            {/* Subcategorías especiales por categoría: Ofertas y Novedades (excluye Tienda, Ofertas, Especiales) */}
+            {(() => {
+              const lowerName = (category.name || '').toLowerCase();
+              const isExcluded = lowerName === 'tienda' || lowerName === 'ofertas' || lowerName === 'especiales';
+              if (isExcluded) return null;
+              return (
+                <>
+                  <button
+                    onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
+                    className={`block text-sm w-full text-left ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                  >
+                    Ofertas
+                  </button>
+                  <button
+                    onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
+                    className={`block text-sm w-full text-left ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                  >
+                    Novedades
+                  </button>
+                </>
+              );
+            })()}
           </div>
         </div>
       )
@@ -667,7 +721,7 @@ function TiendaPageContent() {
     { name: "Tienda", icon: ShoppingBag, href: "/tienda" },
     { name: "Carrito", icon: ShoppingCart, href: "/carrito" },
     { name: "Cuenta", icon: User, href: "#" },
-    { name: "Info", icon: Info, href: "/sobre-nosotros" },
+    { name: "Info", icon: Info, href: "/contacto" },
     { name: "Vacantes", icon: Briefcase, href: "/vacantes" },
     { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
   ];
@@ -978,7 +1032,7 @@ function TiendaPageContent() {
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-1">
-                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
@@ -990,12 +1044,12 @@ function TiendaPageContent() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
                     </Link>
-                    <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
+                    <Link href="/contacto" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -1071,7 +1125,7 @@ function TiendaPageContent() {
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-2">
-                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
@@ -1083,12 +1137,12 @@ function TiendaPageContent() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
                     </Link>
-                    <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
+                    <Link href="/contacto" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -1164,7 +1218,7 @@ function TiendaPageContent() {
                   </div>
                   <div className="w-[1.5px] h-5 bg-gray-200"></div>
                   <div className="flex items-center space-x-3">
-                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
@@ -1176,7 +1230,7 @@ function TiendaPageContent() {
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
                     </Link>
-                    <Link href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
+                    <Link href="/contacto" className="group flex flex-col items-center justify-center">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <MapPin className="h-full w-full" />
                       </div>
@@ -1361,7 +1415,13 @@ function TiendaPageContent() {
                             <h3 className="text-base font-bold text-gray-800">Filtros de productos</h3>
                           </div>
                           {/* Botón para limpiar filtros avanzados - esquina superior derecha */}
-                          {((priceRange[0] !== priceBounds.min || priceRange[1] !== priceBounds.max) || showOnlyOffers || showOnlyDiscounts || selectedProductCategory || selectedProductSubcategory || selectedBrand) && (
+                          {(() => {
+                            // Solo mostrar el botón si hay filtros aplicados manualmente
+                            const hasPriceFilter = Math.abs(priceRange[0] - priceBounds.min) > 10 || Math.abs(priceRange[1] - priceBounds.max) > 10
+                            const hasAdvancedFilter = hasPriceFilter || showOnlyOffers || showOnlyDiscounts || selectedBrand || 
+                              (selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && (selectedProductCategory || selectedProductSubcategory))
+                            return hasAdvancedFilter
+                          })() && (
                             <button
                               onClick={clearAdvancedFilters}
                               className="group flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 hover:shadow-lg transform hover:scale-105 h-5"
@@ -1455,9 +1515,10 @@ function TiendaPageContent() {
                                   <select
                                     value={selectedProductCategory || ""}
                                     onChange={(e) => {
-                                      const categoryId = e.target.value ? Number(e.target.value) : CATEGORIES.TODOS_LOS_PRODUCTOS
-                                      // Si se cambia la categoría, resetear la subcategoría a "Todas" para evitar inconsistencias
-                                      handleCategoryChange(categoryId, CATEGORIES.TODOS_LOS_PRODUCTOS)
+                                      const categoryId = e.target.value ? Number(e.target.value) : null
+                                      setSelectedProductCategory(categoryId)
+                                      // Limpiar subcategoría cuando se cambia la categoría
+                                      setSelectedProductSubcategory(null)
                                     }}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
                                   >
@@ -1483,9 +1544,8 @@ function TiendaPageContent() {
                                   <select
                                     value={selectedProductSubcategory || ""}
                                     onChange={(e) => {
-                                      const subcategoryId = e.target.value ? Number(e.target.value) : CATEGORIES.TODOS_LOS_PRODUCTOS
-                                      // Mantener la categoría actual cuando se cambie la subcategoría
-                                      handleCategoryChange(selectedProductCategory || CATEGORIES.TODOS_LOS_PRODUCTOS, subcategoryId)
+                                      const subcategoryId = e.target.value ? Number(e.target.value) : null
+                                      setSelectedProductSubcategory(subcategoryId)
                                     }}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
                                   >
@@ -1823,6 +1883,34 @@ function TiendaPageContent() {
                           {subcategory.subcategoryName}
                         </button>
                       ))}
+                    {/* Subcategorías especiales por categoría: Ofertas y Novedades (excluye Tienda, Ofertas, Especiales) */}
+                    {(() => {
+                      const lowerName = (category.name || '').toLowerCase();
+                      const isExcluded = lowerName === 'tienda' || lowerName === 'ofertas' || lowerName === 'especiales';
+                      if (isExcluded) return null;
+                      return (
+                        <>
+                          <button
+                            onClick={() => {
+                              handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS);
+                              setIsCategoriesDrawerOpen(false);
+                            }}
+                            className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                          >
+                            Ofertas
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES);
+                              setIsCategoriesDrawerOpen(false);
+                            }}
+                            className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                          >
+                            Novedades
+                          </button>
+                        </>
+                      );
+                    })()}
                     </div>
                   </div>
                 )

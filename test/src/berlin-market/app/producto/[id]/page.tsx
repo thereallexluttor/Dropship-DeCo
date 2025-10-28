@@ -119,6 +119,9 @@ export default function ProductPage() {
   const [selectedSizeIndex, setSelectedSizeIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [relatedProducts, setRelatedProducts] = useState<Producto[]>([])
+  
+  // Estado para manejar el tamaño seleccionado de cada producto relacionado
+  const [selectedRelatedSizes, setSelectedRelatedSizes] = useState<{[key: number]: number}>({})
 
   // Header hooks
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
@@ -943,13 +946,18 @@ export default function ProductPage() {
                 <>
                   <ChevronRight className="h-4 w-4 text-gray-400" />
                   <Link 
-                    href={`/tienda?category=${product.subcategorias.categories_id}`}
+                    href={`/tienda?categoria=${product.subcategorias.categories_id}&subcategoria=${product.subcategorias_id}`}
                     className="text-gray-600 hover:text-[#196428]"
                   >
                     {product.subcategorias?.categories?.nombre || 'Categoría'}
                   </Link>
                   <ChevronRight className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-800 font-medium">{product.subcategorias.nombre}</span>
+                  <Link 
+                    href={`/tienda?categoria=${product.subcategorias.categories_id}&subcategoria=${product.subcategorias_id}`}
+                    className="text-gray-800 font-medium hover:text-[#196428]"
+                  >
+                    {product.subcategorias.nombre}
+                  </Link>
                 </>
               )}
             </div>
@@ -1028,18 +1036,7 @@ export default function ProductPage() {
                 <h1 className="text-2xl lg:text-3xl font-black text-gray-900 mb-2">
                   {product.nombre}
                 </h1>
-                {/* Rating */}
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${i < 4 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs text-gray-600">(4.5) 128 reseñas</span>
-                </div>
+                
               </div>
 
               {/* Price */}
@@ -1211,17 +1208,17 @@ export default function ProductPage() {
               <h2 className="text-xl font-black text-gray-900 mb-4">Productos relacionados</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                 {relatedProducts.map((relatedProduct) => {
+                  const selectedSizeIndex = selectedRelatedSizes[relatedProduct.id!] || 0;
                   const hasSizes = relatedProduct.tamano && relatedProduct.tamano.length > 0;
                   const hasPrices = relatedProduct.precios && relatedProduct.precios.length > 0;
-                  const hasDiscount = relatedProduct.descuento && relatedProduct.descuento_valor;
 
-                  // Obtener el precio (para productos relacionados, usar el primer precio disponible)
+                  // Obtener el precio según el tamaño seleccionado
                   const getCurrentPrice = () => {
-                    if (hasPrices && relatedProduct.precios![0] !== undefined) {
-                      return relatedProduct.precios![0];
+                    if (hasSizes && hasPrices && relatedProduct.precios![selectedSizeIndex] !== undefined) {
+                      return relatedProduct.precios![selectedSizeIndex];
                     }
-                    if (relatedProduct.stocks && relatedProduct.stocks.length > 0) {
-                      return relatedProduct.stocks[0].precio;
+                    if (relatedProduct.stocks && relatedProduct.stocks.length > selectedSizeIndex) {
+                      return relatedProduct.stocks[selectedSizeIndex].precio;
                     }
                     return 0;
                   };
@@ -1230,7 +1227,7 @@ export default function ProductPage() {
 
                   // Calcular precio con descuento
                   const getPriceWithDiscount = () => {
-                    if (hasDiscount) {
+                    if (relatedProduct.descuento && relatedProduct.descuento_valor) {
                       const discount = typeof relatedProduct.descuento_valor === 'string'
                         ? parseFloat(relatedProduct.descuento_valor)
                         : Number(relatedProduct.descuento_valor);
@@ -1240,6 +1237,7 @@ export default function ProductPage() {
                   };
 
                   const finalPrice = getPriceWithDiscount();
+                  const hasDiscount = relatedProduct.descuento && relatedProduct.descuento_valor;
 
                   return (
                     <div key={relatedProduct.id} className="bg-white rounded-[20px] sm:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
@@ -1256,7 +1254,7 @@ export default function ProductPage() {
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            addToCart(relatedProduct, 1, 0)
+                            addToCart(relatedProduct, 1, selectedSizeIndex)
                           }}
                           className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300"
                         >
@@ -1267,21 +1265,21 @@ export default function ProductPage() {
                         {relatedProduct.descuento && (
                           <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
                             <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-                              -{relatedProduct.descuento_valor}% OFF
+                              Oferta
                             </span>
                           </div>
                         )}
                         {relatedProduct.destacado && !relatedProduct.descuento && (
                           <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
                             <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                              DESTACADO
+                              Destacado
                             </span>
                           </div>
                         )}
                         {relatedProduct.novedad && !relatedProduct.descuento && !relatedProduct.destacado && (
                           <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
                             <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
-                              NUEVO
+                              Nuevo
                             </span>
                           </div>
                         )}
@@ -1297,24 +1295,33 @@ export default function ProductPage() {
                           </p>
                         </Link>
 
-                        {/* Mostrar tamaños si están disponibles */}
+                        {/* Mostrar tamaños del producto - Seleccionables */}
                         {hasSizes && (
                           <div className="mb-3">
                             <p className="text-xs text-gray-500 mb-1">Tamaños disponibles:</p>
                             <div className="flex flex-wrap gap-1.5">
                               {relatedProduct.tamano!.map((tamano, index) => (
-                                <span
+                                <button
                                   key={index}
-                                  className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    setSelectedRelatedSizes({...selectedRelatedSizes, [relatedProduct.id!]: index})
+                                  }}
+                                  className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                                    selectedSizeIndex === index
+                                      ? 'bg-[#196428] text-white shadow-sm'
+                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                  }`}
                                 >
                                   {tamano.cantidad} {tamano.unidad}
-                                </span>
+                                </button>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {/* Mostrar precio */}
+                        {/* Mostrar precio según tamaño seleccionado */}
                         {hasPrices && currentPrice > 0 ? (
                           hasDiscount ? (
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">

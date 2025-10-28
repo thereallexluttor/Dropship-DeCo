@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { User, Mail, Phone, MapPin, Edit, ShoppingBag, Calendar, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ const formatPrice = (price: number): string => {
 };
 
 export default function CuentaPage() {
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +59,25 @@ export default function CuentaPage() {
   useEffect(() => {
     checkUser();
   }, []);
+
+  // Redirigir "Nuestras Tiendas" a /contacto en esta página sin modificar Header
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const anchor = target.closest('a') as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute('href');
+      if (href === '/#nuestras-tiendas' || href === '#nuestras-tiendas') {
+        e.preventDefault();
+        router.push('/contacto');
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => {
+      document.removeEventListener('click', handleClick);
+    };
+  }, [router]);
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();

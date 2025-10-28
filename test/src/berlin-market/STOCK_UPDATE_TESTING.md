@@ -243,3 +243,5 @@ Si encuentras algún problema durante las pruebas:
 Sigue los casos de prueba en orden y marca cada uno como completado. Si todos los casos pasan exitosamente, el sistema está funcionando correctamente.
 
 **Recuerda**: Siempre prueba en un entorno de desarrollo primero antes de aplicar cambios en producción.
+
+

@@ -61,9 +61,9 @@ const Footer = () => {
                 <div className="text-left">
                   <h3 className="text-base font-normal mb-3">Servicio al cliente</h3>
                   <ul className="space-y-2 text-sm">
-                    <li><Link href="#" className="hover:underline">Ayuda y preguntas frecuentes</Link></li>
-                    <li><Link href="#" className="hover:underline">Contacto</Link></li>
-                    <li><Link href="#" className="hover:underline">Mi cuenta</Link></li>
+                    <li><Link href="/ayuda" className="hover:underline">Ayuda y preguntas frecuentes</Link></li>
+                    <li><Link href="/contacto" className="hover:underline">Contacto</Link></li>
+                    <li><Link href="/cuenta" className="hover:underline">Mi cuenta</Link></li>
                   </ul>
                 </div>
 
@@ -72,10 +72,9 @@ const Footer = () => {
                   <h3 className="text-base font-normal mb-3">Acerca de Unisantander</h3>
                   <ul className="space-y-2 text-sm">
                     <li><Link href="/sobre-nosotros" className="hover:underline">Sobre nosotros</Link></li>
-                    <li><Link href="#" className="hover:underline">Carreras</Link></li>
-                    <li><Link href="#" className="hover:underline">Responsabilidad</Link></li>
-                    <li><Link href="#" className="hover:underline">Cumplimiento</Link></li>
-                    <li><Link href="#" className="hover:underline">Prensa</Link></li>
+                    <li><Link href="/carreras" className="hover:underline">Carreras</Link></li>
+                    <li><Link href="/responsabilidad" className="hover:underline">Responsabilidad</Link></li>
+                    <li><Link href="/cumplimiento" className="hover:underline">Cumplimiento</Link></li>
                   </ul>
                 </div>
               </div>
