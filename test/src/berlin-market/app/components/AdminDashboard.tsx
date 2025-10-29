@@ -70,6 +70,7 @@ const AdminDashboard = () => {
   const [aliados, setAliados] = useState<{id: number, nombre: string, imagen_url: string, created_at?: string}[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [filtroEstadoPedidos, setFiltroEstadoPedidos] = useState<string>('todos');
+  const [pedidoSearch, setPedidoSearch] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
@@ -198,6 +199,7 @@ const AdminDashboard = () => {
               fecha,
               total,
               estado,
+              Direccion,
               usuarios:usuario_id (
                 nombre,
                 correo,
@@ -225,7 +227,7 @@ const AdminDashboard = () => {
           nombre: detalle.pedidos?.usuarios?.nombre || '',
           correo: detalle.pedidos?.usuarios?.correo || '',
           telefono: detalle.pedidos?.usuarios?.telefono || '',
-          direccion: detalle.pedidos?.usuarios?.direccion || '',
+          direccion: detalle.pedidos?.Direccion || detalle.pedidos?.usuarios?.direccion || '',
           producto_id: detalle.producto_id,
           nombre_producto: detalle.productos?.nombre || '',
           imagen_producto: detalle.productos?.imagen_url || '',
@@ -371,11 +373,72 @@ const AdminDashboard = () => {
 
       console.log(`✅ Pedido ${pedidoId} actualizado a: ${nuevoEstado}`);
 
+      // Enviar correo de seguimiento si el nuevo estado lo requiere
+      const estadosConCorreo = ['pagado', 'enviado', 'entregado'];
+      if (estadosConCorreo.includes(nuevoEstado)) {
+        try {
+          // Agrupar productos del pedido
+          const productosDelPedido = pedidos
+            .filter(p => p.pedido_id === pedidoId)
+            .map(p => ({
+              nombre: p.nombre_producto,
+              nombre_producto: p.nombre_producto,
+              cantidad: p.cantidad,
+              quantity: p.cantidad,
+              subtotal: p.subtotal,
+              unitPrice: p.subtotal / p.cantidad
+            }));
+
+          // Obtener información del cliente del primer producto del pedido
+          const pedidoInfo = pedidos.find(p => p.pedido_id === pedidoId);
+          
+          if (pedidoInfo && pedidoInfo.correo) {
+            // Preparar datos para el correo
+            const emailData = {
+              userEmail: pedidoInfo.correo,
+              userName: pedidoInfo.nombre || '',
+              orderId: pedidoId.toString(),
+              orderDate: pedidoInfo.fecha || new Date().toISOString(),
+              totalAmount: pedidoInfo.total || 0,
+              items: productosDelPedido,
+              orderStatus: nuevoEstado,
+              address: pedidoInfo.direccion || ''
+            };
+
+            // Enviar correo de seguimiento
+            const emailResponse = await fetch('/api/send-order-status-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(emailData)
+            });
+
+            if (emailResponse.ok) {
+              console.log(`✅ Correo de seguimiento enviado para pedido #${pedidoId}`);
+            } else {
+              const errorData = await emailResponse.json();
+              console.error('Error enviando correo de seguimiento:', errorData);
+              // No bloquear la actualización del estado si falla el correo
+            }
+          } else {
+            console.warn(`⚠️ No se encontró correo para pedido #${pedidoId}, no se enviará correo de seguimiento`);
+          }
+        } catch (emailError) {
+          console.error('Error al enviar correo de seguimiento:', emailError);
+          // No bloquear la actualización del estado si falla el correo
+        }
+      }
+
       // Mostrar mensajes según el tipo de cambio
       if (nuevoEstado === 'pagado') {
-        alert('Pedido marcado como pagado y stocks actualizados correctamente');
+        alert('Pedido marcado como pagado y stocks actualizados correctamente. Se ha enviado un correo de confirmación al cliente.');
       } else if (nuevoEstado === 'pendiente' && estadoActual === 'pagado') {
         alert('Estado cambiado a pendiente y stocks restituidos correctamente');
+      } else if (nuevoEstado === 'enviado') {
+        alert('Pedido marcado como enviado. Se ha enviado un correo de seguimiento al cliente.');
+      } else if (nuevoEstado === 'entregado') {
+        alert('Pedido marcado como entregado. Se ha enviado un correo de confirmación al cliente.');
       }
     } catch (error) {
       console.error('Error inesperado actualizando pedido:', error);
@@ -5228,11 +5291,24 @@ const AdminDashboard = () => {
                 <div className="space-y-6">
                   {/* Filtros de Estado */}
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-700">Filtrar por estado:</span>
                       <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">
                         Total: {getContadorPedidosPorEstado('todos')} pedido{getContadorPedidosPorEstado('todos') !== 1 ? 's' : ''}
                       </span>
+                      </div>
+
+                      {/* Mini buscador por #pedido */}
+                      <div className="w-full lg:w-64">
+                        <input
+                          type="text"
+                          value={pedidoSearch}
+                          onChange={(e) => setPedidoSearch(e.target.value)}
+                          placeholder="Buscar por #pedido"
+                          className="w-full p-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                        />
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -5324,6 +5400,11 @@ const AdminDashboard = () => {
                       });
                       return acc;
                     }, {}))
+                  .filter(([pedidoId]) => {
+                    const needle = (pedidoSearch || '').replace(/[^0-9]/g, '').trim();
+                    if (!needle) return true;
+                    return pedidoId.toString().includes(needle);
+                  })
                   .map(([pedidoId, pedido]: [string, any], ordenIndex: number) => (
                     <Card key={pedidoId} className="border-l-4 border-l-[#196428] shadow-lg">
                       <CardContent className="p-6">
@@ -5365,7 +5446,7 @@ const AdminDashboard = () => {
                                   <span className="ml-2 font-medium text-gray-900">{pedido.telefono}</span>
                                 </div>
                                 <div className="md:col-span-2">
-                                  <span className="text-gray-600">Dirección:</span>
+                                  <span className="text-gray-600">Dirección de entrega:</span>
                                   <span className="ml-2 font-medium text-gray-900">{pedido.direccion}</span>
                                 </div>
                               </div>

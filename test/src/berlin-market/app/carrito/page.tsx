@@ -100,6 +100,12 @@ export default function CarritoPage() {
   // Estado para mostrar carga durante el procesamiento del pago
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
+  // Dirección y zona para entrega y cálculo de envío
+  const [deliveryAddress, setDeliveryAddress] = useState("")
+  const [deliveryZone, setDeliveryZone] = useState<'bucaramanga_am' | 'piedecuesta' | ''>('')
+  const [shippingFee, setShippingFee] = useState<number>(0)
+  const [pickupInStore, setPickupInStore] = useState(false)
+
   // Usar el contexto del carrito
   const { items, updateQuantity, removeFromCart, updateProductSize, getTotalItems, getTotalPrice, clearCart } = useCart()
 
@@ -128,6 +134,20 @@ export default function CarritoPage() {
     setUser(user)
   }
 
+  // Calcular envío basado en reglas proporcionadas
+  useEffect(() => {
+    const subtotal = getTotalPrice()
+    let fee = 0
+    if (pickupInStore) {
+      fee = 0
+    } else if (deliveryZone === 'bucaramanga_am') {
+      fee = subtotal < 100000 ? 4000 : 0
+    } else if (deliveryZone === 'piedecuesta') {
+      fee = subtotal < 150000 ? 8000 : 0
+    }
+    setShippingFee(fee)
+  }, [deliveryZone, items, getTotalPrice, pickupInStore])
+
   // Función para manejar el pago
   const handlePayment = async () => {
     if (!user) {
@@ -137,6 +157,16 @@ export default function CarritoPage() {
       // Validar que el carrito no esté vacío
       if (items.length === 0) {
         alert('Tu carrito está vacío. Agrega algunos productos antes de proceder al pago.')
+        return
+      }
+
+      // Validar dirección y zona de entrega
+      if (!pickupInStore && !deliveryAddress.trim()) {
+        alert('Por favor ingresa la dirección de entrega y detalles antes de confirmar el pedido.')
+        return
+      }
+      if (!pickupInStore && !deliveryZone) {
+        alert('Por favor selecciona la ciudad/zona de entrega para calcular el envío.')
         return
       }
 
@@ -184,8 +214,12 @@ export default function CarritoPage() {
           tamano_index: item.selectedSizeIndex || 0
         }))
 
-        // Calcular el total del pedido
-        const totalAmount = getTotalPrice()
+        // Calcular envío y total del pedido (según reglas)
+        const cartSubtotal = getTotalPrice()
+        const currentShipping = pickupInStore ? 0 : (deliveryZone === 'bucaramanga_am'
+          ? (cartSubtotal < 100000 ? 4000 : 0)
+          : (deliveryZone === 'piedecuesta' ? (cartSubtotal < 150000 ? 8000 : 0) : 0))
+        const totalAmount = cartSubtotal + currentShipping
 
         // Crear el pedido en la tabla pedidos
         const { data: orderResult, error: orderError } = await supabase
@@ -195,7 +229,8 @@ export default function CarritoPage() {
               usuario_id: userData.id,
               fecha: new Date().toISOString(),
               total: totalAmount,
-              estado: 'pendiente'
+              estado: 'pendiente',
+              Direccion: pickupInStore ? 'Recoger en tienda' : `${deliveryAddress} | Zona: ${deliveryZone === 'bucaramanga_am' ? 'Bucaramanga / Área Metropolitana' : 'Piedecuesta'}`
             }
           ])
           .select()
@@ -242,6 +277,7 @@ export default function CarritoPage() {
               orderId: orderResult.id,
               orderDate: orderResult.fecha,
               totalAmount: totalAmount,
+              address: pickupInStore ? 'Recoger en tienda' : `${deliveryAddress} | Zona: ${deliveryZone === 'bucaramanga_am' ? 'Bucaramanga / Área Metropolitana' : 'Piedecuesta'}`,
               items: items,
               orderStatus: orderResult.estado
             })
@@ -264,6 +300,7 @@ export default function CarritoPage() {
 📦 Número de pedido: ${orderResult.id}
 📊 Estado: ${orderResult.estado}
 💰 Total: $${totalAmount.toLocaleString('es-CO')}
+🚚 Envío: $${currentShipping.toLocaleString('es-CO')}
 ⏰ Fecha: ${new Date(orderResult.fecha).toLocaleDateString('es-CO')}
 📧 Te hemos enviado un correo de confirmación a ${user.email}
 
@@ -941,6 +978,55 @@ Te notificaremos cuando tu pedido sea procesado.`)
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">Resumen del Pedido</h2>
 
+                    {/* Opción de recoger en tienda, zona y dirección */}
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="pickupInStore"
+                          type="checkbox"
+                          checked={pickupInStore}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            setPickupInStore(checked)
+                            if (checked) {
+                              setDeliveryZone('' as any)
+                              setDeliveryAddress('')
+                            }
+                          }}
+                          className="h-4 w-4 text-[#196428] border-gray-300 rounded"
+                        />
+                        <label htmlFor="pickupInStore" className="text-sm font-medium text-gray-800">Recoger en tienda</label>
+                      </div>
+
+                      {!pickupInStore && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad/Zona de entrega</label>
+                            <select
+                              value={deliveryZone}
+                              onChange={(e) => setDeliveryZone(e.target.value as any)}
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm"
+                            >
+                              <option value="">Selecciona una opción</option>
+                              <option value="bucaramanga_am">Bucaramanga / Área Metropolitana</option>
+                              <option value="piedecuesta">Piedecuesta</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de entrega y detalles</label>
+                            <textarea
+                              value={deliveryAddress}
+                              onChange={(e) => setDeliveryAddress(e.target.value)}
+                              rows={3}
+                              placeholder="Ej: Calle 10 # 20-30, Apto 401, Barrio XXX, Referencia: Portería azul"
+                              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+
                     <div className="space-y-3 mb-6">
                       <div className="flex justify-between text-gray-600">
                         <span>Subtotal ({getTotalItems()} productos)</span>
@@ -949,7 +1035,9 @@ Te notificaremos cuando tu pedido sea procesado.`)
 
                       <div className="flex justify-between text-gray-600">
                         <span>Envío</span>
-                        <span className="text-green-600 font-medium">Gratis</span>
+                        <span className={shippingFee > 0 ? 'text-gray-800 font-medium' : 'text-green-600 font-medium'}>
+                          {shippingFee > 0 ? `$ ${formatPrice(shippingFee)}` : 'Gratis'}
+                        </span>
                       </div>
 
                       <div className="flex justify-between text-gray-600">
@@ -960,7 +1048,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
                       <div className="border-t border-gray-200 pt-3">
                         <div className="flex justify-between text-lg font-bold text-gray-900">
                           <span>Total</span>
-                          <span className="text-[#196428]">$ {formatPrice(getTotalPrice())}</span>
+                          <span className="text-[#196428]">$ {formatPrice(getTotalPrice() + shippingFee)}</span>
                         </div>
                       </div>
                     </div>
