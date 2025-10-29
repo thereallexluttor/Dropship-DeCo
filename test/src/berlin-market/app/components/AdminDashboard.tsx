@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from "next/image";
 import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto, ProductoStock, UI, SobreNosotros, Tienda } from '@/lib/supabase';
 import { Trabajo, Aplicacion, actualizarEstadoAplicacion, crearTrabajo, editarTrabajo, obtenerTrabajos } from '@/lib/vacantes';
 
@@ -2454,11 +2455,15 @@ const AdminDashboard = () => {
                       {newCategoria.imagen_marca1 && (
                         <div className="mt-2">
                           <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                          <img
-                            src={newCategoria.imagen_marca1}
-                            alt="Marca 1 Preview"
-                            className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                          />
+                          <div className="relative w-20 h-20">
+                            <Image
+                              src={newCategoria.imagen_marca1}
+                              alt="Marca 1 Preview"
+                              fill
+                              className="object-cover rounded-lg border border-gray-300"
+                              sizes="80px"
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => setNewCategoria({ ...newCategoria, imagen_marca1: '' })}
@@ -2490,11 +2495,15 @@ const AdminDashboard = () => {
                       {newCategoria.imagen_marca2 && (
                         <div className="mt-2">
                           <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                          <img
-                            src={newCategoria.imagen_marca2}
-                            alt="Marca 2 Preview"
-                            className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                          />
+                          <div className="relative w-20 h-20">
+                            <Image
+                              src={newCategoria.imagen_marca2}
+                              alt="Marca 2 Preview"
+                              fill
+                              className="object-cover rounded-lg border border-gray-300"
+                              sizes="80px"
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => setNewCategoria({ ...newCategoria, imagen_marca2: '' })}
@@ -2526,11 +2535,15 @@ const AdminDashboard = () => {
                       {newCategoria.imagen_marca3 && (
                         <div className="mt-2">
                           <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                          <img
-                            src={newCategoria.imagen_marca3}
-                            alt="Marca 3 Preview"
-                            className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                          />
+                          <div className="relative w-20 h-20">
+                            <Image
+                              src={newCategoria.imagen_marca3}
+                              alt="Marca 3 Preview"
+                              fill
+                              className="object-cover rounded-lg border border-gray-300"
+                              sizes="80px"
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => setNewCategoria({ ...newCategoria, imagen_marca3: '' })}
@@ -2564,11 +2577,15 @@ const AdminDashboard = () => {
                     {newCategoria.categoria_imagen && (
                       <div className="mt-2">
                         <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                        <img
-                          src={newCategoria.categoria_imagen}
-                          alt="Categoría Preview"
-                          className="w-32 h-32 object-cover rounded-lg border border-gray-300"
-                        />
+                        <div className="relative w-32 h-32">
+                          <Image
+                            src={newCategoria.categoria_imagen}
+                            alt="Categoría Preview"
+                            fill
+                            className="object-cover rounded-lg border border-gray-300"
+                            sizes="128px"
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={() => setNewCategoria({ ...newCategoria, categoria_imagen: '' })}
@@ -2643,11 +2660,15 @@ const AdminDashboard = () => {
                                   {editingCategoria?.imagen_marca1 && (
                                     <div className="mt-2">
                                       <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
-                                      <img
-                                        src={editingCategoria.imagen_marca1}
-                                        alt="Marca 1 Preview"
-                                        className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                                      />
+                                      <div className="relative w-20 h-20">
+                                        <Image
+                                          src={editingCategoria.imagen_marca1}
+                                          alt="Marca 1 Preview"
+                                          fill
+                                          className="object-cover rounded-lg border border-gray-300"
+                                          sizes="80px"
+                                        />
+                                      </div>
                                       <button
                                         type="button"
                                         onClick={() => editingCategoria && setEditingCategoria({ ...editingCategoria, imagen_marca1: '' })}
@@ -2679,11 +2700,15 @@ const AdminDashboard = () => {
                                   {editingCategoria?.imagen_marca2 && (
                                     <div className="mt-2">
                                       <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
-                                      <img
-                                        src={editingCategoria.imagen_marca2}
-                                        alt="Marca 2 Preview"
-                                        className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                                      />
+                                      <div className="relative w-20 h-20">
+                                        <Image
+                                          src={editingCategoria.imagen_marca2}
+                                          alt="Marca 2 Preview"
+                                          fill
+                                          className="object-cover rounded-lg border border-gray-300"
+                                          sizes="80px"
+                                        />
+                                      </div>
                                       <button
                                         type="button"
                                         onClick={() => editingCategoria && setEditingCategoria({ ...editingCategoria, imagen_marca2: '' })}
@@ -2715,11 +2740,15 @@ const AdminDashboard = () => {
                                   {editingCategoria?.imagen_marca3 && (
                                     <div className="mt-2">
                                       <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
-                                      <img
-                                        src={editingCategoria.imagen_marca3}
-                                        alt="Marca 3 Preview"
-                                        className="w-20 h-20 object-cover rounded-lg border border-gray-300"
-                                      />
+                                      <div className="relative w-20 h-20">
+                                        <Image
+                                          src={editingCategoria.imagen_marca3}
+                                          alt="Marca 3 Preview"
+                                          fill
+                                          className="object-cover rounded-lg border border-gray-300"
+                                          sizes="80px"
+                                        />
+                                      </div>
                                       <button
                                         type="button"
                                         onClick={() => editingCategoria && setEditingCategoria({ ...editingCategoria, imagen_marca3: '' })}
@@ -2753,11 +2782,15 @@ const AdminDashboard = () => {
                                 {editingCategoria?.categoria_imagen && (
                                   <div className="mt-2">
                                     <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
-                                    <img
-                                      src={editingCategoria.categoria_imagen}
-                                      alt="Categoría Preview"
-                                      className="w-32 h-32 object-cover rounded-lg border border-gray-300"
-                                    />
+                                    <div className="relative w-32 h-32">
+                                      <Image
+                                        src={editingCategoria.categoria_imagen}
+                                        alt="Categoría Preview"
+                                        fill
+                                        className="object-cover rounded-lg border border-gray-300"
+                                        sizes="128px"
+                                      />
+                                    </div>
                                     <button
                                       type="button"
                                       onClick={() => editingCategoria && setEditingCategoria({ ...editingCategoria, categoria_imagen: '' })}
@@ -3148,11 +3181,15 @@ const AdminDashboard = () => {
                       {newProducto.imagen_url && (
                         <div className="mt-2">
                           <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                          <img
-                            src={newProducto.imagen_url}
-                            alt="Preview"
-                            className="w-32 h-32 object-cover rounded-lg border border-gray-300"
-                          />
+                          <div className="relative w-32 h-32">
+                            <Image
+                              src={newProducto.imagen_url}
+                              alt="Preview"
+                              fill
+                              className="object-cover rounded-lg border border-gray-300"
+                              sizes="128px"
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => setNewProducto({ ...newProducto, imagen_url: '' })}
@@ -3437,11 +3474,15 @@ const AdminDashboard = () => {
                                     {editingProducto?.imagen_url && (
                                       <div className="mt-2">
                                         <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
-                                        <img
-                                          src={editingProducto.imagen_url}
-                                          alt="Preview"
-                                          className="w-32 h-32 object-cover rounded-lg border border-gray-300"
-                                        />
+                                        <div className="relative w-32 h-32">
+                                          <Image
+                                            src={editingProducto.imagen_url}
+                                            alt="Preview"
+                                            fill
+                                            className="object-cover rounded-lg border border-gray-300"
+                                            sizes="128px"
+                                          />
+                                        </div>
                                         <button
                                           type="button"
                                           onClick={() => editingProducto && setEditingProducto({ ...editingProducto, imagen_url: '' })}
@@ -3601,11 +3642,15 @@ const AdminDashboard = () => {
                                 </div>
                                 <div className="flex items-start gap-4">
                                   {producto.imagen_url && (
-                                    <img 
-                                      src={producto.imagen_url} 
-                                      alt={producto.nombre}
-                                      className="w-24 h-24 object-cover rounded-lg"
-                                    />
+                                    <div className="relative w-24 h-24">
+                                      <Image 
+                                        src={producto.imagen_url} 
+                                        alt={producto.nombre}
+                                        fill
+                                        className="object-cover rounded-lg"
+                                        sizes="96px"
+                                      />
+                                    </div>
                                   )}
                                   <div>
                                     <h3 className="font-semibold text-lg text-gray-900 mb-1">
@@ -3858,7 +3903,9 @@ const AdminDashboard = () => {
                         {url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? (
                           <video src={url} className="w-full h-32 object-cover rounded-lg" controls />
                         ) : (
-                          <img src={url} alt={`Banner ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                          <div className="relative w-full h-32">
+                            <Image src={url} alt={`Banner ${index + 1}`} fill className="object-cover rounded-lg" sizes="(max-width: 768px) 100vw, 33vw" />
+                          </div>
                         )}
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                           <Button
@@ -3943,7 +3990,9 @@ const AdminDashboard = () => {
                         {url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? (
                           <video src={url} className="w-full h-32 object-cover rounded-lg" controls />
                         ) : (
-                          <img src={url} alt={`Hidden Banner ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                          <div className="relative w-full h-32">
+                            <Image src={url} alt={`Hidden Banner ${index + 1}`} fill className="object-cover rounded-lg" sizes="(max-width: 768px) 100vw, 33vw" />
+                          </div>
                         )}
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                           <Button
@@ -4029,7 +4078,9 @@ const AdminDashboard = () => {
                        (editingUI ? editingUI.popup : newUI.popup)?.includes('.mov') ? (
                         <video src={editingUI ? editingUI.popup! : newUI.popup!} className="w-full h-48 object-cover rounded-lg" controls />
                       ) : (
-                        <img src={editingUI ? editingUI.popup! : newUI.popup!} alt="Popup" className="w-full h-48 object-cover rounded-lg" />
+                        <div className="relative w-full h-48">
+                          <Image src={editingUI ? editingUI.popup! : newUI.popup!} alt="Popup" fill className="object-cover rounded-lg" sizes="(max-width: 768px) 100vw, 400px" />
+                        </div>
                       )}
                       <Button
                         type="button"
@@ -4140,7 +4191,9 @@ const AdminDashboard = () => {
                                       {url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? (
                                         <video src={url} className="w-full h-20 object-cover rounded" />
                                       ) : (
-                                        <img src={url} alt={`Banner ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                                        <div className="relative w-full h-20">
+                                          <Image src={url} alt={`Banner ${index + 1}`} fill className="object-cover rounded" sizes="(max-width: 768px) 100vw, 25vw" />
+                                        </div>
                                       )}
                                     </div>
                                   ))}
@@ -4158,7 +4211,9 @@ const AdminDashboard = () => {
                                       {url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? (
                                         <video src={url} className="w-full h-20 object-cover rounded" />
                                       ) : (
-                                        <img src={url} alt={`Hidden Banner ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                                        <div className="relative w-full h-20">
+                                          <Image src={url} alt={`Hidden Banner ${index + 1}`} fill className="object-cover rounded" sizes="(max-width: 768px) 100vw, 25vw" />
+                                        </div>
                                       )}
                                     </div>
                                   ))}
@@ -4174,7 +4229,9 @@ const AdminDashboard = () => {
                                   {ui.popup.includes('.mp4') || ui.popup.includes('.webm') || ui.popup.includes('.mov') ? (
                                     <video src={ui.popup} className="w-full h-32 object-cover rounded" controls />
                                   ) : (
-                                    <img src={ui.popup} alt="Popup" className="w-full h-32 object-cover rounded" />
+                                    <div className="relative w-full h-32">
+                                      <Image src={ui.popup} alt="Popup" fill className="object-cover rounded" sizes="(max-width: 768px) 100vw, 320px" />
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -4862,11 +4919,15 @@ const AdminDashboard = () => {
                       {newAliado.imagen_url && (
                         <div className="mt-2">
                           <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                          <img
-                            src={newAliado.imagen_url}
-                            alt="Aliado Preview"
-                            className="w-32 h-20 object-contain rounded-lg border border-gray-300"
-                          />
+                          <div className="relative w-32 h-20">
+                            <Image
+                              src={newAliado.imagen_url}
+                              alt="Aliado Preview"
+                              fill
+                              className="object-contain rounded-lg border border-gray-300"
+                              sizes="128px"
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => setNewAliado({ ...newAliado, imagen_url: '' })}
@@ -4932,11 +4993,15 @@ const AdminDashboard = () => {
                               {editingAliado?.imagen_url && (
                                 <div className="mt-2">
                                   <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
-                                  <img
-                                    src={editingAliado.imagen_url}
-                                    alt="Aliado Preview"
-                                    className="w-32 h-20 object-contain rounded-lg border border-gray-300"
-                                  />
+                                  <div className="relative w-32 h-20">
+                                    <Image
+                                      src={editingAliado.imagen_url}
+                                      alt="Aliado Preview"
+                                      fill
+                                      className="object-contain rounded-lg border border-gray-300"
+                                      sizes="128px"
+                                    />
+                                  </div>
                                   <button
                                     type="button"
                                     onClick={() => editingAliado && setEditingAliado({ ...editingAliado, imagen_url: '' })}
@@ -4972,11 +5037,15 @@ const AdminDashboard = () => {
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <img
-                                  src={aliado.imagen_url}
-                                  alt={aliado.nombre}
-                                  className="w-16 h-10 object-contain rounded-lg border border-gray-300"
-                                />
+                                <div className="relative w-16 h-10">
+                                  <Image
+                                    src={aliado.imagen_url}
+                                    alt={aliado.nombre}
+                                    fill
+                                    className="object-contain rounded-lg border border-gray-300"
+                                    sizes="64px"
+                                  />
+                                </div>
                                 <div>
                                   <h3 className="font-semibold text-lg text-gray-900">
                                     {aliado.nombre}
@@ -5529,11 +5598,15 @@ const AdminDashboard = () => {
                               </div>
                               
                               {producto.imagen_producto && (
-                                <img
-                                  src={producto.imagen_producto}
-                                  alt={producto.nombre_producto}
-                                  className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                                />
+                                <div className="relative w-16 h-16">
+                                  <Image
+                                    src={producto.imagen_producto}
+                                    alt={producto.nombre_producto}
+                                    fill
+                                    className="object-cover rounded-lg border border-gray-200"
+                                    sizes="64px"
+                                  />
+                                </div>
                               )}
                               
                               <div className="flex-1">

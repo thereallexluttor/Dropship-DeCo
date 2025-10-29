@@ -1052,11 +1052,15 @@ export default function Home() {
                           className="absolute inset-0 w-full h-full object-cover rounded-lg"
                         />
                       ) : (
-                        <img
-                          src={slide.url}
-                          alt={slide.alt}
-                          className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                        />
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={slide.url}
+                            alt={slide.alt}
+                            fill
+                            className="object-cover rounded-lg"
+                            sizes="100vw"
+                          />
+                        </div>
                       )}
                       <div className="absolute inset-0 flex items-center">
                         <div className="container mx-auto px-2 xs:px-3 sm:px-4">
@@ -1320,11 +1324,15 @@ export default function Home() {
                             className="absolute inset-0 w-full h-full object-cover rounded-lg"
                           />
                         ) : (
-                          <img
-                            src={slide.url}
-                            alt={slide.alt}
-                            className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                          />
+                          <div className="relative w-full h-full">
+                            <Image
+                              src={slide.url}
+                              alt={slide.alt}
+                              fill
+                              className="object-cover rounded-lg"
+                              sizes="100vw"
+                            />
+                          </div>
                         )}
                       </div>
                     ))}
@@ -1681,11 +1689,16 @@ export default function Home() {
                 </button>
               </div>
             ) : (
-              <img
-                src={uiElements[0].popup}
-                alt="Popup"
-                className="w-full h-auto rounded-lg"
-              />
+              <div className="relative w-full">
+                <Image
+                  src={uiElements[0].popup}
+                  alt="Popup"
+                  width={400}
+                  height={600}
+                  className="w-full h-auto rounded-lg"
+                  sizes="(max-width: 768px) 100vw, 400px"
+                />
+              </div>
             )}
           </div>
         </div>

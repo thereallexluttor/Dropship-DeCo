@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import Image from "next/image"
 import { ShoppingCart, Check, AlertTriangle, X } from 'lucide-react'
 import { Producto } from '@/lib/supabase'
 import { NotificationType, NOTIFICATION_TYPES } from '@/app/contexts/CartNotificationContext'
@@ -112,7 +113,7 @@ export default function CartNotification({ product, quantity, onClose, isVisible
       // Si se monta con isVisible=true pero no está animando, comenzar la animación
       setIsAnimating(true)
     }
-  }, [])
+  }, [isVisible, shouldRender, isAnimating])
 
   if (!shouldRender) return null
 
@@ -141,10 +142,12 @@ export default function CartNotification({ product, quantity, onClose, isVisible
           <div className="flex-shrink-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg overflow-hidden relative">
               {product.imagen_url ? (
-                <img
+                <Image
                   src={product.imagen_url}
                   alt={product.nombre}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="48px"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-200">

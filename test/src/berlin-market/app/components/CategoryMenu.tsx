@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { useScrollBehavior } from '../hooks/useScrollBehavior'
@@ -200,7 +201,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                       >
                         <div className="flex items-center justify-between p-4 md:p-6">
                           <div className="flex items-center space-x-4">
-                            <img src={promo.icon} alt="" className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
+                            <Image src={promo.icon} alt="" width={32} height={32} className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
                             <div>
                               <h4 className="text-[11px] sm:text-xs lg:text-sm font-medium text-gray-900 group-hover:text-[#196428] transition-colors duration-300">
                                 {promo.type === 'offer' ? 'Ofertas' : 'Novedades'}
@@ -239,11 +240,15 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                         href={brand.href}
                         className="group flex items-center justify-center aspect-[4/3] rounded-lg bg-white p-4 transition-all duration-300 hover:shadow-md border border-gray-100"
                       >
-                        <img 
-                          src={brand.logo} 
-                          alt={brand.name} 
-                          className="max-h-8 md:max-h-10 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300" 
-                        />
+                        <div className="relative w-full h-full">
+                          <Image 
+                            src={brand.logo} 
+                            alt={brand.name} 
+                            fill
+                            className="object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300" 
+                            sizes="(max-width: 768px) 33vw, 20vw"
+                          />
+                        </div>
                       </Link>
                     ))}
                   </div>
@@ -255,11 +260,15 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
             <div className="w-full md:w-1/5 min-h-[200px] md:min-h-[380px] flex items-stretch overflow-hidden md:rounded-r-lg">
               {category.bannerImage && (
                 <Link href={category.bannerImage.href} className="block w-full">
-                  <img
-                    src={category.bannerImage.src}
-                    alt={category.bannerImage.alt}
-                    className="w-full h-full min-h-[200px] md:min-h-[380px] object-cover object-center"
-                  />
+                  <div className="relative w-full h-full min-h-[200px] md:min-h-[380px]">
+                    <Image
+                      src={category.bannerImage.src}
+                      alt={category.bannerImage.alt}
+                      fill
+                      className="object-cover object-center"
+                      sizes="(max-width: 768px) 100vw, 20vw"
+                    />
+                  </div>
                 </Link>
               )}
             </div>
