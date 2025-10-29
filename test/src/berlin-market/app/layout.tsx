@@ -29,8 +29,9 @@ export const metadata: Metadata = {
   category: 'commerce',
   alternates: { canonical: '/' },
   icons: {
-    icon: '/unisantander.png',
-    apple: '/unisantander.png',
+    icon: '/img/icon.png',
+    shortcut: '/img/icon.png',
+    apple: '/img/icon.png',
   },
   openGraph: {
     type: 'website',
