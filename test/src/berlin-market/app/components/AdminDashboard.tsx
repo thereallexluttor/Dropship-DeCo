@@ -3222,6 +3222,7 @@ const AdminDashboard = () => {
                               <option value="Tabletas">Tabletas</option>
                               <option value="Comprimidos">Comprimidos</option>
                               <option value="Sachet">Sachet</option>
+                              <option value="Blister">Blister</option>
                             </select>
                           </div>
                           <div className="flex-1">
@@ -3509,6 +3510,7 @@ const AdminDashboard = () => {
                                               <option value="Tabletas">Tabletas</option>
                                               <option value="Comprimidos">Comprimidos</option>
                                               <option value="Sachet">Sachet</option>
+                                              <option value="Blister">Blister</option>
                                             </select>
                                           </div>
                                           <div className="flex-1">
