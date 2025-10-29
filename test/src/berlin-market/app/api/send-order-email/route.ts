@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
               </div>
 
               <div style="margin-bottom: 15px;">
-                <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.6;"><strong>3. Envíanos por WhatsApp</strong> la captura del comprobante junto con el <strong style="color: #196428; font-size: 16px;">#${orderId}</strong> a nuestro número: <strong style="font-size: 16px;">3152255019</strong></p>
+                <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.6;"><strong>3. Envíanos por WhatsApp</strong> la captura del comprobante junto con el <strong style="color: #196428; font-size: 16px;">#${orderId}</strong> a nuestro número: <strong style="font-size: 16px;">3112777907</strong></p>
               </div>
             </div>
 
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
               <a href="mailto:sistemas@unisander.com" style="color: #196428; text-decoration: none; font-weight: 600;">sistemas@unisander.com</a>
             </p>
             <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 12px;">
-              WhatsApp: <a href="https://wa.me/3152255019" style="color: #196428; text-decoration: none; font-weight: 600;">3152255019</a>
+              WhatsApp: <a href="https://wa.me/3112777907" style="color: #196428; text-decoration: none; font-weight: 600;">3112777907</a>
             </p>
           </div>
 
@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
     // Enviar copia para registro interno
     const internalEmailData = await resend.emails.send({
       from: 'noreply@unisantander.co',
-      to: 'hedinyer.perucho@gmail.com',
+      to: 'distribuidora@unisander.com',
       subject: `📋 Registro - Pedido #${orderId} - ${userName || 'Cliente'} - $${totalAmount.toLocaleString('es-CO')}`,
       html: htmlContent,
       attachments: attachments
