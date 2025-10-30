@@ -241,10 +241,21 @@ export async function POST(request: NextRequest) {
       html: htmlContent
     })
 
+    // Enviar copia para registro interno
+    const internalEmail = await resend.emails.send({
+      from: 'noreply@unisantander.co',
+      to: 'distribuidora@unisander.com',
+      subject: subject,
+      html: htmlContent
+    })
+
     return NextResponse.json({
       success: true,
       message: 'Correo de seguimiento enviado exitosamente',
-      data: data
+      data: {
+        customerEmail: data,
+        internalEmail: internalEmail
+      }
     })
 
   } catch (error) {

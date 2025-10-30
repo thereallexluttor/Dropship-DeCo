@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
     // Enviar copia para registro interno
     const internalEmailData = await resend.emails.send({
       from: 'noreply@unisantander.co',
-      to: 'distribuidora@unisander.com',
+      to: 'distribuidora@unisander.com', //'distribuidora@unisander.com',
       subject: `📋 Registro - Pedido #${orderId} - ${userName || 'Cliente'} - $${totalAmount.toLocaleString('es-CO')}`,
       html: htmlContent,
       attachments: attachments
