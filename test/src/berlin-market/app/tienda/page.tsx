@@ -1667,6 +1667,9 @@ function TiendaPageContent() {
                                 fill
                                 quality={60}
                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                placeholder="blur"
+                                blurDataURL={'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNlZWVlZWUiIC8+PC9zdmc+'}
+                                loading="lazy"
                                 className="object-contain p-3 sm:p-4"
                               />
                             </Link>

@@ -66,7 +66,19 @@ export const useProducts = () => {
       const { data, error } = await supabase
         .from('productos')
         .select(`
-          *,
+          id,
+          subcategorias_id,
+          nombre,
+          descripcion,
+          imagen_url,
+          descuento,
+          descuento_valor,
+          destacado,
+          novedad,
+          id_marca,
+          stocks,
+          precios,
+          tamano,
           subcategorias:subcategorias_id (
             id,
             nombre,
@@ -120,7 +132,19 @@ export const useProducts = () => {
           supabase
             .from('productos')
             .select(`
-              *,
+              id,
+              subcategorias_id,
+              nombre,
+              descripcion,
+              imagen_url,
+              descuento,
+              descuento_valor,
+              destacado,
+              novedad,
+              id_marca,
+              stocks,
+              precios,
+              tamano,
               subcategorias:subcategorias_id (
                 id,
                 nombre,
@@ -136,17 +160,17 @@ export const useProducts = () => {
 
           supabase
             .from('categories')
-            .select('*')
+            .select('id,nombre')
             .order('id', { ascending: true }),
 
           supabase
             .from('marcas')
-            .select('*')
+            .select('id,nombre_marca')
             .order('nombre_marca'),
 
           supabase
             .from('subcategories')
-            .select('*')
+            .select('id,categories_id,nombre,descripcion')
             .order('categories_id')
             .order('id')
         ])
@@ -270,7 +294,19 @@ export const useProducts = () => {
       const { data, error } = await supabase
         .from('productos')
         .select(`
-          *,
+          id,
+          subcategorias_id,
+          nombre,
+          descripcion,
+          imagen_url,
+          descuento,
+          descuento_valor,
+          destacado,
+          novedad,
+          id_marca,
+          stocks,
+          precios,
+          tamano,
           subcategorias:subcategorias_id (
             id,
             nombre,

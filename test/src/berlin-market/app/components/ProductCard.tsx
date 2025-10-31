@@ -17,6 +17,8 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const tinyBlurDataURL =
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNlZWVlZWUiIC8+PC9zdmc+'
   
   return (
     <div 
@@ -47,6 +49,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             fill
             className="object-cover"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            placeholder="blur"
+            blurDataURL={tinyBlurDataURL}
+            loading="lazy"
+            quality={70}
           />
         </div>
 
