@@ -65,6 +65,23 @@ import AccountPopover from "./components/AccountPopover"
 import AccountPopoverContent from "./components/AccountPopoverContent"
 import SearchAutocomplete from "./components/SearchAutocomplete"
 
+// Helper to leverage Supabase Image Transformations for faster, cheaper delivery
+function optimizeSupabaseImage(url: string, width: number, quality: number = 60, format: string = 'webp') {
+  try {
+    const base = typeof window === 'undefined' ? 'http://localhost' : window.location.origin
+    const parsed = new URL(url, base)
+    if (parsed.hostname.includes('supabase.co')) {
+      parsed.searchParams.set('width', String(width))
+      parsed.searchParams.set('quality', String(quality))
+      parsed.searchParams.set('format', format)
+      return parsed.toString()
+    }
+    return url
+  } catch {
+    return url
+  }
+}
+
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [activeHiddenSlide, setActiveHiddenSlide] = useState(0)
@@ -1049,6 +1066,7 @@ export default function Home() {
                           muted
                           loop
                           playsInline
+                          preload="metadata"
                           className="absolute inset-0 w-full h-full object-cover rounded-lg"
                         />
                       ) : (
@@ -1059,6 +1077,7 @@ export default function Home() {
                             fill
                             className="object-cover rounded-lg"
                             sizes="100vw"
+                            priority={index === 0}
                           />
                         </div>
                       )}
@@ -1127,7 +1146,7 @@ export default function Home() {
                       <div className="bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
                         <div className="relative aspect-square">
                           <Image
-                            src={producto.imagen_url || '/placeholder.jpg'}
+                            src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 600, 60) : '/placeholder.jpg'}
                             alt={producto.nombre}
                             fill
                             className="object-contain p-1.5 sm:p-2 md:p-3"
@@ -1321,6 +1340,7 @@ export default function Home() {
                             muted
                             loop
                             playsInline
+                            preload="metadata"
                             className="absolute inset-0 w-full h-full object-cover rounded-lg"
                           />
                         ) : (
@@ -1369,7 +1389,7 @@ export default function Home() {
                       <div className="bg-white rounded-[15px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
                         <div className="relative aspect-square">
                           <Image
-                            src={producto.imagen_url || '/placeholder.jpg'}
+                            src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 400, 60) : '/placeholder.jpg'}
                             alt={producto.nombre}
                             fill
                             className="object-contain p-1.5"
@@ -1485,7 +1505,7 @@ export default function Home() {
                               <div className="relative aspect-square">
                                 <Link href={`/producto/${producto.id}`} className="block">
                                   <Image
-                                    src={producto.imagen_url || '/placeholder.jpg'}
+                                    src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 600, 60) : '/placeholder.jpg'}
                                     alt={producto.nombre}
                                     fill
                                     className="object-contain p-2 md:p-3"
@@ -1600,7 +1620,7 @@ export default function Home() {
                             <div key={brandIndex} className="w-full sm:w-24 md:w-32 lg:w-40">
                               <div className="relative aspect-[2/1]">
                                 <Image
-                                  src={brand.src}
+                                  src={optimizeSupabaseImage(brand.src, 400, 60)}
                                   alt={brand.alt}
                                   fill
                                   className="object-contain"
@@ -1679,6 +1699,7 @@ export default function Home() {
                   muted={popupMuted}
                   loop
                   playsInline
+                  preload="metadata"
                   className="w-full h-auto rounded-lg"
                 />
                 <button
@@ -1691,7 +1712,7 @@ export default function Home() {
             ) : (
               <div className="relative w-full">
                 <Image
-                  src={uiElements[0].popup}
+                  src={optimizeSupabaseImage(uiElements[0].popup, 800, 60)}
                   alt="Popup"
                   width={400}
                   height={600}
