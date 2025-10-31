@@ -1659,29 +1659,53 @@ const AdminDashboard = () => {
     });
   };
 
-  // Función para subir imagen a Supabase Storage
+  // Función para sanear segmentos de ruta de archivo
+  function sanitizePathSegment(input: string) {
+    return (input || 'producto')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 80);
+  }
+
+  // Función para subir imagen a Supabase Storage (robusta)
   const uploadImageToStorage = async (file: File, productName: string): Promise<string> => {
     try {
-      // Crear nombre único para el archivo
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${productName.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}.${fileExt}`;
-      const filePath = `productos/${fileName}`;
+      const safeBase = sanitizePathSegment(productName || 'producto');
+      const originalExt = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : '';
+      const mimeExt = (file.type || '').split('/').pop() || '';
+      const ext = sanitizePathSegment(originalExt || mimeExt || 'jpg') || 'jpg';
+      const unique = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      let filePath = `productos/${safeBase}_${unique}.${ext}`;
 
-      // Subir archivo al bucket 'images'
-      const { data, error } = await supabase.storage
+      const { error: upErr } = await supabase.storage
         .from('images')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          contentType: file.type || `image/${ext}`,
+          upsert: false,
+        });
 
-      if (error) {
-        console.error('Error subiendo imagen:', error);
-        throw error;
+      if (upErr) {
+        console.error('Upload error:', upErr, { filePath, contentType: file.type, size: file.size });
+        // Reintentar con otro nombre en caso de colisión u otro caso transitorio
+        const unique2 = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+        filePath = `productos/${safeBase}_${unique2}.${ext}`;
+        const { error: retryErr } = await supabase.storage
+          .from('images')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            contentType: file.type || `image/${ext}`,
+            upsert: false,
+          });
+        if (retryErr) throw retryErr;
       }
 
-      // Obtener URL pública de la imagen
       const { data: { publicUrl } } = supabase.storage
         .from('images')
         .getPublicUrl(filePath);
-
       return publicUrl;
     } catch (error) {
       console.error('Error en upload de imagen:', error);
@@ -1692,49 +1716,58 @@ const AdminDashboard = () => {
   // Función para manejar selección de archivo
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>, productName: string) => {
     setImageUploading(true);
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) { setImageUploading(false); return null; }
 
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido');
-      return;
+    const mime = (file.type || '').toLowerCase();
+    if (!mime.startsWith('image/') || mime.includes('heic') || mime.includes('heif')) {
+      alert('Por favor selecciona una imagen válida (JPG/PNG/WebP). HEIC/HEIF no soportado.');
+      setImageUploading(false);
+      input.value = '';
+      return null;
     }
 
-    // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('La imagen debe ser menor a 5MB');
-      return;
+      setImageUploading(false);
+      input.value = '';
+      return null;
     }
 
     try {
       const imageUrl = await uploadImageToStorage(file, productName);
       return imageUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error subiendo imagen:', error);
-      alert('Error al subir la imagen. Inténtalo de nuevo.');
+      alert(`Error al subir la imagen: ${error?.message || 'Desconocido'}`);
       return null;
     } finally {
       setImageUploading(false);
+      input.value = '';
     }
   };
 
   // Función para manejar selección de archivo de marca
   const handleFileSelectMarca = async (event: React.ChangeEvent<HTMLInputElement>, marcaType: string) => {
     setImageUploading(true);
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) { setImageUploading(false); return null; }
 
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido');
-      return;
+    const mime = (file.type || '').toLowerCase();
+    if (!mime.startsWith('image/') || mime.includes('heic') || mime.includes('heif')) {
+      alert('Por favor selecciona una imagen válida (JPG/PNG/WebP). HEIC/HEIF no soportado.');
+      setImageUploading(false);
+      input.value = '';
+      return null;
     }
 
-    // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('La imagen debe ser menor a 5MB');
-      return;
+      setImageUploading(false);
+      input.value = '';
+      return null;
     }
 
     try {
@@ -1746,25 +1779,30 @@ const AdminDashboard = () => {
       return null;
     } finally {
       setImageUploading(false);
+      input.value = '';
     }
   };
 
   // Función para manejar selección de archivo de categoría
   const handleFileSelectCategoria = async (event: React.ChangeEvent<HTMLInputElement>) => {
     setImageUploading(true);
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const input = event.target;
+    const file = input.files?.[0];
+    if (!file) { setImageUploading(false); return null; }
 
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido');
-      return;
+    const mime = (file.type || '').toLowerCase();
+    if (!mime.startsWith('image/') || mime.includes('heic') || mime.includes('heif')) {
+      alert('Por favor selecciona una imagen válida (JPG/PNG/WebP). HEIC/HEIF no soportado.');
+      setImageUploading(false);
+      input.value = '';
+      return null;
     }
 
-    // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('La imagen debe ser menor a 5MB');
-      return;
+      setImageUploading(false);
+      input.value = '';
+      return null;
     }
 
     try {
@@ -1776,6 +1814,7 @@ const AdminDashboard = () => {
       return null;
     } finally {
       setImageUploading(false);
+      input.value = '';
     }
   };
 
@@ -2357,40 +2396,40 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 max-w-6xl mx-auto rounded-full border border-green-200 bg-green-50 shadow-sm">
-          <TabsTrigger value="categorias" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+        <TabsList className="grid w-full grid-cols-9 items-center max-w-6xl mx-auto rounded-full border border-green-200 bg-green-50 shadow-sm">
+          <TabsTrigger value="categorias" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             Categorías
           </TabsTrigger>
-          <TabsTrigger value="subcategorias" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="subcategorias" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
            
             Subcategorías
           </TabsTrigger>
-          <TabsTrigger value="productos" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="productos" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             Productos
           </TabsTrigger>
-          <TabsTrigger value="marcas" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="marcas" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             Marcas
           </TabsTrigger>
-          <TabsTrigger value="ui" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="ui" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             UI
           </TabsTrigger>
-          <TabsTrigger value="tiendas" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="tiendas" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
            
             Tiendas
           </TabsTrigger>
-          <TabsTrigger value="aliados" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="aliados" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             Aliados
           </TabsTrigger>
-          <TabsTrigger value="vacantes" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="vacantes" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             Vacantes
           </TabsTrigger>
-          <TabsTrigger value="pedidos" className="flex items-center gap-2 data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="pedidos" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             Pedidos
           </TabsTrigger>
