@@ -160,7 +160,7 @@ export const useProducts = () => {
 
           supabase
             .from('categories')
-            .select('id,nombre')
+            .select('id,nombre,descripcion,imagen_marca1,imagen_marca2,imagen_marca3,categoria_imagen,created_at,updated_at')
             .order('id', { ascending: true }),
 
           supabase
