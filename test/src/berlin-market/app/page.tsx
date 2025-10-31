@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link" 
+import { useRouter } from "next/navigation"
 import {
   ShoppingBag,
   Search,
@@ -83,6 +84,7 @@ function optimizeSupabaseImage(url: string, width: number, quality: number = 60,
 }
 
 export default function Home() {
+  const router = useRouter()
   const [activeSlide, setActiveSlide] = useState(0)
   const [activeHiddenSlide, setActiveHiddenSlide] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
@@ -798,19 +800,19 @@ export default function Home() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <div className="flex items-center space-x-1">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="#" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/")}>
                       <div className="h-4 w-4 text-[#196428] transition-colors">
                         <HomeIcon className="h-full w-full" />
                       </div>
                       <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
                     </Link>
-                    <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/tienda" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/tienda")}>
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <ShoppingBag className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </Link>
-                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/carrito")}>
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <CartCounter />
                       </div>
@@ -820,13 +822,13 @@ export default function Home() {
                   </div>
                   <div className="w-[1px] h-6 bg-gray-200"></div>
                   <div className="flex items-center space-x-1">
-                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/sobre-nosotros" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/sobre-nosotros")}>
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Info className="h-full w-full" />
                       </div>
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
                     </Link>
-                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                    <Link href="/vacantes" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/vacantes")}>
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                         <Briefcase className="h-full w-full" />
                       </div>
