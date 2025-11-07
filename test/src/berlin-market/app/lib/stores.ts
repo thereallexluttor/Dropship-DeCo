@@ -9,6 +9,7 @@ export interface Store {
   phone: string
   contact: string
   coords: { lat: number; lng: number }
+  imageUrl?: string | null
 }
 
 // Función para cargar tiendas desde Supabase
@@ -33,7 +34,8 @@ export const loadStoresFromSupabase = async (): Promise<Store[]> => {
       city: tienda.ciudad,
       phone: tienda.telefono,
       contact: tienda.contacto,
-      coords: { lat: tienda.lat, lng: tienda.lng }
+      coords: { lat: tienda.lat, lng: tienda.lng },
+      imageUrl: tienda.imagen_url || tienda.image_url || tienda.foto_url || tienda.photo_url || null
     }))
   } catch (error) {
     console.error('Error cargando tiendas:', error)

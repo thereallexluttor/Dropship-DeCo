@@ -90,6 +90,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false)
   const [activeProductSlide, setActiveProductSlide] = useState(0)
+  const [activeMobileProductSlide, setActiveMobileProductSlide] = useState(0)
   const [activeBrandSlide, setActiveBrandSlide] = useState(0)
   const [openCategory, setOpenCategory] = useState<string | null>(null)
   const categoriesContainerRef = useRef<HTMLDivElement>(null)
@@ -378,6 +379,39 @@ export default function Home() {
     console.log(`Agregado al carrito: ${producto.nombre}`)
   }
 
+  const PRODUCTS_PER_SLIDE = 8
+  const MOBILE_PRODUCTS_PER_SLIDE = 4 // 2x2 grid
+  const totalProductSlides = Math.max(1, Math.ceil(productosDestacados.length / PRODUCTS_PER_SLIDE))
+  const totalMobileProductSlides = Math.max(1, Math.ceil(productosDestacados.length / MOBILE_PRODUCTS_PER_SLIDE))
+
+  const nextProductSlide = () => {
+    setActiveProductSlide((current) => (current + 1) % totalProductSlides)
+  }
+
+  const prevProductSlide = () => {
+    setActiveProductSlide((current) => (current - 1 + totalProductSlides) % totalProductSlides)
+  }
+
+  const nextMobileProductSlide = () => {
+    setActiveMobileProductSlide((current) => (current + 1) % totalMobileProductSlides)
+  }
+
+  const prevMobileProductSlide = () => {
+    setActiveMobileProductSlide((current) => (current - 1 + totalMobileProductSlides) % totalMobileProductSlides)
+  }
+
+  useEffect(() => {
+    if (activeProductSlide >= totalProductSlides) {
+      setActiveProductSlide(Math.max(0, totalProductSlides - 1))
+    }
+  }, [activeProductSlide, totalProductSlides])
+
+  useEffect(() => {
+    if (activeMobileProductSlide >= totalMobileProductSlides) {
+      setActiveMobileProductSlide(Math.max(0, totalMobileProductSlides - 1))
+    }
+  }, [activeMobileProductSlide, totalMobileProductSlides])
+
   const closePopup = () => {
     setShowPopup(false);
     sessionStorage.setItem('hasVisitedHome', 'true');
@@ -446,74 +480,6 @@ export default function Home() {
       </div>
     );
   }
-
-
-  const productImages = [
-    "/cap1.png",
-    "/cap2.png",
-    "/cap3.png",
-    "/cap4.png",
-    "/cap1-2.png",
-    "/cap2-2.png",
-    "/cap3-2.png",
-    "/cap4-2.png",
-    "/cap1-3.png",
-    "/cap2-3.png",
-    "/cap3-3.png",
-    "/cap4-3.png",
-  ];
-
-  const featuredProducts = Array.from({ length: 12 }, (_, i) => ({
-    id: `${i + 1}`,
-    name: `Producto Destacado ${i + 1}`,
-    price: `${(Math.random() * 50 + 10).toFixed(3)}`,
-    image: productImages[i % productImages.length],
-    tag: i % 3 === 0 ? "Exclusivo" : null,
-    tagColor: "bg-[#196428]",
-  }));
-
-
-
-  const totalProductSlides = Math.ceil(featuredProducts.length / 4);
-
-  const nextProductSlide = () => {
-    setActiveProductSlide((current) => (current + 1) % totalProductSlides);
-  };
-
-  const prevProductSlide = () => {
-    setActiveProductSlide((current) => (current - 1 + totalProductSlides) % totalProductSlides);
-  };
-
-  const renderProduct = (product: typeof featuredProducts[0]) => (
-    <div key={product.id} className="bg-white rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-      <div className="relative aspect-square">
-        <div className="relative aspect-square">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-contain p-4"
-          />
-        </div>
-        <button className="absolute top-4 right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300">
-          <ShoppingCart className="h-5 w-5" />
-        </button>
-        {product.tag && (
-          <div className="absolute top-4 left-4">
-            <span className={`${product.tagColor} text-white text-xs px-2 py-1 rounded`}>
-              {product.tag}
-            </span>
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
-        <p className="text-sm text-gray-600 mb-2">Descripción del producto</p>
-        <p className="text-[#196428] hover:text-[#196428] font-medium text-sm">$ {product.price}</p>
-      </div>
-    </div>
-  );
-
   const navLinks = [
     { name: "Inicio", icon: HomeIcon, href: "/" },
     { name: "Tienda", icon: ShoppingBag, href: "/tienda" },
@@ -1092,7 +1058,7 @@ export default function Home() {
                               mejores ofertas
                             </h2>
                             <Link
-                              href="#"
+                              href="/tienda"
                               className="inline-block bg-[#196428] hover:bg-[#196428] text-white
                               text-xs sm:text-sm md:text-base lg:text-lg
                               py-1.5 sm:py-2 md:py-2.5 lg:py-3
@@ -1113,23 +1079,23 @@ export default function Home() {
           </section>
 
           {/* Ofertas de la semana */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
-            <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-              <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
-              <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 md:pb-0 md:overflow-x-hidden">
-                <style jsx global>{`
-                  @media (max-width: 768px) {
-                    .scroll-container::-webkit-scrollbar {
-                      display: none;
+          {productosEnOferta.length >= 4 && (
+            <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
+              <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
+                <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
+                <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 md:pb-0 md:overflow-x-hidden scroll-container">
+                  <style jsx global>{`
+                    @media (max-width: 768px) {
+                      .scroll-container::-webkit-scrollbar {
+                        display: none;
+                      }
+                      .scroll-container {
+                        -ms-overflow-style: none;
+                        scrollbar-width: none;
+                      }
                     }
-                    .scroll-container {
-                      -ms-overflow-style: none;
-                      scrollbar-width: none;
-                    }
-                  }
-                `}</style>
-                {productosEnOferta.length > 0 ? (
-                  productosEnOferta.slice(0, 4).map((producto) => {
+                  `}</style>
+                  {productosEnOferta.slice(0, 4).map((producto) => {
                     const selectedSizeIndex = selectedSizes[producto.id!] || 0;
                     const hasSizes = producto.tamano && producto.tamano.length > 0;
                     const hasPrices = producto.precios && producto.precios.length > 0;
@@ -1144,9 +1110,9 @@ export default function Home() {
                     const currentPrice = getCurrentPrice();
 
                     return (
-                    <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[160px] md:w-full block">
-                      <div className="bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                        <div className="relative aspect-square">
+                    <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[170px] xs:w-[180px] md:w-full block">
+                      <div className="bg-white rounded-[18px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
+                        <div className="relative aspect-square flex-shrink-0">
                           <Image
                             src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 600, 60) : '/placeholder.jpg'}
                             alt={producto.nombre}
@@ -1158,13 +1124,20 @@ export default function Home() {
                             OFERTA
                           </div>
                         </div>
-                      <div className="p-2 sm:p-2.5 md:p-3">
-                        <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">{producto.nombre}</h3>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{producto.descripcion || 'Producto en oferta especial'}</p>
+                      <div className="p-2 sm:p-2.5 md:p-3 flex-1 flex flex-col gap-1.5">
+                        <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 leading-tight line-clamp-2">{producto.nombre}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed min-h-[40px] sm:min-h-[44px] line-clamp-2 overflow-hidden">
+                          {(() => {
+                            const fallback = 'Producto en oferta especial'
+                            const words = (producto.descripcion?.trim() || fallback).split(/\s+/)
+                            const truncated = words.slice(0, 9).join(' ')
+                            return words.length > 9 ? `${truncated}…` : truncated
+                          })()}
+                        </p>
 
                         {/* Mostrar tamaños del producto - Seleccionables */}
                         {hasSizes && (
-                          <div className="mb-2">
+                          <div className="mt-1.5">
                             <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
                             <div className="flex flex-wrap gap-1">
                               {producto.tamano!.map((tamano, index) => (
@@ -1186,7 +1159,7 @@ export default function Home() {
 
                         {/* Mostrar precio según tamaño seleccionado */}
                         {hasPrices && currentPrice > 0 ? (
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="mt-auto flex items-center gap-2">
                             {producto.descuento_valor && (
                               <>
                                 <span className="text-sm font-medium text-gray-500 line-through">
@@ -1208,7 +1181,7 @@ export default function Home() {
                             )}
                           </div>
                         ) : (
-                          <p className="text-gray-400 text-xs italic mb-2">Precio no disponible</p>
+                          <p className="mt-auto text-gray-400 text-xs italic">Precio no disponible</p>
                         )}
                         <button
                           onClick={(e) => {
@@ -1216,7 +1189,7 @@ export default function Home() {
                             e.stopPropagation()
                             handleAddToCart(producto)
                           }}
-                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm flex items-center gap-1"
+                          className="mt-2 inline-flex items-center justify-center gap-1 rounded-full border border-[#196428] px-3 py-1 text-xs sm:text-sm font-semibold text-[#196428] transition-colors hover:bg-[#196428] hover:text-white"
                         >
                           <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
                           Agregar al carrito
@@ -1225,102 +1198,11 @@ export default function Home() {
                       </div>
                     </Link>
                     );
-                  })
-                ) : (
-                  /* Productos hardcodeados como fallback si no hay productos en oferta */
-                  <>
-                    {/* Hill's */}
-                    <div className="flex-none w-[160px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                      <div className="relative aspect-square">
-                        <Image
-                          src="/cap1.png"
-                          alt="Plan científico Hill"
-                          fill
-                          className="object-contain p-1.5 sm:p-2 md:p-3"
-                        />
-                      </div>
-                      <div className="p-2 sm:p-2.5 md:p-3">
-                        <h3 className="text-sm sm:text-base md:text-lg font-medium mb-1 sm:mb-2">Plan científico Hill</h3>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Descubre comida de alta calidad para tus mascotas</p>
-                        <Link
-                          href="#"
-                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                        >
-                          Ahorra ahora
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Carny */}
-                    <div className="flex-none w-[160px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                      <div className="relative aspect-square">
-                        <Image
-                          src="/cap2.png"
-                          alt="Carny"
-                          fill
-                          className="object-contain p-1.5 sm:p-2 md:p-3"
-                        />
-                      </div>
-                      <div className="p-2 sm:p-2.5 md:p-3">
-                        <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Carny</h3>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Comida única e irresistible</p>
-                        <Link
-                          href="#"
-                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                        >
-                          Ahorra ahora
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Royal Canin */}
-                    <div className="flex-none w-[160px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                      <div className="relative aspect-square">
-                        <Image
-                          src="/cap3.png"
-                          alt="Royal canin"
-                          fill
-                          className="object-contain p-1.5 sm:p-2 md:p-3"
-                        />
-                      </div>
-                      <div className="p-2 sm:p-2.5 md:p-3">
-                        <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Royal canin</h3>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Para las necesidades especiales de tu gato</p>
-                        <Link
-                          href="#"
-                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                        >
-                          Ahorra ahora
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Felix */}
-                    <div className="flex-none w-[160px] md:w-full bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200">
-                      <div className="relative aspect-square">
-                        <Image
-                          src="/cap4.png"
-                          alt="Felix"
-                          fill
-                          className="object-contain p-1.5 sm:p-2 md:p-3"
-                        />
-                      </div>
-                      <div className="p-2 sm:p-2.5 md:p-3">
-                        <h3 className="text-sm sm:text-base md:text-lg font-semibold mb-1 sm:mb-2">Felix</h3>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Ahorra en comida irresistible para tu gato</p>
-                        <Link
-                          href="#"
-                          className="inline-block text-[#196428] hover:text-[#196428] font-medium text-xs sm:text-sm"
-                        >
-                          Ahorra ahora
-                        </Link>
-                      </div>
-                    </div>
-                  </>
-                )}
+                  })}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* Hidden Banner Section - Solo se muestra si hay hidden banners */}
           {getHiddenBannerSlides().length > 0 && (
@@ -1369,101 +1251,163 @@ export default function Home() {
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Productos destacados</h2>
               
-              {/* Vista móvil: scroll horizontal */}
-              <div className="md:hidden overflow-x-auto pb-4 scroll-container">
-                <div className="flex gap-2">
-                  {productosDestacados.map((producto) => {
-                    const selectedSizeIndex = selectedSizes[producto.id!] || 0;
-                    const hasSizes = producto.tamano && producto.tamano.length > 0;
-                    const hasPrices = producto.precios && producto.precios.length > 0;
-                    
-                    const getCurrentPrice = () => {
-                      if (hasSizes && hasPrices && producto.precios![selectedSizeIndex] !== undefined) {
-                        return producto.precios![selectedSizeIndex];
-                      }
-                      return 0;
-                    };
+              {/* Vista móvil: carrusel 2x2 */}
+              <div className="md:hidden">
+                <div className="flex items-center gap-1.5 mb-4">
+                  {/* Botón de navegación izquierdo */}
+                  <button 
+                    onClick={prevMobileProductSlide}
+                    className="flex-shrink-0 bg-white p-1.5 rounded-full border border-[#196428] hover:bg-green-50 transition-colors duration-300"
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#196428]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
 
-                    const currentPrice = getCurrentPrice();
+                  {/* Contenedor del carrusel */}
+                  <div className="flex-grow overflow-hidden">
+                    <div
+                      className="flex transition-transform duration-500 ease-in-out"
+                      style={{ transform: `translateX(-${activeMobileProductSlide * 100}%)` }}
+                    >
+                      {Array.from({ length: totalMobileProductSlides }).map((_, slideIndex) => {
+                        const slideProducts = productosDestacados.slice(
+                          slideIndex * MOBILE_PRODUCTS_PER_SLIDE,
+                          slideIndex * MOBILE_PRODUCTS_PER_SLIDE + MOBILE_PRODUCTS_PER_SLIDE
+                        )
+                        return (
+                          <div key={slideIndex} className="w-full flex-shrink-0 px-1">
+                            <div className="grid grid-cols-2 gap-3">
+                              {slideProducts.map((producto) => {
+                                const selectedSizeIndex = selectedSizes[producto.id!] || 0
+                                const hasSizes = producto.tamano && producto.tamano.length > 0
+                                const hasPrices = producto.precios && producto.precios.length > 0
 
-                    return (
-                    <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[160px] block">
-                      <div className="bg-white rounded-[15px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                        <div className="relative aspect-square">
-                          <Image
-                            src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 400, 60) : '/placeholder.jpg'}
-                            alt={producto.nombre}
-                            fill
-                            className="object-contain p-1.5"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleAddToCart(producto)
-                            }}
-                            className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300"
-                          >
-                            <ShoppingCart className="h-3 w-3" />
-                          </button>
-                        {producto.descuento && (
-                          <div className="absolute top-2 left-2">
-                            <span className="bg-green-600 text-white text-[10px] px-1.5 py-0.5 rounded">
-                              {producto.descuento_valor}% OFF
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-1.5">
-                        <h3 className="text-sm font-semibold mb-1">{producto.nombre}</h3>
-                        <p className="text-xs text-gray-600 mb-1">{producto.descripcion}</p>
+                                const getCurrentPrice = () => {
+                                  if (hasSizes && hasPrices && producto.precios![selectedSizeIndex] !== undefined) {
+                                    return producto.precios![selectedSizeIndex]
+                                  }
+                                  return 0
+                                }
 
-                        {/* Mostrar tamaños del producto - Seleccionables */}
-                        {hasSizes && (
-                          <div className="mb-2">
-                            <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {producto.tamano!.map((tamano, index) => (
-                                <button
-                                  key={index}
-                                  onClick={() => setSelectedSizes({...selectedSizes, [producto.id!]: index})}
-                                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-all ${
-                                    selectedSizeIndex === index
-                                      ? 'bg-[#196428] text-white'
-                                      : 'bg-gray-100 text-gray-700'
-                                  }`}
-                                >
-                                  {tamano.cantidad}{tamano.unidad}
-                                </button>
-                              ))}
+                                const currentPrice = getCurrentPrice()
+
+                                return (
+                                  <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full">
+                                    <div className="bg-white rounded-[18px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200 flex flex-col h-full min-h-[340px]">
+                                      <div className="relative aspect-[4/3] flex-shrink-0">
+                                        <Image
+                                          src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 400, 60) : '/placeholder.jpg'}
+                                          alt={producto.nombre}
+                                          fill
+                                          className="object-contain p-2.5"
+                                        />
+                                        <button
+                                          onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            handleAddToCart(producto)
+                                          }}
+                                          className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300"
+                                        >
+                                          <ShoppingCart className="h-3.5 w-3.5" />
+                                        </button>
+                                        {producto.descuento && (
+                                          <div className="absolute top-2 left-2">
+                                            <span className="bg-green-600 text-white text-[10px] px-1.5 py-0.5 rounded">
+                                              {producto.descuento_valor}% OFF
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="p-2.5 flex-1 flex flex-col gap-2 min-h-[160px]">
+                                        <h3 className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2 min-h-[36px]">{producto.nombre}</h3>
+                                        <p className="text-xs text-gray-600 leading-relaxed min-h-[48px] line-clamp-3 overflow-hidden">
+                                          {(() => {
+                                            if (!producto.descripcion) return ''
+                                            const words = producto.descripcion.trim().split(/\s+/)
+                                            const truncated = words.slice(0, 9).join(' ')
+                                            return words.length > 9 ? `${truncated}…` : truncated
+                                          })()}
+                                        </p>
+
+                                        {hasSizes && (
+                                          <div className="mt-0.5 flex-shrink-0">
+                                            <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
+                                            <div className="flex flex-wrap gap-1">
+                                              {producto.tamano!.slice(0, 2).map((tamano, index) => (
+                                                <button
+                                                  key={index}
+                                                  onClick={(e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    setSelectedSizes({...selectedSizes, [producto.id!]: index})
+                                                  }}
+                                                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-all ${
+                                                    selectedSizeIndex === index
+                                                      ? 'bg-[#196428] text-white'
+                                                      : 'bg-gray-100 text-gray-700'
+                                                  }`}
+                                                >
+                                                  {tamano.cantidad}{tamano.unidad}
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {hasPrices && currentPrice > 0 ? (
+                                          <div className="mt-auto flex items-center gap-2 flex-shrink-0">
+                                            {producto.descuento ? (
+                                              <>
+                                                <p className="text-[#196428] font-medium text-xs">
+                                                  $ {(currentPrice * (1 - Number(producto.descuento_valor || 0)/100)).toLocaleString('es-CO')}
+                                                </p>
+                                                <p className="text-gray-400 text-[11px] line-through">
+                                                  $ {currentPrice.toLocaleString('es-CO')}
+                                                </p>
+                                              </>
+                                            ) : (
+                                              <p className="text-[#196428] font-medium text-xs">$ {currentPrice.toLocaleString('es-CO')}</p>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <p className="mt-auto text-gray-400 text-xs italic flex-shrink-0">No disponible</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </Link>
+                                )
+                              })}
                             </div>
                           </div>
-                        )}
+                        )
+                      })}
+                    </div>
+                  </div>
 
-                        {/* Mostrar precio según tamaño seleccionado */}
-                        {hasPrices && currentPrice > 0 ? (
-                          <div className="flex items-center gap-2">
-                            {producto.descuento ? (
-                              <>
-                                <p className="text-[#196428] font-medium text-xs">
-                                  $ {(currentPrice * (1 - Number(producto.descuento_valor || 0)/100)).toLocaleString('es-CO')}
-                                </p>
-                                <p className="text-gray-400 text-xs line-through">
-                                  $ {currentPrice.toLocaleString('es-CO')}
-                                </p>
-                              </>
-                            ) : (
-                              <p className="text-[#196428] font-medium text-xs">$ {currentPrice.toLocaleString('es-CO')}</p>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-gray-400 text-xs italic">No disponible</p>
-                        )}
-                      </div>
-                      </div>
-                    </Link>
-                    );
-                  })}
+                  {/* Botón de navegación derecho */}
+                  <button 
+                    onClick={nextMobileProductSlide}
+                    className="flex-shrink-0 bg-white p-1.5 rounded-full border border-[#196428] hover:bg-green-50 transition-colors duration-300"
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#196428]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Indicadores de paginación */}
+                <div className="flex justify-center gap-1.5 mt-3">
+                  {Array.from({ length: totalMobileProductSlides }).map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveMobileProductSlide(index)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        activeMobileProductSlide === index ? 'w-6 bg-[#196428]' : 'w-1.5 bg-gray-300'
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -1485,10 +1429,10 @@ export default function Home() {
                     className="flex transition-transform duration-500 ease-in-out"
                     style={{ transform: `translateX(-${activeProductSlide * 100}%)` }}
                   >
-                    {Array.from({ length: Math.ceil(productosDestacados.length / 4) }).map((_, slideIndex) => (
+                    {Array.from({ length: totalProductSlides }).map((_, slideIndex) => (
                       <div key={slideIndex} className="w-full flex-shrink-0">
-                        <div className="grid grid-cols-4 gap-3 md:gap-4">
-                          {productosDestacados.slice(slideIndex * 4, slideIndex * 4 + 4).map((producto) => {
+                        <div className="grid grid-cols-4 gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+                          {productosDestacados.slice(slideIndex * PRODUCTS_PER_SLIDE, slideIndex * PRODUCTS_PER_SLIDE + PRODUCTS_PER_SLIDE).map((producto) => {
                             const selectedSizeIndex = selectedSizes[producto.id!] || 0;
                             const hasSizes = producto.tamano && producto.tamano.length > 0;
                             const hasPrices = producto.precios && producto.precios.length > 0;
@@ -1503,7 +1447,7 @@ export default function Home() {
                             const currentPrice = getCurrentPrice();
 
                             return (
-                            <div key={producto.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                            <div key={producto.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
                               <div className="relative aspect-square">
                                 <Link href={`/producto/${producto.id}`} className="block">
                                   <Image
@@ -1531,10 +1475,17 @@ export default function Home() {
                                   </div>
                                 )}
                               </div>
-                              <div className="p-2.5 md:p-3">
+                              <div className="p-2.5 md:p-3 flex-1 flex flex-col gap-2">
                                 <Link href={`/producto/${producto.id}`} className="block">
-                                  <h3 className="text-base md:text-lg font-semibold mb-2 hover:text-[#196428] transition-colors">{producto.nombre}</h3>
-                                  <p className="text-sm text-gray-600 mb-2">{producto.descripcion}</p>
+                                  <h3 className="text-base md:text-lg font-semibold leading-tight line-clamp-2 mb-1 hover:text-[#196428] transition-colors">{producto.nombre}</h3>
+                                  <p className="text-sm text-gray-600 leading-relaxed min-h-[44px] line-clamp-2 overflow-hidden">
+                                    {(() => {
+                                      if (!producto.descripcion) return ''
+                                      const words = producto.descripcion.trim().split(/\s+/)
+                                      const truncated = words.slice(0, 9).join(' ')
+                                      return words.length > 9 ? `${truncated}…` : truncated
+                                    })()}
+                                  </p>
                                 </Link>
 
                                 {/* Mostrar tamaños del producto - Seleccionables */}
@@ -1565,7 +1516,7 @@ export default function Home() {
 
                                 {/* Mostrar precio según tamaño seleccionado */}
                                 {hasPrices && currentPrice > 0 ? (
-                                  <div className="flex items-center gap-2">
+                                  <div className="mt-auto flex items-center gap-2">
                                     {producto.descuento ? (
                                       <>
                                         <p className="text-[#196428] font-medium text-sm">
@@ -1580,7 +1531,7 @@ export default function Home() {
                                     )}
                                   </div>
                                 ) : (
-                                  <p className="text-gray-400 text-xs italic">Precio no disponible</p>
+                                  <p className="text-gray-400 text-xs italic mt-auto">Precio no disponible</p>
                                 )}
                               </div>
                             </div>

@@ -2,16 +2,24 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { stores, loadStoresFromSupabase, getUniqueCities, getStoresByCity, type Store } from '../lib/stores'
+import { MapPin, Phone, User, Navigation } from 'lucide-react'
+import { stores, loadStoresFromSupabase, type Store } from '../lib/stores'
 
 // Dynamically import the Map component to avoid SSR issues
 const Map = dynamic(() => import('./Map'), { ssr: false })
 
 export default function StoreLocator() {
+  // Función para encontrar "Distribuidora PETS" o usar la primera tienda como fallback
+  const findPetsStore = (storesList: Store[]): Store | null => {
+    const petsStore = storesList.find(store => store.name.includes("Distribuidora PETS"))
+    return petsStore || storesList[0] || null
+  }
+
   const [storesList, setStoresList] = useState<Store[]>(stores)
-  const [selectedStore, setSelectedStore] = useState<Store>(stores[0])
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null)
   const [selectedCity, setSelectedCity] = useState<string | 'all'>('all')
   const [isLoading, setIsLoading] = useState(true)
+  const [initialPetsStore, setInitialPetsStore] = useState<Store | null>(findPetsStore(stores))
 
   // Cargar tiendas desde Supabase al montar el componente
   useEffect(() => {
@@ -19,7 +27,7 @@ export default function StoreLocator() {
       const supabaseStores = await loadStoresFromSupabase()
       if (supabaseStores.length > 0) {
         setStoresList(supabaseStores)
-        setSelectedStore(supabaseStores[0])
+        setInitialPetsStore(findPetsStore(supabaseStores))
       }
       setIsLoading(false)
     }
@@ -33,15 +41,21 @@ export default function StoreLocator() {
     : storesList.filter(store => store.city === selectedCity)
 
   return (
-    <div className="flex flex-col md:grid md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+    <div className="flex flex-col md:grid md:grid-cols-3 gap-4 sm:gap-6">
       {/* Store List */}
-      <div className="md:col-span-1 bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] shadow-sm p-3 sm:p-4 h-[300px] md:h-[600px] overflow-y-auto">
-        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Nuestras Tiendas</h3>
+      <div className="md:col-span-1 bg-white rounded-[18px] sm:rounded-[22px] md:rounded-[26px] shadow-lg border border-[#196428]/10 p-3 sm:p-4 lg:p-5 h-[320px] md:h-[620px] overflow-y-auto">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-[#0f3c1a]">Nuestras Tiendas</h3>
+            <p className="text-xs sm:text-sm text-gray-500">Explora por ciudad y descubre tu punto más cercano.</p>
+          </div>
+        </div>
         
         {/* City Filter */}
-        <div className="mb-3 sm:mb-4">
-          <select 
-            className="w-full p-1.5 sm:p-2 text-sm sm:text-base border rounded-lg"
+        <div className="mb-3 sm:mb-5">
+          <div className="relative">
+            <select 
+              className="w-full appearance-none p-2 sm:p-2.5 pr-10 text-sm sm:text-base border border-[#196428]/30 rounded-full bg-white shadow-inner focus:outline-none focus:ring-2 focus:ring-[#196428]/60 focus:border-transparent transition-all"
             value={selectedCity}
             onChange={(e) => setSelectedCity(e.target.value as string)}
           >
@@ -50,36 +64,53 @@ export default function StoreLocator() {
               <option key={city} value={city}>{city}</option>
             ))}
           </select>
+            <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#196428]/70 pointer-events-none" />
+          </div>
         </div>
 
-        <div className="space-y-2 sm:space-y-3 md:space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredStores.map((store) => (
             <div
               key={store.id}
-              className={`p-2 sm:p-3 md:p-4 rounded-lg cursor-pointer transition-all ${
-                selectedStore.id === store.id
-                  ? 'bg-[#196428] text-white'
-                  : 'bg-gray-50 hover:bg-gray-100'
+              className={`relative overflow-hidden group rounded-2xl cursor-pointer transition-all duration-300 border ${
+                selectedStore?.id === store.id
+                  ? 'bg-gradient-to-br from-[#196428] via-[#145020] to-[#0d2d15] text-white shadow-xl border-[#196428]'
+                  : 'bg-white text-gray-800 shadow-sm border-gray-100 hover:-translate-y-1 hover:shadow-lg'
               }`}
               onClick={() => setSelectedStore(store)}
             >
-              <h4 className="text-sm sm:text-base font-medium">{store.name}</h4>
-              <p className={`text-xs sm:text-sm ${selectedStore.id === store.id ? 'text-white/90' : 'text-gray-600'}`}>
-                {store.address}
-              </p>
-              <p className={`text-xs sm:text-sm ${selectedStore.id === store.id ? 'text-white/90' : 'text-gray-600'}`}>
-                {store.city}
-              </p>
-              <div className={`mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t ${selectedStore.id === store.id ? 'border-white/20' : 'border-gray-200'}`}>
-                <p className={`text-xs sm:text-sm ${selectedStore.id === store.id ? 'text-white/90' : 'text-gray-600'}`}>
-                  <strong>Contacto:</strong> {store.contact}
-                </p>
-                <p className={`text-xs sm:text-sm ${selectedStore.id === store.id ? 'text-white/90' : 'text-gray-600'}`}>
-                  <strong>Tel:</strong> {store.phone}
-                </p>
-                <p className={`text-xs sm:text-sm ${selectedStore.id === store.id ? 'text-white/90' : 'text-gray-600'}`}>
-                  <strong>GPS:</strong> {store.coords.lat}, {store.coords.lng}
-                </p>
+              <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${selectedStore?.id === store.id ? 'hidden' : 'bg-gradient-to-br from-[#196428]/10 via-transparent to-transparent'}`} />
+              <div className="relative z-[1] p-3 sm:p-4">
+                <div className="flex items-start">
+                  <div className="flex-1 min-w-0">
+                    <h4 className={`text-sm sm:text-base font-semibold tracking-tight ${selectedStore?.id === store.id ? 'text-white' : 'text-[#0f3c1a]'}`}>{store.name}</h4>
+                    <p className={`text-xs sm:text-sm mt-0.5 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-gray-600'}`}>{store.address}</p>
+                    <p className={`text-xs sm:text-sm ${selectedStore?.id === store.id ? 'text-emerald-100' : 'text-[#196428]'}`}>{store.city}</p>
+                  </div>
+                </div>
+
+                <div className={`mt-3 grid grid-cols-1 gap-2 rounded-xl p-3 ${selectedStore?.id === store.id ? 'bg-black/10 backdrop-blur border border-white/20' : 'bg-[#f5fdf5] border border-[#196428]/10'}`}>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <User className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
+                    <span className={selectedStore?.id === store.id ? 'text-white/90' : 'text-gray-700'}>{store.contact}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <Phone className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
+                    <a
+                      href={`tel:${store.phone}`}
+                      className={`underline-offset-2 ${selectedStore?.id === store.id ? 'text-white hover:text-emerald-100' : 'text-[#196428] hover:text-[#0f3c1a]'}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {store.phone}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <Navigation className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
+                    <span className={selectedStore?.id === store.id ? 'text-white/90' : 'text-gray-700'}>
+                      {store.coords.lat.toFixed(4)}, {store.coords.lng.toFixed(4)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -87,12 +118,13 @@ export default function StoreLocator() {
       </div>
 
       {/* Map */}
-      <div className="md:col-span-2 rounded-[15px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden h-[400px] md:h-[600px]">
+      <div className="md:col-span-2 rounded-[18px] sm:rounded-[22px] md:rounded-[28px] overflow-hidden h-[420px] md:h-[620px] shadow-lg border border-[#196428]/10">
         <Map 
           stores={filteredStores}
           selectedStore={selectedStore}
           onStoreSelect={setSelectedStore}
           selectedCity={selectedCity}
+          initialPetsStore={initialPetsStore}
         />
       </div>
     </div>

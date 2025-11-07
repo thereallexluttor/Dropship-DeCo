@@ -177,6 +177,22 @@ body {
   border: none;
 }
 
+/* Estilos para popups de Leaflet - fondo transparente */
+.leaflet-popup-content-wrapper {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+
+.leaflet-popup-tip {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 /* Animación para el menú desplegable */
 @keyframes fadeInUp {
   from {
