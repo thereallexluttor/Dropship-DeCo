@@ -1075,7 +1075,7 @@ const AdminDashboard = () => {
       const { error: subError } = await supabase
         .from('subcategories')
         .delete()
-        .eq('categoria_id', id);
+        .eq('categories_id', id);
 
       if (subError) throw subError;
 
