@@ -35,9 +35,10 @@ interface HeaderProps {
   searchQuery?: string
   onSearchChange?: (query: string) => void
   onSearchSubmit?: (e: React.FormEvent) => void
+  onAccountClick?: () => void
 }
 
-export default function Header({ searchQuery = "", onSearchChange, onSearchSubmit }: HeaderProps) {
+export default function Header({ searchQuery = "", onSearchChange, onSearchSubmit, onAccountClick }: HeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -56,7 +57,7 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
     { name: "Cuenta", icon: User, href: "/cuenta" },
     { name: "Info", icon: Info, href: "/sobre-nosotros" },
     { name: "Vacantes", icon: Briefcase, href: "/vacantes" },
-    { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
+    { name: "Tiendas", icon: MapPin, href: "/contacto" },
   ]
 
   // Aggressive prefetch of primary routes to speed up navigation
@@ -133,6 +134,21 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                         );
                       }
                       if (link.name === "Cuenta") {
+                        if (onAccountClick) {
+                          return (
+                            <button
+                              key={link.name}
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setTimeout(() => onAccountClick(), 300);
+                              }}
+                              className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors text-left w-full"
+                            >
+                              <link.icon className="h-5 w-5 text-gray-600" />
+                              <span className="text-sm font-medium text-gray-800">{link.name}</span>
+                            </button>
+                          );
+                        }
                         return (
                           <div key={link.name} onClick={() => setIsMobileMenuOpen(false)}>
                             <AccountPopover />
@@ -171,7 +187,7 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
       {/* Tablet Header (640px - 1023px) */}
       <div className="hidden md:block lg:hidden">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 min-w-0">
             <Link href="/" className="flex items-center flex-shrink-0">
               <Image
                 src="/unisantander.png"
@@ -200,47 +216,49 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
               </form>
             </div>
 
-            <div className="flex items-center space-x-2 flex-shrink-0">
-              <div className="flex items-center space-x-1">
-                <Link href="/" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/")}>
+            <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0 min-w-0">
+              <div className="flex items-center space-x-0.5 sm:space-x-1">
+                <Link href="/" prefetch className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]" onMouseEnter={() => router.prefetch("/")}>
                   <div className={`h-4 w-4 ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} transition-colors`}>
                     <HomeIcon className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} mt-1 transition-colors`}>Inicio</span>
+                  <span className={`text-xs font-light ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} mt-1 transition-colors whitespace-nowrap`}>Inicio</span>
                 </Link>
-                <Link href="/tienda" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/tienda")}>
+                <Link href="/tienda" prefetch className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]" onMouseEnter={() => router.prefetch("/tienda")}>
                   <div className={`h-4 w-4 ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingBag className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Tienda</span>
+                  <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Tienda</span>
                 </Link>
-                <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/carrito")}>
+                <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]" onMouseEnter={() => router.prefetch("/carrito")}>
                   <div className={`h-4 w-4 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingCart className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Carrito</span>
+                  <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Carrito</span>
                 </Link>
-                <AccountPopover />
+                <div className="min-w-[44px]">
+                  <AccountPopover />
+                </div>
               </div>
-              <div className="w-[1px] h-6 bg-gray-200"></div>
-              <div className="flex items-center space-x-1">
-                <Link href="/sobre-nosotros" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/sobre-nosotros")}>
+              <div className="w-[1px] h-6 bg-gray-200 flex-shrink-0"></div>
+              <div className="flex items-center space-x-0.5 sm:space-x-1">
+                <Link href="/sobre-nosotros" prefetch className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]" onMouseEnter={() => router.prefetch("/sobre-nosotros")}>
                   <div className={`h-4 w-4 ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <Info className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Info</span>
+                  <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Info</span>
                 </Link>
-                <Link href="/vacantes" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/vacantes")}>
+                <Link href="/vacantes" prefetch className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]" onMouseEnter={() => router.prefetch("/vacantes")}>
                   <div className={`h-4 w-4 ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <Briefcase className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Vacantes</span>
+                  <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Vacantes</span>
                 </Link>
-                <Link href="/#nuestras-tiendas" prefetch className="group flex flex-col items-center justify-center" onMouseEnter={() => router.prefetch("/#nuestras-tiendas")}>
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                <Link href="/contacto" prefetch className="group flex flex-col items-center justify-center min-w-[44px]" onMouseEnter={() => router.prefetch("/contacto")}>
+                  <div className={`h-4 w-4 ${pathname === "/contacto" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <MapPin className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
+                  <span className={`text-xs font-light ${pathname === "/contacto" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Tiendas</span>
                 </Link>
               </div>
             </div>
@@ -251,7 +269,7 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
       {/* Large Tablet Header (1024px - 1279px) */}
       <div className="hidden lg:block xl:hidden">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 min-w-0">
             <Link href="/" className="flex items-center flex-shrink-0">
               <Image
                 src="/unisantander.png"
@@ -280,47 +298,49 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
               </form>
             </div>
 
-            <div className="flex items-center space-x-3 flex-shrink-0">
-              <div className="flex items-center space-x-2">
-                <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0 min-w-0">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]">
                   <div className={`h-4 w-4 ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} transition-colors`}>
                     <HomeIcon className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} mt-1 transition-colors`}>Inicio</span>
+                  <span className={`text-xs font-light ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} mt-1 transition-colors whitespace-nowrap`}>Inicio</span>
                 </Link>
-                <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
+                <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]">
                   <div className={`h-4 w-4 ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingBag className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Tienda</span>
+                  <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Tienda</span>
                 </Link>
-                <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
+                <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]">
                   <div className={`h-4 w-4 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingCart className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Carrito</span>
+                  <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Carrito</span>
                 </Link>
-                <AccountPopover />
+                <div className="min-w-[44px]">
+                  <AccountPopover />
+                </div>
               </div>
-              <div className="w-[1px] h-6 bg-gray-200"></div>
-              <div className="flex items-center space-x-2">
-                <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
+              <div className="w-[1px] h-6 bg-gray-200 flex-shrink-0"></div>
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]">
                   <div className={`h-4 w-4 ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <Info className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Info</span>
+                  <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Info</span>
                 </Link>
-                <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]">
                   <div className={`h-4 w-4 ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <Briefcase className="h-full w-full" />
                   </div>
-                  <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Vacantes</span>
+                  <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Vacantes</span>
                 </Link>
-                <Link href="/#nuestras-tiendas" className="group flex flex-col items-center justify-center">
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                <Link href="/contacto" className="group flex flex-col items-center justify-center min-w-[44px]">
+                  <div className={`h-4 w-4 ${pathname === "/contacto" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <MapPin className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
+                  <span className={`text-xs font-light ${pathname === "/contacto" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Tiendas</span>
                 </Link>
               </div>
             </div>
@@ -331,7 +351,7 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
       {/* Desktop Header (≥ 1280px) */}
       <div className="hidden xl:block">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 min-w-0">
             <Link href="/" className="flex items-center flex-shrink-0 ml-[150px] xl:ml-[150px] 2xl:ml-[180px]">
               <Image
                 src="/unisantander.png"
@@ -396,11 +416,11 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   </div>
                   <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Vacantes</span>
                 </Link>
-                <Link href="/#nuestras-tiendas" className="group flex flex-col items-center justify-center">
-                  <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                <Link href="/contacto" className="group flex flex-col items-center justify-center">
+                  <div className={`h-4 w-4 ${pathname === "/contacto" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <MapPin className="h-full w-full" />
                   </div>
-                  <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Nuestras Tiendas</span>
+                  <span className={`text-xs font-light ${pathname === "/contacto" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Nuestras Tiendas</span>
                 </Link>
               </div>
             </div>

@@ -5,6 +5,13 @@ import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   ArrowLeft,
   MapPin,
   Clock,
@@ -12,7 +19,10 @@ import {
   Send,
   Upload,
   CheckCircle,
-  XCircle
+  XCircle,
+  Eye,
+  EyeOff,
+  Check
 } from "lucide-react"
 import Footer from '../../components/Footer'
 import MainLayout from "../../components/MainLayout"
@@ -40,6 +50,21 @@ const OfertaDetalle = () => {
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  
+  // Estados para el formulario de autenticación modal
+  const [modalShowPassword, setModalShowPassword] = useState(false)
+  const [modalShowConfirmPassword, setModalShowConfirmPassword] = useState(false)
+  const [modalIsRegistering, setModalIsRegistering] = useState(false)
+  const [modalIsLoading, setModalIsLoading] = useState(false)
+  const [modalEmail, setModalEmail] = useState("")
+  const [modalPassword, setModalPassword] = useState("")
+  const [modalRegisterEmail, setModalRegisterEmail] = useState("")
+  const [modalRegisterPassword, setModalRegisterPassword] = useState("")
+  const [modalConfirmPassword, setModalConfirmPassword] = useState("")
+  const [modalNombre, setModalNombre] = useState("")
+  const [modalTelefono, setModalTelefono] = useState("")
+  const [modalDireccion, setModalDireccion] = useState("")
 
   // Estados para el formulario de aplicación
   const [formData, setFormData] = useState<{
@@ -92,6 +117,13 @@ const OfertaDetalle = () => {
     }
 
     cargarDatos()
+
+    // Escuchar cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
   }, [params.id, router])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -103,6 +135,104 @@ const OfertaDetalle = () => {
       setFormData(prev => ({ ...prev, cv: files[0] }))
     } else {
       setFormData(prev => ({ ...prev, [name]: value }))
+    }
+  }
+
+  // Función para manejar login en el modal
+  const handleModalLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setModalIsLoading(true)
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: modalEmail,
+        password: modalPassword,
+      })
+
+      if (error) throw error
+
+      if (data.user) {
+        setUser(data.user)
+        alert("Inicio de sesión exitoso")
+        setIsAuthModalOpen(false)
+        // Limpiar formulario
+        setModalEmail("")
+        setModalPassword("")
+      }
+    } catch (error) {
+      console.error('Error en login:', error)
+      alert("Error en el inicio de sesión. Verifica tus credenciales.")
+    } finally {
+      setModalIsLoading(false)
+    }
+  }
+
+  // Función para manejar registro en el modal
+  const handleModalRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (modalRegisterPassword !== modalConfirmPassword) {
+      alert("Las contraseñas no coinciden")
+      return
+    }
+
+    if (!modalRegisterEmail || !modalRegisterPassword || !modalNombre || !modalTelefono || !modalDireccion) {
+      alert("Por favor completa todos los campos")
+      return
+    }
+
+    setModalIsLoading(true)
+
+    try {
+      // Crear usuario en Supabase Auth con email confirmation
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: modalRegisterEmail,
+        password: modalRegisterPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            nombre: modalNombre,
+            telefono: modalTelefono,
+            direccion: modalDireccion
+          }
+        }
+      })
+
+      if (authError) throw authError
+
+      if (authData.user) {
+        // Guardar información adicional en la tabla usuarios
+        const { error: insertError } = await supabase
+          .from('usuarios')
+          .insert([
+            {
+              nombre: modalNombre,
+              correo: modalRegisterEmail,
+              telefono: modalTelefono,
+              direccion: modalDireccion,
+              rol: 'cliente',
+              password: modalRegisterPassword
+            }
+          ])
+
+        if (insertError) throw insertError
+
+        alert("¡Registro exitoso! Revisa tu email para confirmar tu cuenta.")
+        // Limpiar formulario
+        setModalRegisterEmail("")
+        setModalRegisterPassword("")
+        setModalConfirmPassword("")
+        setModalNombre("")
+        setModalTelefono("")
+        setModalDireccion("")
+        setModalIsRegistering(false)
+        setIsAuthModalOpen(false)
+      }
+    } catch (error) {
+      console.error('Error en registro:', error)
+      alert("Error en el registro. Inténtalo de nuevo.")
+    } finally {
+      setModalIsLoading(false)
     }
   }
 
@@ -253,12 +383,12 @@ const OfertaDetalle = () => {
                 ) : (
                   <div className="text-center">
                     <p className="text-gray-600 mb-3">Debes iniciar sesión para aplicar a esta oferta</p>
-                    <Link
-                      href="/cuenta"
+                    <button
+                      onClick={() => setIsAuthModalOpen(true)}
                       className="bg-[#196428] hover:bg-[#2d7a3d] text-white font-semibold py-2 px-6 rounded-lg transition-colors inline-block"
                     >
                       Iniciar Sesión
-                    </Link>
+                    </button>
                   </div>
                 )}
               </div>
@@ -487,6 +617,232 @@ const OfertaDetalle = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Autenticación */}
+      <Dialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen}>
+        <DialogContent className="w-[95vw] max-w-sm mx-auto bg-[#FBFFE6] border-2 border-gray-200 shadow-2xl rounded-xl sm:rounded-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="text-center border-b border-gray-200 pb-3 sm:pb-4 pt-2 flex-shrink-0">
+            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-800">Iniciar Sesión o Registrarse</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-gray-600 mt-1">
+              Para aplicar a esta oferta, necesitas tener una cuenta
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-3 sm:px-4 py-3 sm:py-4 overflow-y-auto flex-1">
+            {/* Formulario de Login/Registro para el Modal */}
+            <div className="w-full space-y-3">
+                {/* Ya soy cliente */}
+                {!modalIsRegistering && (
+                  <div className="space-y-3">
+                    <form className="space-y-3" onSubmit={handleModalLogin}>
+                      <div>
+                        <input
+                          type="email"
+                          placeholder="Email"
+                          value={modalEmail}
+                          onChange={(e) => setModalEmail(e.target.value)}
+                          className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
+                        />
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={modalShowPassword ? "text" : "password"}
+                          placeholder="Contraseña"
+                          value={modalPassword}
+                          onChange={(e) => setModalPassword(e.target.value)}
+                          className="w-full px-3 py-2.5 sm:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 sm:pr-12 transition-all duration-200 touch-manipulation"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setModalShowPassword(!modalShowPassword)}
+                          className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors touch-manipulation p-1"
+                        >
+                          {modalShowPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={modalIsLoading}
+                        className="w-full bg-[#196428] hover:bg-[#145020] active:bg-[#0f3a15] text-white font-semibold py-2.5 sm:py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg touch-manipulation"
+                      >
+                        {modalIsLoading ? "Cargando..." : "Iniciar sesión"}
+                      </button>
+                    </form>
+
+                    <div className="flex flex-col space-y-2">
+                      <div className="text-center">
+                        <a href="#" className="text-[#196428] hover:underline text-xs font-medium transition-colors">
+                          Olvidé mi contraseña
+                        </a>
+                      </div>
+                      <div className="text-[10px] text-gray-600 text-center leading-tight">
+                        Protegido por reCAPTCHA - <a href="#" className="underline hover:text-[#196428] transition-colors">Privacidad</a> y{' '}
+                        <a href="#" className="underline hover:text-[#196428] transition-colors">Condiciones</a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Divider */}
+                <div className="border-t border-gray-300"></div>
+
+                {/* Nuevo aquí / Formulario de registro */}
+                <div className="space-y-3">
+                  {!modalIsRegistering ? (
+                    <>
+                      <div className="text-center">
+                        <h2 className="text-base font-bold text-gray-800 mb-2">
+                          ¿Nuevo aquí?
+                        </h2>
+                        <p className="text-xs text-gray-700 mb-3">
+                          ¡Disfruta de beneficios exclusivos!
+                        </p>
+                      </div>
+
+                      <ul className="space-y-2 mb-4">
+                        <li className="flex items-start gap-3">
+                          <Check className="h-4 w-4 text-[#196428] flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 leading-tight">
+                            Compras más <span className="font-bold">rápidas</span>
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <Check className="h-4 w-4 text-[#196428] flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 leading-tight">
+                            <span className="font-bold">Historial</span> de pedidos
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <Check className="h-4 w-4 text-[#196428] flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 leading-tight">
+                            <span className="font-bold">Descuentos</span> exclusivos
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <Check className="h-4 w-4 text-[#196428] flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700 leading-tight">
+                            <span className="font-bold">Lista</span> de deseos
+                          </span>
+                        </li>
+                      </ul>
+
+                      <button
+                        type="button"
+                        onClick={() => setModalIsRegistering(true)}
+                        className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-2 rounded-lg transition-all duration-200 text-sm hover:shadow-lg"
+                      >
+                        Regístrate ahora
+                      </button>
+                    </>
+                  ) : (
+                    /* Formulario de registro */
+                    <div className="space-y-3">
+                      <div className="text-center mb-3">
+                        <h3 className="text-base font-bold text-gray-800">
+                          Crear cuenta
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Completa tus datos para registrarte
+                        </p>
+                      </div>
+
+                      <form className="space-y-3" onSubmit={handleModalRegister}>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Nombre completo"
+                            value={modalNombre}
+                            onChange={(e) => setModalNombre(e.target.value)}
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            value={modalRegisterEmail}
+                            onChange={(e) => setModalRegisterEmail(e.target.value)}
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="tel"
+                            placeholder="Teléfono"
+                            value={modalTelefono}
+                            onChange={(e) => setModalTelefono(e.target.value)}
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Dirección completa"
+                            value={modalDireccion}
+                            onChange={(e) => setModalDireccion(e.target.value)}
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type={modalShowPassword ? "text" : "password"}
+                            placeholder="Contraseña"
+                            value={modalRegisterPassword}
+                            onChange={(e) => setModalRegisterPassword(e.target.value)}
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 transition-all duration-200 touch-manipulation"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setModalShowPassword(!modalShowPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors touch-manipulation p-1"
+                          >
+                            {modalShowPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+
+                        <div className="relative">
+                          <input
+                            type={modalShowConfirmPassword ? "text" : "password"}
+                            placeholder="Confirmar contraseña"
+                            value={modalConfirmPassword}
+                            onChange={(e) => setModalConfirmPassword(e.target.value)}
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 transition-all duration-200 touch-manipulation"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setModalShowConfirmPassword(!modalShowConfirmPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors touch-manipulation p-1"
+                          >
+                            {modalShowConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={modalIsLoading}
+                          className="w-full bg-[#196428] hover:bg-[#145020] active:bg-[#0f3a15] text-white font-semibold py-2.5 sm:py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg touch-manipulation"
+                        >
+                          {modalIsLoading ? "Registrando..." : "Crear cuenta"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setModalIsRegistering(false)}
+                          className="w-full text-[#196428] hover:underline text-xs font-medium transition-colors text-center"
+                        >
+                          ← Volver al inicio de sesión
+                        </button>
+                      </form>
+                    </div>
+                  )}
+                </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </MainLayout>

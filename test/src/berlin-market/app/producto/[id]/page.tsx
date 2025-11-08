@@ -1035,7 +1035,7 @@ export default function ProductPage() {
                 <div className="bg-white p-3 rounded-lg border border-gray-200 text-center">
                   <Truck className="h-5 w-5 text-[#196428] mx-auto mb-1" />
                   <p className="text-xs font-medium text-gray-700">Envío Gratis</p>
-                  <p className="text-[10px] text-gray-500">En compras +$50k</p>
+                  <p className="text-[10px] text-gray-500">mayores a $150k</p>
                 </div>
                 <div className="bg-white p-3 rounded-lg border border-gray-200 text-center">
                   <Shield className="h-5 w-5 text-[#196428] mx-auto mb-1" />
@@ -1238,7 +1238,7 @@ export default function ProductPage() {
           {relatedProducts.length > 0 && (
             <div className="mt-12">
               <h2 className="text-xl font-black text-gray-900 mb-4">Productos relacionados</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                 {relatedProducts.map((relatedProduct) => {
                   const selectedSizeIndex = selectedRelatedSizes[relatedProduct.id!] || 0;
                   const hasSizes = relatedProduct.tamano && relatedProduct.tamano.length > 0;

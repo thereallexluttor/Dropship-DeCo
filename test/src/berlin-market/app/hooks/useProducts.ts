@@ -273,6 +273,15 @@ export const useProducts = () => {
     return subcategory ? subcategory.products : []
   }
 
+  // Función para obtener todos los productos de una categoría (sin filtrar por subcategoría)
+  const getAllProductsByCategory = (categoryId: number) => {
+    const category = productsByCategory.find(cat => cat.categoryId === categoryId)
+    if (!category) return []
+
+    // Combinar todos los productos de todas las subcategorías
+    return category.subcategories.flatMap(sub => sub.products)
+  }
+
   const refreshProducts = () => {
     setIsLoading(true)
     setError(null)
@@ -380,6 +389,7 @@ export const useProducts = () => {
     error,
     getProductsByCategory,
     getProductsBySubcategory,
+    getAllProductsByCategory,
     refreshProducts,
     // Funcionalidades de búsqueda
     searchResults,

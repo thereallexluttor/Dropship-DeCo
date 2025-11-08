@@ -180,7 +180,7 @@ const Vacantes = () => {
     { name: "Tienda", icon: ShoppingBag, href: "/tienda" },
     { name: "Carrito", icon: ShoppingCart, href: "/carrito" },
     { name: "Cuenta", icon: User, href: "#" },
-    { name: "Info", icon: Info, href: "/contacto" },
+    { name: "Info", icon: Info, href: "/sobre-nosotros" },
     { name: "Vacantes", icon: Briefcase, href: "/vacantes" },
     { name: "Tiendas", icon: MapPin, href: "/contacto" },
   ];
@@ -525,7 +525,7 @@ const Vacantes = () => {
                 </div>
                 <div className="w-[1px] h-6 bg-gray-200"></div>
                 <div className="flex items-center space-x-1">
-                  <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
                     <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                       <Info className="h-full w-full" />
                     </div>
@@ -608,7 +608,7 @@ const Vacantes = () => {
                 </div>
                 <div className="w-[1px] h-6 bg-gray-200"></div>
                 <div className="flex items-center space-x-2">
-                  <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
                     <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                       <Info className="h-full w-full" />
                     </div>
@@ -691,7 +691,7 @@ const Vacantes = () => {
                 </div>
                 <div className="w-[1.5px] h-5 bg-gray-200"></div>
                 <div className="flex items-center space-x-3">
-                  <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
+                  <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
                     <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
                       <Info className="h-full w-full" />
                     </div>

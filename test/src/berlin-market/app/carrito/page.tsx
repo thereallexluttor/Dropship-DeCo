@@ -60,7 +60,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import MainLayout from "../components/MainLayout"
-import CategoryDropdown from "../components/CategoryDropdown"
+import Header from "../components/Header"
 import AccountPopover from "../components/AccountPopover"
 import AccountPopoverContent from "../components/AccountPopoverContent"
 import Footer from "../components/Footer"
@@ -77,7 +77,6 @@ export default function CarritoPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Estado de autenticación
   const [user, setUser] = useState<any>(null)
@@ -112,10 +111,6 @@ export default function CarritoPage() {
   // Usar el hook personalizado para cargar categorías dinámicamente
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Searching for:", searchQuery)
-  }
 
   // Efecto para verificar autenticación
   useEffect(() => {
@@ -414,28 +409,6 @@ Te notificaremos cuando tu pedido sea procesado.`)
     }
   }
 
-  // Crear categorías con datos reales de Supabase
-  const processedCategories = categories.map(category => ({
-    name: category.name,
-    href: category.href,
-    subcategories: category.subcategories?.map(sub => ({
-      name: sub.name,
-      href: sub.href
-    })) || [],
-    promotions: category.promotions || [],
-    brands: category.brands || [],
-    bannerImage: category.bannerImage || { src: "/placeholder.jpg", alt: category.name, href: "#" }
-  }));
-
-  const navLinks = [
-    { name: "Inicio", icon: HomeIcon, href: "/" },
-    { name: "Tienda", icon: ShoppingBag, href: "/tienda" },
-    { name: "Carrito", icon: ShoppingCart, href: "/carrito" },
-    { name: "Cuenta", icon: User, href: "#" },
-    { name: "Info", icon: Info, href: "/sobre-nosotros" },
-    { name: "Vacantes", icon: Briefcase, href: "/vacantes" },
-    { name: "Tiendas", icon: MapPin, href: "#nuestras-tiendas" },
-  ];
 
   // Account Popover Content Component
   const AccountContent = () => (
@@ -546,337 +519,63 @@ Te notificaremos cuando tu pedido sea procesado.`)
     <MainLayout>
       <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
         {/* Promotional Banner */}
-        <div className="bg-[#196428] text-white py-1 overflow-hidden">
-          <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+        <div className="bg-[#196428] text-white py-1 sm:py-1.5 overflow-hidden">
+          <div className="animate-scroll whitespace-nowrap text-xs sm:text-sm font-bold" style={{ animationDuration: '40s' }}>
+            <span className="inline-block mr-4 sm:mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+            <span className="inline-block mr-4 sm:mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+            <span className="inline-block mr-4 sm:mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+            <span className="inline-block mr-4 sm:mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
           </div>
         </div>
 
-        <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
-          {/* Mobile Header (< 640px) */}
-          <div className="md:hidden">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <Link href="/" className="flex items-center flex-shrink-0">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={100}
-                    height={25}
-                    className="w-auto h-6 sm:h-7"
-                  />
-                </Link>
+        <Header 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={(e) => {
+            e.preventDefault()
+            if (searchQuery.trim()) {
+              router.push(`/tienda?search=${encodeURIComponent(searchQuery.trim())}`)
+            }
+          }}
+          onAccountClick={() => setIsAccountDrawerOpen(true)}
+        />
 
-                <div className="flex-1 w-full max-w-xs">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Buscar..."
-                      className="w-full h-9 px-3 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-4 w-4" />
-                    </button>
-                  </form>
-                </div>
-
-                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                  <SheetTrigger asChild>
-                    <button className="p-2 -mr-2">
-                      <Menu className="h-6 w-6 text-gray-700" />
-                    </button>
-                  </SheetTrigger>
-                  <SheetOverlay className="z-[100] bg-black/40" />
-                  <SheetContent side="right" className="w-[80%] max-w-[300px] overflow-y-auto z-[101]">
-                    <SheetHeader>
-                      <SheetTitle className="text-lg font-bold">Menú</SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-8 flex flex-col gap-6">
-                      <div>
-                        <h3 className="mb-2 text-sm font-semibold text-gray-500 px-2">Categorías</h3>
-                        <nav className="flex flex-col gap-1">
-                          {processedCategories.map((category) => (
-                            <Link key={category.name} href={category.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                              <span className="text-sm font-bold text-gray-800">{category.name}</span>
-                            </Link>
-                          ))}
-                        </nav>
-                      </div>
-                      <div className="border-t border-gray-200 -mx-6"></div>
-                      <nav className="flex flex-col gap-1">
-                        {navLinks.map((link) => {
-                          if (link.name === "Inicio") {
-                            return (
-                              <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                                <link.icon className="h-5 w-5 text-gray-500" />
-                                <span className="text-sm font-medium text-gray-500">{link.name}</span>
-                              </Link>
-                            );
-                          }
-                          if (link.name === "Carrito") {
-                            return (
-                              <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                                <div className="h-5 w-5 text-[#196428]">
-                                  <CartCounter />
-                                </div>
-                                <span className="text-sm font-medium text-[#196428]">{link.name}</span>
-                              </Link>
-                            );
-                          }
-                          if (link.name === "Cuenta") {
-                            return (
-                              <button
-                                key={link.name}
-                                onClick={() => {
-                                  setIsMobileMenuOpen(false);
-                                  setTimeout(() => setIsAccountDrawerOpen(true), 300);
-                                }}
-                                className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors text-left w-full"
-                              >
-                                <link.icon className="h-5 w-5 text-gray-600" />
-                                <span className="text-sm font-medium text-gray-800">{link.name}</span>
-                              </button>
-                            );
-                          }
-                          if (link.name === "Tiendas" || link.name === "Info" || link.name === "Vacantes") {
-                            return (
-                              <Link
-                                key={link.name}
-                                href={link.href}
-                                className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                              >
-                                <link.icon className="h-5 w-5 text-gray-600" />
-                                <span className="text-sm font-medium text-gray-800">{link.name === "Info" ? "Sobre Nosotros" : link.name}</span>
-                              </Link>
-                            );
-                          }
-                          return (
-                            <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                              <link.icon className="h-5 w-5 text-gray-600" />
-                              <span className="text-sm font-medium text-gray-800">{link.name}</span>
-                            </Link>
-                          );
-                        })}
-                      </nav>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
-            </div>
-          </div>
-
-          {/* Tablet Header (640px - 1023px) */}
-          <div className="hidden md:block lg:hidden">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={150}
-                    height={38}
-                    className="w-auto h-8"
-                  />
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-sm mx-4">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Buscar productos..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-5 w-5" />
-                    </button>
-                  </form>
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  <div className="flex items-center space-x-1">
-                    <Link href="/" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/")}>
-                      <div className="h-4 w-4 text-gray-500 transition-colors">
-                        <HomeIcon className="h-full w-full" />
-                      </div>
-                      <span className="text-xs font-light text-gray-500 mt-1 transition-colors">Inicio</span>
-                    </Link>
-                    <Link href="/tienda" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/tienda")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <ShoppingBag className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
-                    </Link>
-                    <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/carrito")}>
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
-                        <CartCounter />
-                      </div>
-                          <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Carrito</span>
-                    </Link>
-                    <AccountPopover />
-                  </div>
-                  <div className="w-[1px] h-6 bg-gray-200"></div>
-                  <div className="flex items-center space-x-1">
-                    <Link href="/sobre-nosotros" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/sobre-nosotros")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Info className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
-                    </Link>
-                    <Link href="/vacantes" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/vacantes")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Briefcase className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
-                    </Link>
-                    <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <MapPin className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop Header (≥ 1280px) */}
-          <div className="hidden xl:block">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0 ml-[150px] xl:ml-[150px] 2xl:ml-[180px]">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={200}
-                    height={50}
-                    className="w-auto h-12"
-                  />
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-lg mx-8 ml-[70px]">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Busca el producto o categoria de tu preferencia..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-5 w-5" />
-                    </button>
-                  </form>
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-4 flex-shrink-0">
-                  <div className="flex items-center space-x-3">
-                    <Link href="/" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/")}>
-                      <div className="h-4 w-4 text-gray-500 transition-colors">
-                        <HomeIcon className="h-full w-full" />
-                      </div>
-                      <span className="text-xs font-light text-gray-500 mt-1 transition-colors">Inicio</span>
-                    </Link>
-                    <Link href="/tienda" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/tienda")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <ShoppingBag className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
-                    </Link>
-                    <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/carrito")}>
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
-                        <CartCounter />
-                      </div>
-                          <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Carrito</span>
-                    </Link>
-                    <AccountPopover />
-                  </div>
-                  <div className="w-[1.5px] h-5 bg-gray-200"></div>
-                  <div className="flex items-center space-x-3">
-                    <Link href="/sobre-nosotros" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/sobre-nosotros")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Info className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
-                    </Link>
-                    <Link href="/vacantes" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/vacantes")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Briefcase className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
-                    </Link>
-                    <Link href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <MapPin className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Nuestras Tiendas</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="py-8">
-          <div className="container mx-auto px-4">
+        <main className="py-4 sm:py-6 md:py-8">
+          <div className="container mx-auto px-3 sm:px-4">
             <div className="max-w-4xl mx-auto">
               {/* Título */}
-              <div className="mb-8">
-                <h1 className="text-3xl font-black text-black mb-2">Carrito de Compras</h1>
-                <p className="text-gray-600">
+              <div className="mb-4 sm:mb-6 md:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-black text-black mb-1 sm:mb-2">Carrito de Compras</h1>
+                <p className="text-sm sm:text-base text-gray-600">
                   {items.length === 0 ? 'Tu carrito está vacío' : `${getTotalItems()} productos en tu carrito`}
                 </p>
               </div>
 
               {items.length === 0 ? (
                 /* Carrito vacío */
-                <div className="text-center py-16">
-                  <ShoppingCart className="h-24 w-24 text-gray-300 mx-auto mb-6" />
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Tu carrito está vacío</h2>
-                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                <div className="text-center py-8 sm:py-12 md:py-16">
+                  <ShoppingCart className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 text-gray-300 mx-auto mb-4 sm:mb-6" />
+                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2 sm:mb-4">Tu carrito está vacío</h2>
+                  <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-md mx-auto px-4">
                     ¡Es hora de llenarlo con productos increíbles para tus mascotas!
                   </p>
                   <Link
                     href="/tienda"
-                    className="inline-block bg-[#196428] hover:bg-[#145020] text-white px-8 py-3 rounded-full font-semibold transition-colors"
+                    className="inline-block bg-[#196428] hover:bg-[#145020] text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-colors text-sm sm:text-base"
                   >
                     Continuar Comprando
                   </Link>
                 </div>
               ) : (
                 /* Carrito con productos */
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Lista de productos */}
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <div className="space-y-4">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
+                    <div className="space-y-3 sm:space-y-4">
                       {items.map((item) => (
-                        <div key={item.id!} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                        <div key={item.id!} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-200 rounded-lg">
                           {/* Imagen del producto */}
-                          <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                          <div className="w-full sm:w-20 h-20 sm:h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 mx-auto sm:mx-0">
                             <Image
                               src={item.imagen_url || '/placeholder.jpg'}
                               alt={item.nombre}
@@ -887,9 +586,9 @@ Te notificaremos cuando tu pedido sea procesado.`)
                           </div>
 
                           {/* Información del producto */}
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg text-gray-900 mb-1">{item.nombre}</h3>
-                            <p className="text-sm text-gray-600 mb-2">{item.descripcion || 'Descripción del producto'}</p>
+                          <div className="flex-1 w-full sm:w-auto">
+                            <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-1">{item.nombre}</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{item.descripcion || 'Descripción del producto'}</p>
 
                             {/* Mostrar tamaños del producto con selección */}
                             <div className="mb-2">
@@ -905,37 +604,37 @@ Te notificaremos cuando tu pedido sea procesado.`)
                             </div>
 
                             {/* Indicadores */}
-                            <div className="flex gap-2 mb-2">
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2">
                               {item.descuento && (
-                                <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                                <span className="bg-red-100 text-red-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                                   Oferta
                                 </span>
                               )}
                               {item.destacado && (
-                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                <span className="bg-blue-100 text-blue-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                                   Destacado
                                 </span>
                               )}
                               {item.novedad && (
-                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                                <span className="bg-green-100 text-green-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                                   Nuevo
                                 </span>
                               )}
                             </div>
 
                             {/* Precio */}
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mb-3 sm:mb-0">
                               {item.discountApplied > 0 ? (
                                 <>
-                                  <span className="text-red-500 font-medium line-through">
+                                  <span className="text-red-500 font-medium line-through text-sm sm:text-base">
                                     $ {formatPrice(item.unitPrice / (1 - item.discountApplied / 100))}
                                   </span>
-                                  <span className="text-[#196428] font-bold text-lg">
+                                  <span className="text-[#196428] font-bold text-base sm:text-lg">
                                     $ {formatPrice(item.unitPrice)}
                                   </span>
                                 </>
                               ) : (
-                                <span className="text-[#196428] font-bold text-lg">
+                                <span className="text-[#196428] font-bold text-base sm:text-lg">
                                   $ {formatPrice(item.unitPrice)}
                                 </span>
                               )}
@@ -943,28 +642,33 @@ Te notificaremos cuando tu pedido sea procesado.`)
                           </div>
 
                           {/* Controles de cantidad */}
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => updateQuantity(item.id!, (item.quantity || 1) - 1)}
-                              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </button>
+                          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start border-t sm:border-t-0 pt-3 sm:pt-0">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <button
+                                onClick={() => updateQuantity(item.id!, (item.quantity || 1) - 1)}
+                                className="w-9 h-9 sm:w-8 sm:h-8 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full flex items-center justify-center transition-colors touch-manipulation"
+                                aria-label="Disminuir cantidad"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
 
-                            <span className="w-12 text-center font-semibold text-lg">
-                              {item.quantity}
-                            </span>
+                              <span className="w-12 text-center font-semibold text-base sm:text-lg">
+                                {item.quantity}
+                              </span>
 
-                            <button
-                              onClick={() => updateQuantity(item.id!, (item.quantity || 1) + 1)}
-                              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </button>
+                              <button
+                                onClick={() => updateQuantity(item.id!, (item.quantity || 1) + 1)}
+                                className="w-9 h-9 sm:w-8 sm:h-8 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full flex items-center justify-center transition-colors touch-manipulation"
+                                aria-label="Aumentar cantidad"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
 
                             <button
                               onClick={() => removeFromCart(item.id!)}
-                              className="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-full flex items-center justify-center transition-colors ml-2"
+                              className="w-9 h-9 sm:w-8 sm:h-8 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-600 rounded-full flex items-center justify-center transition-colors touch-manipulation sm:ml-2"
+                              aria-label="Eliminar producto"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -975,11 +679,11 @@ Te notificaremos cuando tu pedido sea procesado.`)
                   </div>
 
                   {/* Resumen del pedido */}
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">Resumen del Pedido</h2>
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5 md:p-6">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Resumen del Pedido</h2>
 
                     {/* Opción de recoger en tienda, zona y dirección */}
-                    <div className="space-y-3 mb-6">
+                    <div className="space-y-3 mb-4 sm:mb-6">
                       <div className="flex items-center gap-2">
                         <input
                           id="pickupInStore"
@@ -993,19 +697,19 @@ Te notificaremos cuando tu pedido sea procesado.`)
                               setDeliveryAddress('')
                             }
                           }}
-                          className="h-4 w-4 text-[#196428] border-gray-300 rounded"
+                          className="h-4 w-4 sm:h-5 sm:w-5 text-[#196428] border-gray-300 rounded touch-manipulation"
                         />
-                        <label htmlFor="pickupInStore" className="text-sm font-medium text-gray-800">Recoger en tienda</label>
+                        <label htmlFor="pickupInStore" className="text-sm sm:text-base font-medium text-gray-800 cursor-pointer">Recoger en tienda</label>
                       </div>
 
                       {!pickupInStore && (
                         <>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad/Zona de entrega</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Ciudad/Zona de entrega</label>
                             <select
                               value={deliveryZone}
                               onChange={(e) => setDeliveryZone(e.target.value as any)}
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm"
+                              className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm touch-manipulation"
                             >
                               <option value="">Selecciona una opción</option>
                               <option value="bucaramanga_am">Bucaramanga / Área Metropolitana</option>
@@ -1014,50 +718,50 @@ Te notificaremos cuando tu pedido sea procesado.`)
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de entrega y detalles</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Dirección de entrega y detalles</label>
                             <textarea
                               value={deliveryAddress}
                               onChange={(e) => setDeliveryAddress(e.target.value)}
                               rows={3}
                               placeholder="Ej: Calle 10 # 20-30, Apto 401, Barrio XXX, Referencia: Portería azul"
-                              className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm"
+                              className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm resize-none"
                             />
                           </div>
                         </>
                       )}
                     </div>
 
-                    <div className="space-y-3 mb-6">
-                      <div className="flex justify-between text-gray-600">
+                    <div className="space-y-2.5 sm:space-y-3 mb-4 sm:mb-6">
+                      <div className="flex justify-between text-sm sm:text-base text-gray-600">
                         <span>Subtotal ({getTotalItems()} productos)</span>
-                        <span>$ {formatPrice(getTotalPrice())}</span>
+                        <span className="font-medium">$ {formatPrice(getTotalPrice())}</span>
                       </div>
 
-                      <div className="flex justify-between text-gray-600">
+                      <div className="flex justify-between text-sm sm:text-base text-gray-600">
                         <span>Envío</span>
                         <span className={shippingFee > 0 ? 'text-gray-800 font-medium' : 'text-green-600 font-medium'}>
                           {shippingFee > 0 ? `$ ${formatPrice(shippingFee)}` : 'Gratis'}
                         </span>
                       </div>
 
-                      <div className="flex justify-between text-gray-600">
+                      <div className="flex justify-between text-sm sm:text-base text-gray-600">
                         <span>Impuestos</span>
                         <span className="text-green-600 font-medium">Incluidos</span>
                       </div>
 
-                      <div className="border-t border-gray-200 pt-3">
-                        <div className="flex justify-between text-lg font-bold text-gray-900">
+                      <div className="border-t border-gray-200 pt-2.5 sm:pt-3">
+                        <div className="flex justify-between text-base sm:text-lg font-bold text-gray-900">
                           <span>Total</span>
                           <span className="text-[#196428]">$ {formatPrice(getTotalPrice() + shippingFee)}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-2.5 sm:space-y-3">
                       <button
                         onClick={handlePayment}
                         disabled={isProcessingPayment}
-                        className="w-full bg-[#196428] hover:bg-[#145020] disabled:bg-gray-400 text-white py-3 px-6 rounded-full font-semibold transition-colors disabled:cursor-not-allowed"
+                        className="w-full bg-[#196428] hover:bg-[#145020] active:bg-[#0f3a15] disabled:bg-gray-400 text-white py-3 sm:py-3.5 px-6 rounded-full font-semibold transition-colors disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation"
                       >
                         {isProcessingPayment
                           ? 'Procesando...'
@@ -1067,14 +771,14 @@ Te notificaremos cuando tu pedido sea procesado.`)
 
                       <button
                         onClick={clearCart}
-                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-full font-semibold transition-colors"
+                        className="w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 py-3 sm:py-3.5 px-6 rounded-full font-semibold transition-colors text-sm sm:text-base touch-manipulation"
                       >
                         Vaciar Carrito
                       </button>
 
                       <Link
                         href="/tienda"
-                        className="block text-center text-[#196428] hover:text-[#145020] font-medium transition-colors"
+                        className="block text-center text-[#196428] hover:text-[#145020] font-medium transition-colors text-sm sm:text-base py-2"
                       >
                         Continuar Comprando
                       </Link>
@@ -1091,14 +795,14 @@ Te notificaremos cuando tu pedido sea procesado.`)
 
       {/* Modal de Autenticación para el Pago */}
       <Dialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen}>
-        <DialogContent className="sm:max-w-sm mx-auto bg-[#FBFFE6] border-2 border-gray-200 shadow-2xl rounded-2xl">
-          <DialogHeader className="text-center border-b border-gray-200 pb-4 pt-2">
-            <DialogTitle className="text-xl font-bold text-gray-800">Iniciar Sesión o Registrarse</DialogTitle>
-            <DialogDescription className="text-sm text-gray-600 mt-1">
+        <DialogContent className="w-[95vw] max-w-sm mx-auto bg-[#FBFFE6] border-2 border-gray-200 shadow-2xl rounded-xl sm:rounded-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="text-center border-b border-gray-200 pb-3 sm:pb-4 pt-2 flex-shrink-0">
+            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-800">Iniciar Sesión o Registrarse</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-gray-600 mt-1">
               Para proceder con el pago, necesitas tener una cuenta
             </DialogDescription>
           </DialogHeader>
-          <div className="px-3 py-4 max-h-[55vh] overflow-y-auto">
+          <div className="px-3 sm:px-4 py-3 sm:py-4 overflow-y-auto flex-1">
             {/* Formulario de Login/Registro para el Modal */}
             <div className="w-full space-y-3">
                 {/* Ya soy cliente */}
@@ -1111,7 +815,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
                           placeholder="Email"
                           value={modalEmail}
                           onChange={(e) => setModalEmail(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                          className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
                         />
                       </div>
                       <div className="relative">
@@ -1120,12 +824,12 @@ Te notificaremos cuando tu pedido sea procesado.`)
                           placeholder="Contraseña"
                           value={modalPassword}
                           onChange={(e) => setModalPassword(e.target.value)}
-                          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-12 transition-all duration-200"
+                          className="w-full px-3 py-2.5 sm:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 sm:pr-12 transition-all duration-200 touch-manipulation"
                         />
                         <button
                           type="button"
                           onClick={() => setModalShowPassword(!modalShowPassword)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                          className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors touch-manipulation p-1"
                         >
                           {modalShowPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
@@ -1133,7 +837,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
                       <button
                         type="submit"
                         disabled={modalIsLoading}
-                        className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg"
+                        className="w-full bg-[#196428] hover:bg-[#145020] active:bg-[#0f3a15] text-white font-semibold py-2.5 sm:py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg touch-manipulation"
                       >
                         {modalIsLoading ? "Cargando..." : "Iniciar sesión"}
                       </button>
@@ -1223,7 +927,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
                             placeholder="Nombre completo"
                             value={modalNombre}
                             onChange={(e) => setModalNombre(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
                           />
                         </div>
 
@@ -1233,7 +937,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
                             placeholder="Email"
                             value={modalRegisterEmail}
                             onChange={(e) => setModalRegisterEmail(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
                           />
                         </div>
 
@@ -1243,7 +947,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
                             placeholder="Teléfono"
                             value={modalTelefono}
                             onChange={(e) => setModalTelefono(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
                           />
                         </div>
 
@@ -1253,7 +957,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
                             placeholder="Dirección completa"
                             value={modalDireccion}
                             onChange={(e) => setModalDireccion(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200"
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
                           />
                         </div>
 
@@ -1263,12 +967,12 @@ Te notificaremos cuando tu pedido sea procesado.`)
                             placeholder="Contraseña"
                             value={modalRegisterPassword}
                             onChange={(e) => setModalRegisterPassword(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 transition-all duration-200"
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 transition-all duration-200 touch-manipulation"
                           />
                           <button
                             type="button"
                             onClick={() => setModalShowPassword(!modalShowPassword)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors touch-manipulation p-1"
                           >
                             {modalShowPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                           </button>
@@ -1280,12 +984,12 @@ Te notificaremos cuando tu pedido sea procesado.`)
                             placeholder="Confirmar contraseña"
                             value={modalConfirmPassword}
                             onChange={(e) => setModalConfirmPassword(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 transition-all duration-200"
+                            className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm pr-10 transition-all duration-200 touch-manipulation"
                           />
                           <button
                             type="button"
                             onClick={() => setModalShowConfirmPassword(!modalShowConfirmPassword)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors touch-manipulation p-1"
                           >
                             {modalShowConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                           </button>
@@ -1294,7 +998,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
                         <button
                           type="submit"
                           disabled={modalIsLoading}
-                          className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg"
+                          className="w-full bg-[#196428] hover:bg-[#145020] active:bg-[#0f3a15] text-white font-semibold py-2.5 sm:py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg touch-manipulation"
                         >
                           {modalIsLoading ? "Registrando..." : "Crear cuenta"}
                         </button>
@@ -1317,7 +1021,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
 
       {/* Account Drawer for Mobile */}
       <Drawer open={isAccountDrawerOpen} onOpenChange={setIsAccountDrawerOpen}>
-        <DrawerContent className="max-h-[85vh]">
+        <DrawerContent className="max-h-[85vh] z-[110]">
           <DrawerHeader className="text-center border-b border-gray-200">
             <DrawerTitle className="text-lg font-bold text-gray-800">Mi Cuenta</DrawerTitle>
           </DrawerHeader>

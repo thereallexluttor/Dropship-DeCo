@@ -6,12 +6,20 @@ import { useState, useEffect } from "react"
 import MainLayout from "../components/MainLayout"
 import Header from "../components/Header"
 import Footer from "../components/Footer"
+import AccountPopoverContent from "../components/AccountPopoverContent"
 import supabase, { SobreNosotros } from "@/lib/supabase"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
 
 export default function AboutUs() {
   const [searchQuery, setSearchQuery] = useState("")
   const [contenido, setContenido] = useState<SobreNosotros | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
 
   useEffect(() => {
     const cargarContenido = async () => {
@@ -85,6 +93,7 @@ export default function AboutUs() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onSearchSubmit={handleSearch}
+          onAccountClick={() => setIsAccountDrawerOpen(true)}
         />
 
         <main className="py-16 sm:py-20 md:py-24">
@@ -245,6 +254,18 @@ export default function AboutUs() {
 
         <Footer />
       </div>
+
+      {/* Account Drawer for Mobile */}
+      <Drawer open={isAccountDrawerOpen} onOpenChange={setIsAccountDrawerOpen}>
+        <DrawerContent className="max-h-[85vh] z-[110]">
+          <DrawerHeader className="text-center border-b border-gray-200">
+            <DrawerTitle className="text-lg font-bold text-gray-800">Mi Cuenta</DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-6">
+            <AccountPopoverContent />
+          </div>
+        </DrawerContent>
+      </Drawer>
     </MainLayout>
   )
 }

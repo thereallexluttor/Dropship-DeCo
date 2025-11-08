@@ -39,6 +39,8 @@ export default function AccountPopover() {
     await supabase.auth.signOut();
     setUser(null);
     alert("Sesión cerrada exitosamente");
+    // Redirigir a inicio después de cerrar sesión
+    router.push('/');
   };
 
   const handleGoToAccount = () => {

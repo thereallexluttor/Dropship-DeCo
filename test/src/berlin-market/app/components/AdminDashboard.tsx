@@ -48,12 +48,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown, Briefcase, Users, FileText, Eye, Download, MapPin, ShoppingBag, ClipboardList } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown, Briefcase, Users, FileText, Eye, Download, MapPin, ShoppingBag, ClipboardList, Search, TrendingUp, DollarSign, BarChart3, PieChart, Activity } from 'lucide-react';
 
 // Función helper para formatear precios sin ceros decimales innecesarios
 const formatPrice = (price: number): string => {
   const formatted = price.toFixed(2);
   return formatted.endsWith('.00') ? price.toFixed(0) : formatted;
+};
+
+// Función helper para formatear números con separadores de miles
+const formatNumber = (num: number): string => {
+  return Math.round(num).toLocaleString('es-ES');
+};
+
+// Función helper para calcular días transcurridos desde una fecha
+const calcularDiasTranscurridos = (fecha: string): number => {
+  const fechaPedido = new Date(fecha);
+  const fechaActual = new Date();
+  fechaActual.setHours(0, 0, 0, 0);
+  fechaPedido.setHours(0, 0, 0, 0);
+  const diferencia = fechaActual.getTime() - fechaPedido.getTime();
+  return Math.floor(diferencia / (1000 * 60 * 60 * 24));
 };
 
 const AdminDashboard = () => {
@@ -72,6 +87,11 @@ const AdminDashboard = () => {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [filtroEstadoPedidos, setFiltroEstadoPedidos] = useState<string>('todos');
   const [pedidoSearch, setPedidoSearch] = useState<string>('');
+  const [filtroCategoriaSubcategorias, setFiltroCategoriaSubcategorias] = useState<number>(0);
+  const [busquedaSubcategorias, setBusquedaSubcategorias] = useState<string>('');
+  const [busquedaProductos, setBusquedaProductos] = useState<string>('');
+  const [filtroCategoriaProductos, setFiltroCategoriaProductos] = useState<number>(0);
+  const [filtroSubcategoriaProductos, setFiltroSubcategoriaProductos] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
@@ -170,8 +190,51 @@ const AdminDashboard = () => {
   }, []);
 
   // Función para cargar pedidos con detalles
+  // Función para cancelar automáticamente pedidos pendientes con más de 7 días
+  const cancelarPedidosVencidos = async () => {
+    try {
+      const fechaLimite = new Date();
+      fechaLimite.setDate(fechaLimite.getDate() - 7);
+      fechaLimite.setHours(0, 0, 0, 0);
+
+      // Buscar pedidos pendientes con más de 7 días
+      const { data: pedidosVencidos, error: errorBusqueda } = await supabase
+        .from('pedidos')
+        .select('id')
+        .eq('estado', 'pendiente')
+        .lt('fecha', fechaLimite.toISOString());
+
+      if (errorBusqueda) {
+        console.error('❌ Error buscando pedidos vencidos:', errorBusqueda);
+        return;
+      }
+
+      if (pedidosVencidos && pedidosVencidos.length > 0) {
+        console.log(`🔄 Cancelando ${pedidosVencidos.length} pedido(s) vencido(s)...`);
+        
+        // Actualizar todos los pedidos vencidos a cancelado
+        const { error: errorActualizacion } = await supabase
+          .from('pedidos')
+          .update({ estado: 'cancelado' })
+          .in('id', pedidosVencidos.map(p => p.id));
+
+        if (errorActualizacion) {
+          console.error('❌ Error cancelando pedidos vencidos:', errorActualizacion);
+        } else {
+          console.log(`✅ ${pedidosVencidos.length} pedido(s) cancelado(s) automáticamente`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error inesperado cancelando pedidos vencidos:', error);
+    }
+  };
+
   const loadPedidos = async () => {
     console.log('🔄 Cargando pedidos desde Supabase...');
+    
+    // Primero cancelar pedidos vencidos automáticamente
+    await cancelarPedidosVencidos();
+    
     try {
       // Intentar usar función RPC primero (más eficiente)
       const { data: pedidosData, error: pedidosError } = await supabase
@@ -454,6 +517,7 @@ const AdminDashboard = () => {
       case 'pagado': return 'text-blue-600';
       case 'enviado': return 'text-purple-600';
       case 'entregado': return 'text-green-600';
+      case 'cancelado': return 'text-red-600';
       default: return 'text-gray-600';
     }
   };
@@ -465,6 +529,7 @@ const AdminDashboard = () => {
       case 'pagado': return 'Pagado';
       case 'enviado': return 'Enviado';
       case 'entregado': return 'Entregado';
+      case 'cancelado': return 'Cancelado';
       default: return estado;
     }
   };
@@ -494,6 +559,128 @@ const AdminDashboard = () => {
       return 'bg-[#196428] text-white hover:bg-[#145020]';
     }
     return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+  };
+
+  // Funciones para calcular métricas de analítica
+  const calcularMetricasPedidos = () => {
+    // Obtener pedidos únicos
+    const pedidosUnicos = new Map<number, any>();
+    pedidos.forEach(p => {
+      if (!pedidosUnicos.has(p.pedido_id)) {
+        pedidosUnicos.set(p.pedido_id, {
+          pedido_id: p.pedido_id,
+          total: p.total,
+          estado: p.estado_pedido,
+          fecha: p.fecha
+        });
+      }
+    });
+    const pedidosArray = Array.from(pedidosUnicos.values());
+
+    // Total de pedidos
+    const totalPedidos = pedidosArray.length;
+
+    // Pedidos por estado
+    const pedidosPorEstado = pedidosArray.reduce((acc: any, p: any) => {
+      const estado = p.estado || 'sin_estado';
+      acc[estado] = (acc[estado] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Ingresos totales (solo pedidos pagados, enviados o entregados)
+    const estadosPagados = ['pagado', 'enviado', 'entregado'];
+    const ingresosTotales = pedidosArray
+      .filter((p: any) => estadosPagados.includes(p.estado))
+      .reduce((sum: number, p: any) => sum + (p.total || 0), 0);
+
+    // Promedio de valor por pedido
+    const promedioValor = totalPedidos > 0 
+      ? pedidosArray.reduce((sum: number, p: any) => sum + (p.total || 0), 0) / totalPedidos 
+      : 0;
+
+    // Pedidos por mes (últimos 6 meses)
+    const ahora = new Date();
+    const pedidosPorMes: { [key: string]: number } = {};
+    for (let i = 5; i >= 0; i--) {
+      const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+      const mesKey = fecha.toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
+      pedidosPorMes[mesKey] = 0;
+    }
+
+    pedidosArray.forEach((p: any) => {
+      if (p.fecha) {
+        const fechaPedido = new Date(p.fecha);
+        const mesKey = fechaPedido.toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
+        if (pedidosPorMes[mesKey] !== undefined) {
+          pedidosPorMes[mesKey]++;
+        }
+      }
+    });
+
+    // Tasa de cancelación
+    const pedidosCancelados = pedidosPorEstado['cancelado'] || 0;
+    const tasaCancelacion = totalPedidos > 0 ? (pedidosCancelados / totalPedidos) * 100 : 0;
+
+    return {
+      totalPedidos,
+      pedidosPorEstado,
+      ingresosTotales,
+      promedioValor,
+      pedidosPorMes,
+      tasaCancelacion
+    };
+  };
+
+  const calcularMetricasProductos = () => {
+    // Agrupar productos vendidos
+    const productosVendidos = new Map<number, {
+      producto_id: number;
+      nombre: string;
+      cantidad: number;
+      ingresos: number;
+    }>();
+
+    pedidos.forEach(p => {
+      if (p.producto_id && p.nombre_producto) {
+        const productoId = p.producto_id;
+        if (!productosVendidos.has(productoId)) {
+          productosVendidos.set(productoId, {
+            producto_id: productoId,
+            nombre: p.nombre_producto,
+            cantidad: 0,
+            ingresos: 0
+          });
+        }
+        const producto = productosVendidos.get(productoId)!;
+        producto.cantidad += p.cantidad || 0;
+        // Solo contar ingresos de pedidos pagados, enviados o entregados
+        if (['pagado', 'enviado', 'entregado'].includes(p.estado_pedido)) {
+          producto.ingresos += p.subtotal || 0;
+        }
+      }
+    });
+
+    const productosArray = Array.from(productosVendidos.values());
+    
+    // Total de unidades vendidas
+    const totalUnidades = productosArray.reduce((sum, p) => sum + p.cantidad, 0);
+
+    // Top 10 productos más vendidos por cantidad
+    const topProductosCantidad = [...productosArray]
+      .sort((a, b) => b.cantidad - a.cantidad)
+      .slice(0, 10);
+
+    // Top 10 productos por ingresos
+    const topProductosIngresos = [...productosArray]
+      .sort((a, b) => b.ingresos - a.ingresos)
+      .slice(0, 10);
+
+    return {
+      totalUnidades,
+      totalProductosUnicos: productosArray.length,
+      topProductosCantidad,
+      topProductosIngresos
+    };
   };
 
   const loadData = async () => {
@@ -2396,7 +2583,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-9 items-center max-w-6xl mx-auto rounded-full border border-green-200 bg-green-50 shadow-sm">
+        <TabsList className="grid w-full grid-cols-10 items-center max-w-6xl mx-auto rounded-full border border-green-200 bg-green-50 shadow-sm">
           <TabsTrigger value="categorias" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             Categorías
@@ -2432,6 +2619,10 @@ const AdminDashboard = () => {
           <TabsTrigger value="pedidos" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             
             Pedidos
+          </TabsTrigger>
+          <TabsTrigger value="analitica" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            
+            Analitica
           </TabsTrigger>
         </TabsList>
 
@@ -2972,14 +3163,72 @@ const AdminDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {subcategorias.length === 0 ? (
-                <div className="text-center py-8">
-                  <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No hay subcategorías registradas</p>
+              {/* Filtros de búsqueda y categoría */}
+              <div className="mb-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar subcategoría por nombre..."
+                      value={busquedaSubcategorias}
+                      onChange={(e) => setBusquedaSubcategorias(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select
+                    value={filtroCategoriaSubcategorias.toString()}
+                    onValueChange={(value) => setFiltroCategoriaSubcategorias(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrar por categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Todas las categorías</SelectItem>
+                      {(() => {
+                        const filteredCategorias = categorias.filter((cat): cat is typeof cat & { id: number } => cat.id !== undefined && cat.id !== null);
+                        return filteredCategorias.map((categoria) => (
+                          <SelectItem key={categoria.id} value={categoria.id.toString()}>
+                            {categoria.nombre}
+                          </SelectItem>
+                        ));
+                      })()}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {subcategorias.map((subcategoria) => {
+              </div>
+
+              {(() => {
+                // Filtrar subcategorías según los filtros
+                const subcategoriasFiltradas = subcategorias.filter((subcategoria) => {
+                  const coincideCategoria = filtroCategoriaSubcategorias === 0 || subcategoria.categories_id === filtroCategoriaSubcategorias;
+                  const coincideBusqueda = busquedaSubcategorias === '' || 
+                    subcategoria.nombre.toLowerCase().includes(busquedaSubcategorias.toLowerCase()) ||
+                    subcategoria.descripcion?.toLowerCase().includes(busquedaSubcategorias.toLowerCase());
+                  return coincideCategoria && coincideBusqueda;
+                });
+
+                if (subcategorias.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No hay subcategorías registradas</p>
+                    </div>
+                  );
+                }
+
+                if (subcategoriasFiltradas.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No se encontraron subcategorías con los filtros aplicados</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {subcategoriasFiltradas.map((subcategoria) => {
                     const categoria = categorias.find(c => c.id === subcategoria.categories_id);
                     return (
                       <Card key={subcategoria.id} className="border-l-4 border-l-blue-500">
@@ -3068,8 +3317,9 @@ const AdminDashboard = () => {
                       </Card>
                     );
                   })}
-                </div>
-              )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -3366,14 +3616,109 @@ const AdminDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {productos.length === 0 ? (
-                <div className="text-center py-8">
-                  <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No hay productos registrados</p>
+              {/* Filtros de búsqueda, categoría y subcategoría */}
+              <div className="mb-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar producto por nombre..."
+                      value={busquedaProductos}
+                      onChange={(e) => setBusquedaProductos(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select
+                    value={filtroCategoriaProductos.toString()}
+                    onValueChange={(value) => {
+                      setFiltroCategoriaProductos(parseInt(value));
+                      setFiltroSubcategoriaProductos(0); // Reset subcategoría cuando cambia la categoría
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrar por categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Todas las categorías</SelectItem>
+                      {(() => {
+                        const filteredCategorias = categorias.filter((cat): cat is typeof cat & { id: number } => cat.id !== undefined && cat.id !== null);
+                        return filteredCategorias.map((categoria) => (
+                          <SelectItem key={categoria.id} value={categoria.id.toString()}>
+                            {categoria.nombre}
+                          </SelectItem>
+                        ));
+                      })()}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={filtroSubcategoriaProductos.toString()}
+                    onValueChange={(value) => setFiltroSubcategoriaProductos(parseInt(value))}
+                    disabled={filtroCategoriaProductos === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrar por subcategoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Todas las subcategorías</SelectItem>
+                      {(() => {
+                        const filteredSubcategorias = subcategorias
+                          .filter(sub => filtroCategoriaProductos === 0 || sub.categories_id === filtroCategoriaProductos)
+                          .filter((sub): sub is typeof sub & { id: number } => sub.id !== undefined && sub.id !== null);
+                        return filteredSubcategorias.map((subcategoria) => {
+                          const categoria = categorias.find(c => c.id === subcategoria.categories_id);
+                          return (
+                            <SelectItem key={subcategoria.id} value={subcategoria.id.toString()}>
+                              {categoria?.nombre} - {subcategoria.nombre}
+                            </SelectItem>
+                          );
+                        });
+                      })()}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {productos.map((producto) => {
+              </div>
+
+              {(() => {
+                // Filtrar productos según los filtros
+                const productosFiltrados = productos.filter((producto) => {
+                  const subcategoria = subcategorias.find(s => s.id === producto.subcategorias_id);
+                  const categoria = categorias.find(c => c.id === subcategoria?.categories_id);
+                  
+                  const coincideNombre = busquedaProductos === '' || 
+                    producto.nombre.toLowerCase().includes(busquedaProductos.toLowerCase()) ||
+                    producto.descripcion?.toLowerCase().includes(busquedaProductos.toLowerCase());
+                  
+                  const coincideCategoria = filtroCategoriaProductos === 0 || 
+                    subcategoria?.categories_id === filtroCategoriaProductos;
+                  
+                  const coincideSubcategoria = filtroSubcategoriaProductos === 0 || 
+                    producto.subcategorias_id === filtroSubcategoriaProductos;
+                  
+                  return coincideNombre && coincideCategoria && coincideSubcategoria;
+                });
+
+                if (productos.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No hay productos registrados</p>
+                    </div>
+                  );
+                }
+
+                if (productosFiltrados.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No se encontraron productos con los filtros aplicados</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {productosFiltrados.map((producto) => {
                     const subcategoria = subcategorias.find(s => s.id === producto.subcategorias_id);
                     const categoria = categorias.find(c => c.id === subcategoria?.categories_id);
                     const marca = marcas.find(m => m.id === producto.id_marca);
@@ -3761,8 +4106,9 @@ const AdminDashboard = () => {
                       </Card>
                     );
                   })}
-                </div>
-              )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -5456,6 +5802,13 @@ const AdminDashboard = () => {
                       >
                         ✅ Entregados ({getContadorPedidosPorEstado('entregado')})
                       </Button>
+
+                      <Button
+                        onClick={() => setFiltroEstadoPedidos('cancelado')}
+                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('cancelado')}`}
+                      >
+                        ❌ Cancelados ({getContadorPedidosPorEstado('cancelado')})
+                      </Button>
                     </div>
                   </div>
 
@@ -5466,13 +5819,16 @@ const AdminDashboard = () => {
                         filtroEstadoPedidos === 'pendiente' ? 'bg-yellow-100' :
                         filtroEstadoPedidos === 'pagado' ? 'bg-blue-100' :
                         filtroEstadoPedidos === 'enviado' ? 'bg-purple-100' :
-                        'bg-green-100'
+                        filtroEstadoPedidos === 'entregado' ? 'bg-green-100' :
+                        filtroEstadoPedidos === 'cancelado' ? 'bg-red-100' :
+                        'bg-gray-100'
                       }`}>
                         <span className="text-3xl">
                           {filtroEstadoPedidos === 'pendiente' && '⏳'}
                           {filtroEstadoPedidos === 'pagado' && '💳'}
                           {filtroEstadoPedidos === 'enviado' && '📦'}
                           {filtroEstadoPedidos === 'entregado' && '✅'}
+                          {filtroEstadoPedidos === 'cancelado' && '❌'}
                           {filtroEstadoPedidos === 'todos' && '📋'}
                         </span>
                       </div>
@@ -5527,15 +5883,29 @@ const AdminDashboard = () => {
                                 
                                 <div>
                                   <h3 className="text-2xl font-bold text-gray-900">Pedido #{pedido.pedido_id}</h3>
-                                  <p className="text-sm text-gray-600">
-                                    {new Date(pedido.fecha).toLocaleDateString('es-ES', {
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </p>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="text-sm text-gray-600">
+                                      {new Date(pedido.fecha).toLocaleDateString('es-ES', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </p>
+                                    {(() => {
+                                      const diasTranscurridos = calcularDiasTranscurridos(pedido.fecha);
+                                      return (
+                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                          {diasTranscurridos === 0 
+                                            ? 'Hoy' 
+                                            : diasTranscurridos === 1 
+                                            ? 'Hace 1 día' 
+                                            : `Hace ${diasTranscurridos} días`}
+                                        </span>
+                                      );
+                                    })()}
+                                  </div>
                                 </div>
                               </div>
 
@@ -5584,6 +5954,7 @@ const AdminDashboard = () => {
                                       {pedido.estado_pedido === 'pagado' && '💳 '}
                                       {pedido.estado_pedido === 'enviado' && '📦 '}
                                       {pedido.estado_pedido === 'entregado' && '✅ '}
+                                      {pedido.estado_pedido === 'cancelado' && '❌ '}
                                       {getEstadoNombre(pedido.estado_pedido)}
                                     </span>
                                   </SelectValue>
@@ -5607,6 +5978,11 @@ const AdminDashboard = () => {
                                   <SelectItem value="entregado">
                                     <span className="flex items-center gap-2">
                                       ✅ <span className="text-green-600 font-medium">Entregado</span>
+                                    </span>
+                                  </SelectItem>
+                                  <SelectItem value="cancelado">
+                                    <span className="flex items-center gap-2">
+                                      ❌ <span className="text-red-600 font-medium">Cancelado</span>
                                     </span>
                                   </SelectItem>
                                 </SelectContent>
@@ -5690,6 +6066,238 @@ const AdminDashboard = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="analitica" className="space-y-6">
+          {(() => {
+            const metricasPedidos = calcularMetricasPedidos();
+            const metricasProductos = calcularMetricasProductos();
+
+            return (
+              <>
+                {/* Métricas Clave de Pedidos */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Métricas de Pedidos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Total de Pedidos */}
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-black mb-2">Total de Pedidos</p>
+                          <p className="text-3xl font-bold text-black">{formatNumber(metricasPedidos.totalPedidos)}</p>
+                        </div>
+                      </div>
+
+                      {/* Ingresos Totales */}
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-black mb-2">Ingresos Totales</p>
+                          <p className="text-3xl font-bold text-black">${formatNumber(metricasPedidos.ingresosTotales)}</p>
+                        </div>
+                      </div>
+
+                      {/* Promedio por Pedido */}
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-black mb-2">Promedio por Pedido</p>
+                          <p className="text-3xl font-bold text-black">${formatNumber(metricasPedidos.promedioValor)}</p>
+                        </div>
+                      </div>
+
+                      {/* Tasa de Cancelación */}
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-black mb-2">Tasa de Cancelación</p>
+                          <p className="text-3xl font-bold text-black">{Math.round(metricasPedidos.tasaCancelacion)}%</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pedidos por Estado */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <PieChart className="h-5 w-5" />
+                      Pedidos por Estado
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      {Object.entries(metricasPedidos.pedidosPorEstado).map(([estado, cantidad]: [string, any]) => {
+                        const getEstadoBgColor = (estado: string) => {
+                          switch (estado) {
+                            case 'pendiente': return 'bg-yellow-500';
+                            case 'pagado': return 'bg-blue-500';
+                            case 'enviado': return 'bg-purple-500';
+                            case 'entregado': return 'bg-green-500';
+                            case 'cancelado': return 'bg-red-500';
+                            default: return 'bg-gray-500';
+                          }
+                        };
+                        return (
+                          <div key={estado} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <p className="text-sm font-medium text-gray-600 mb-1">{getEstadoNombre(estado)}</p>
+                            <p className="text-2xl font-bold text-gray-900">{cantidad}</p>
+                            <div className="mt-2">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full ${getEstadoBgColor(estado)}`}
+                                  style={{ width: `${(cantidad / metricasPedidos.totalPedidos) * 100}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pedidos por Mes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Pedidos por Mes (Últimos 6 meses)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {Object.entries(metricasPedidos.pedidosPorMes).map(([mes, cantidad]: [string, any]) => {
+                        const maxCantidad = Math.max(...Object.values(metricasPedidos.pedidosPorMes) as number[]);
+                        const porcentaje = maxCantidad > 0 ? (cantidad / maxCantidad) * 100 : 0;
+                        return (
+                          <div key={mes} className="flex items-center gap-4">
+                            <div className="w-24 text-sm font-medium text-gray-700">{mes}</div>
+                            <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                              <div 
+                                className="bg-[#196428] h-6 rounded-full flex items-center justify-end pr-2"
+                                style={{ width: `${porcentaje}%` }}
+                              >
+                                {cantidad > 0 && (
+                                  <span className="text-xs font-semibold text-white">{cantidad}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="w-16 text-right text-sm font-semibold text-gray-900">{cantidad}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Métricas de Productos */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Métricas de Productos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-black mb-2">Total Unidades Vendidas</p>
+                          <p className="text-3xl font-bold text-black">{formatNumber(metricasProductos.totalUnidades)}</p>
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-black mb-2">Productos Únicos</p>
+                          <p className="text-3xl font-bold text-black">{formatNumber(metricasProductos.totalProductosUnicos)}</p>
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <p className="text-sm font-medium text-black mb-2">Promedio por Producto</p>
+                          <p className="text-3xl font-bold text-black">
+                            {metricasProductos.totalProductosUnicos > 0 
+                              ? formatNumber(Math.round(metricasProductos.totalUnidades / metricasProductos.totalProductosUnicos))
+                              : 0}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Top Productos por Cantidad */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Top 10 Productos Más Vendidos (por Cantidad)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {metricasProductos.topProductosCantidad.length > 0 ? (
+                        metricasProductos.topProductosCantidad.map((producto, index) => (
+                          <div key={producto.producto_id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-[#196428] transition-colors">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#196428] text-white font-bold text-sm">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900">{producto.nombre}</p>
+                              <p className="text-sm text-gray-600">ID: {producto.producto_id}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-[#196428] text-lg">{producto.cantidad} unidades</p>
+                              <p className="text-sm text-gray-600">${formatNumber(producto.ingresos)}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-center text-gray-500 py-8">No hay productos vendidos aún</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Top Productos por Ingresos */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Top 10 Productos por Ingresos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {metricasProductos.topProductosIngresos.length > 0 ? (
+                        metricasProductos.topProductosIngresos.map((producto, index) => (
+                          <div key={producto.producto_id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-green-500 transition-colors">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white font-bold text-sm">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900">{producto.nombre}</p>
+                              <p className="text-sm text-gray-600">ID: {producto.producto_id}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-green-600 text-lg">${formatNumber(producto.ingresos)}</p>
+                              <p className="text-sm text-gray-600">{producto.cantidad} unidades</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-center text-gray-500 py-8">No hay productos vendidos aún</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            );
+          })()}
         </TabsContent>
       </Tabs>
 

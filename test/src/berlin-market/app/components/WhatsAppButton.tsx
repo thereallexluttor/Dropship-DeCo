@@ -68,7 +68,7 @@ const WhatsAppButton = ({ className = "" }: WhatsAppButtonProps) => {
       {/* Main WhatsApp Button */}
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className={`whatsapp-button fixed bottom-24 right-8 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-50 ${className}`}
+        className={`whatsapp-button fixed bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-50 ${className}`}
       >
         <Image
           src="/icons/whatsapp.png"

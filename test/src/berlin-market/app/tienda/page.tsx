@@ -82,6 +82,7 @@ function TiendaPageContent() {
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCategoriesDrawerOpen, setIsCategoriesDrawerOpen] = useState(false)
+  const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false)
   const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false)
   // Estado para manejar el tamaño seleccionado de cada producto
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
@@ -99,7 +100,7 @@ function TiendaPageContent() {
 
   // Hooks para datos de Supabase
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
-  const { products, productsByCategory, discountedProducts, featuredProducts, newProducts, brands, categories: productCategories, isLoading: productsLoading, error: productsError, getProductsBySubcategory, searchResults, isSearching, searchProducts, liveSearchResults, isLiveSearching, updateLiveSearchQuery, clearLiveSearchResults } = useProducts()
+  const { products, productsByCategory, discountedProducts, featuredProducts, newProducts, brands, categories: productCategories, isLoading: productsLoading, error: productsError, getProductsBySubcategory, getAllProductsByCategory, searchResults, isSearching, searchProducts, liveSearchResults, isLiveSearching, updateLiveSearchQuery, clearLiveSearchResults } = useProducts()
 
   // Hook para el carrito de compras
   const { addToCart } = useCart()
@@ -167,7 +168,8 @@ function TiendaPageContent() {
               } else {
                 // La subcategoría no existe en la categoría, resetear a "Todas las subcategorías"
                 console.log('Subcategoría no encontrada en la categoría, reseteando')
-                setSelectedSubcategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
+                // Usar 0 como indicador de "todas las subcategorías de esta categoría"
+                setSelectedSubcategory(0)
 
                 // Solo mostrar categoría
                 const category = categories.find(cat => cat.id === categoryId)
@@ -179,7 +181,8 @@ function TiendaPageContent() {
             }
           } else {
             // Solo categoría, mostrar todos los productos de esa categoría
-            setSelectedSubcategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
+            // Usar 0 como indicador de "todas las subcategorías de esta categoría"
+            setSelectedSubcategory(0)
             const category = categories.find(cat => cat.id === categoryId)
             if (category) {
               setCurrentTitle(category.name)
@@ -286,6 +289,52 @@ function TiendaPageContent() {
     }
   }
 
+  // Función para manejar clics en breadcrumbs
+  const handleBreadcrumbClick = (breadcrumbName: string, breadcrumbIndex: number) => {
+    // Si se hace clic en "Tienda", mostrar todos los productos
+    if (breadcrumbName === "Tienda") {
+      handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS)
+      return
+    }
+
+    // Buscar la categoría por nombre en el array de breadcrumbs
+    // El índice en currentBreadcrumbs es: ["Inicio", "Tienda", categoryName, subcategoryName?]
+    // breadcrumbIndex 0 = "Inicio", 1 = "Tienda", 2 = categoryName, 3 = subcategoryName
+    
+    if (breadcrumbIndex === 2) {
+      // Es una categoría (ej: "PERRO")
+      const category = categories.find(cat => cat.name === breadcrumbName)
+      if (category) {
+        // Mostrar todos los productos de esa categoría
+        handleCategoryChange(category.id, 0)
+        return
+      }
+    } else if (breadcrumbIndex === 3) {
+      // Es una subcategoría (ej: "ALIMENTO HÚMEDO")
+      // Necesitamos encontrar la categoría padre y la subcategoría
+      const categoryName = currentBreadcrumbs[2] // El breadcrumb anterior es la categoría
+      const category = categories.find(cat => cat.name === categoryName)
+      
+      if (category) {
+        const categoryData = productsByCategory.find(cat => cat.categoryId === category.id)
+        if (categoryData) {
+          const subcategory = categoryData.subcategories.find(sub => sub.subcategoryName === breadcrumbName)
+          if (subcategory) {
+            handleCategoryChange(category.id, subcategory.subcategoryId)
+            return
+          }
+        }
+      }
+    }
+
+    // Manejar casos especiales
+    if (breadcrumbName === "Ofertas") {
+      handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)
+    } else if (breadcrumbName === "Novedades") {
+      handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)
+    }
+  }
+
   // Función para obtener marcas disponibles según la categoría seleccionada
   const getBrandsForCategory = (categoryId: number) => {
     if (categoryId === CATEGORIES.TODOS_LOS_PRODUCTOS) {
@@ -307,7 +356,13 @@ function TiendaPageContent() {
     }
 
     // Para categorías normales, obtener marcas de productos en la categoría actual
-    const currentProducts = getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
+    // Si selectedSubcategory es 0, significa que se seleccionó toda la categoría
+    const currentProducts = (selectedSubcategory === 0 && 
+      categoryId !== CATEGORIES.TODOS_LOS_PRODUCTOS && 
+      categoryId !== CATEGORIES.OFERTAS && 
+      categoryId !== CATEGORIES.NOVEDADES)
+      ? getAllProductsByCategory(categoryId) || []
+      : getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
     const brandIds = new Set(currentProducts.map(p => p.id_marca).filter(Boolean))
     return brands.filter(brand => brandIds.has(brand.id))
   }
@@ -432,7 +487,14 @@ function TiendaPageContent() {
   }
 
   // Obtener productos actuales
-  const currentProducts = getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
+  // Si selectedSubcategory es 0, significa que se seleccionó toda la categoría
+  // Solo aplicar esta lógica para categorías normales (no especiales)
+  const currentProducts = (selectedSubcategory === 0 && 
+    selectedCategory !== CATEGORIES.TODOS_LOS_PRODUCTOS && 
+    selectedCategory !== CATEGORIES.OFERTAS && 
+    selectedCategory !== CATEGORIES.NOVEDADES)
+    ? getAllProductsByCategory(selectedCategory) || []
+    : getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
 
   // Determinar qué productos mostrar según la categoría seleccionada o búsqueda
   let baseProducts = selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS
@@ -554,16 +616,27 @@ function TiendaPageContent() {
       if (!category) return null
 
       return (
-        <div key={categoryData.categoryId} className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">
+        <div key={categoryData.categoryId} className="mb-5">
+          <button
+            onClick={() => handleCategoryChange(categoryData.categoryId, 0)}
+            className={`w-full text-left text-xs font-medium uppercase tracking-wider mb-2 transition-all duration-200 ${
+              selectedCategory === categoryData.categoryId && selectedSubcategory === 0
+                ? "text-[#196428] font-semibold"
+                : "text-gray-500 hover:text-[#196428] cursor-pointer"
+            }`}
+          >
             {category.name}
-          </h3>
+          </button>
           <div className="space-y-1">
             {categoryData.subcategories.map((subcategory) => (
               <button
                 key={subcategory.subcategoryId}
                 onClick={() => handleCategoryChange(categoryData.categoryId, subcategory.subcategoryId)}
-                className={`block text-sm w-full text-left ${selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                  selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId
+                    ? "text-[#196428] font-medium bg-[#196428]/5"
+                    : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                }`}
               >
                 {subcategory.subcategoryName}
               </button>
@@ -577,13 +650,21 @@ function TiendaPageContent() {
                 <>
                   <button
                     onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
-                    className={`block text-sm w-full text-left ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                    className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                      selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
+                        ? "text-[#196428] font-medium bg-[#196428]/5"
+                        : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                    }`}
                   >
                     Ofertas
                   </button>
                   <button
                     onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
-                    className={`block text-sm w-full text-left ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                    className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                      selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES
+                        ? "text-[#196428] font-medium bg-[#196428]/5"
+                        : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                    }`}
                   >
                     Novedades
                   </button>
@@ -1250,51 +1331,69 @@ function TiendaPageContent() {
             <div className="container mx-auto px-4">
               <div className="flex gap-4 md:gap-8">
                 {/* Sidebar with categories - Hidden on mobile, shown on tablet and desktop */}
-                <aside className="hidden md:block md:w-64 lg:w-80 flex-shrink-0">
-                  <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-200">
-                    <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Categorías</h2>
+                <aside className="hidden md:block md:w-56 lg:w-64 flex-shrink-0">
+                  <div className="bg-white rounded-xl p-4 md:p-5 border border-gray-100">
+                    <h2 className="text-sm font-semibold text-gray-900 mb-5 tracking-tight">Categorías</h2>
 
-                    {/* Todos los productos section */}
-                    <div className="mb-4 md:mb-6">
-                      <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-3">Tienda</h3>
-                      <button
-                        onClick={() => handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS)}
-                        className={`block text-sm w-full text-left mb-1 ${selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && selectedSubcategory === CATEGORIES.TODOS_LOS_PRODUCTOS ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
-                      >
-                        Todos los productos
-                      </button>
-                    </div>
+                    <div className="space-y-5">
+                      {/* Todos los productos section */}
+                      <div>
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Tienda</h3>
+                        <button
+                          onClick={() => handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS)}
+                          className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                            selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && selectedSubcategory === CATEGORIES.TODOS_LOS_PRODUCTOS
+                              ? "text-[#196428] font-medium bg-[#196428]/5"
+                              : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                          }`}
+                        >
+                          Todos los productos
+                        </button>
+                      </div>
 
-                    {/* Ofertas section */}
-                    <div className="mb-4 md:mb-6">
-                      <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-3">Ofertas %</h3>
-                      <button
-                        onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
-                        className={`block text-sm w-full text-left mb-1 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
-                      >
-                        Productos con descuento
-                      </button>
-                    </div>
-
-                    {/* Categorías dinámicas desde Supabase */}
-                    {renderDynamicCategories()}
-
-                    {/* Special sections */}
-                    <div className="mb-4 md:mb-6">
-                      <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-2 md:mb-3">Especiales</h3>
-                      <div className="space-y-1">
+                      {/* Ofertas section */}
+                      <div>
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Ofertas</h3>
                         <button
                           onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
-                          className={`block text-sm w-full text-left ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
+                          className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                            selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
+                              ? "text-[#196428] font-medium bg-[#196428]/5"
+                              : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                          }`}
                         >
-                          Ofertas
+                          Productos con descuento
                         </button>
-                        <button
-                          onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
-                          className={`block text-sm w-full text-left ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES ? "text-[#196428] font-medium bg-green-50 px-2 py-1 rounded" : "text-gray-600 hover:text-[#196428] px-2 py-1 rounded hover:bg-gray-50"}`}
-                        >
-                          Novedades
-                        </button>
+                      </div>
+
+                      {/* Categorías dinámicas desde Supabase */}
+                      {renderDynamicCategories()}
+
+                      {/* Special sections */}
+                      <div>
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Especiales</h3>
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
+                            className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                              selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
+                                ? "text-[#196428] font-medium bg-[#196428]/5"
+                                : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                            }`}
+                          >
+                            Ofertas
+                          </button>
+                          <button
+                            onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
+                            className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                              selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES
+                                ? "text-[#196428] font-medium bg-[#196428]/5"
+                                : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                            }`}
+                          >
+                            Novedades
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1302,22 +1401,22 @@ function TiendaPageContent() {
 
                 {/* Main content area */}
                 <div className="flex-1">
-                  {/* Mobile Categories Button */}
+                  {/* Mobile Navigation Buttons */}
                   <div className="md:hidden mb-4">
                     <div className="flex gap-2">
                       <button
                         onClick={() => setIsCategoriesDrawerOpen(true)}
-                        className="flex items-center gap-2 bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200 flex-1 hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-lg border border-gray-200 flex-1 hover:border-gray-300 hover:bg-gray-50 transition-all text-sm font-medium text-gray-700"
                       >
-                        <Menu className="h-5 w-5 text-gray-600" />
-                        <span className="text-gray-800 font-medium">Ver Categorías</span>
+                        <Menu className="h-4 w-4" />
+                        <span>Categorías</span>
                       </button>
-                      <button
-                        onClick={() => handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS)}
-                        className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-sm border border-gray-200 flex-1 hover:bg-gray-50 transition-colors ${selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS ? "bg-green-50 border-[#196428] text-[#196428]" : "bg-white text-gray-800"}`}
+                      <button 
+                        onClick={() => setIsFiltersDrawerOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-[#196428] px-4 py-2.5 rounded-lg text-white flex-1 hover:bg-[#145020] transition-all text-sm font-medium"
                       >
-                        <ShoppingBag className="h-5 w-5" />
-                        <span className="font-medium">Tienda</span>
+                        <Tag className="h-4 w-4" />
+                        <span>Filtros</span>
                       </button>
                     </div>
                   </div>
@@ -1348,9 +1447,15 @@ function TiendaPageContent() {
                         <div className="flex items-center gap-2 text-sm">
                           <Link href="/" className="text-gray-600 hover:text-[#196428]">Inicio</Link>
                           <ChevronRight className="h-4 w-4 text-gray-400" />
-                          <Link href="/tienda" className="text-gray-600 hover:text-[#196428]">Tienda</Link>
+                          <button
+                            onClick={() => handleBreadcrumbClick("Tienda", 1)}
+                            className="text-gray-600 hover:text-[#196428] cursor-pointer"
+                          >
+                            Tienda
+                          </button>
                           {currentBreadcrumbs.slice(2).map((breadcrumb, index) => {
                             const isLast = index === currentBreadcrumbs.slice(2).length - 1;
+                            const breadcrumbIndex = index + 2; // +2 porque los primeros dos son "Inicio" y "Tienda"
 
                             return (
                               <div key={index} className="flex items-center gap-2">
@@ -1358,12 +1463,12 @@ function TiendaPageContent() {
                                 {isLast ? (
                                   <span className="text-gray-800 font-medium">{breadcrumb}</span>
                                 ) : (
-                                  <Link
-                                    href={breadcrumb === "Ofertas" ? "/tienda?category=999" : breadcrumb === "Novedades" ? "/tienda?category=998" : "#"}
-                                    className="text-gray-600 hover:text-[#196428]"
+                                  <button
+                                    onClick={() => handleBreadcrumbClick(breadcrumb, breadcrumbIndex)}
+                                    className="text-gray-600 hover:text-[#196428] cursor-pointer"
                                   >
                                     {breadcrumb}
-                                  </Link>
+                                  </button>
                                 )}
                               </div>
                             );
@@ -1395,28 +1500,217 @@ function TiendaPageContent() {
 
                   {/* Filters - responsive layout */}
                   <div className="mb-6 md:mb-8">
-                    {/* Mobile Filter Button */}
-                    <div className="md:hidden mb-4">
-                      <button className="group flex items-center justify-center gap-3 bg-gradient-to-r from-[#196428] to-[#145020] px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl w-full transition-all duration-300 transform hover:scale-[1.02]">
-                        <Tag className="h-5 w-5 text-white group-hover:rotate-12 transition-transform duration-300" />
-                        <span className="text-white font-semibold text-base">Filtros y ordenamiento</span>
-                      </button>
-                    </div>
+
+                    {/* Mobile Filters Drawer */}
+                    <Drawer open={isFiltersDrawerOpen} onOpenChange={setIsFiltersDrawerOpen}>
+                      <DrawerContent className="max-h-[90vh]">
+                        <DrawerHeader className="border-b border-gray-100 pb-3">
+                          <div className="flex items-center justify-between">
+                            <DrawerTitle className="text-base font-semibold text-gray-800">Filtros</DrawerTitle>
+                            {(() => {
+                              const hasPriceFilter = Math.abs(priceRange[0] - priceBounds.min) > 10 || Math.abs(priceRange[1] - priceBounds.max) > 10
+                              const hasAdvancedFilter = hasPriceFilter || showOnlyOffers || showOnlyDiscounts || selectedBrand || 
+                                (selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && (selectedProductCategory || selectedProductSubcategory))
+                              return hasAdvancedFilter
+                            })() && (
+                              <button
+                                onClick={clearAdvancedFilters}
+                                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                Limpiar
+                              </button>
+                            )}
+                          </div>
+                        </DrawerHeader>
+                        <div className="overflow-y-auto px-4 py-4">
+                          <div className="flex flex-col gap-4">
+                            {/* Sección de Marca */}
+                            <div className="space-y-1">
+                              <label className="text-xs font-medium text-gray-500">Marca</label>
+                              <div className="relative">
+                                {availableBrands.length > 0 && (
+                                  <select
+                                    value={selectedBrand || ""}
+                                    onChange={(e) => setSelectedBrand(e.target.value ? parseInt(e.target.value) : null)}
+                                    className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                  >
+                                    <option value="">Todas</option>
+                                    {availableBrands.map(brand => (
+                                      <option key={brand.id} value={brand.id}>
+                                        {brand.nombre_marca}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Sección de Precio */}
+                            <div className="space-y-2">
+                              <label className="text-xs font-medium text-gray-500">Precio</label>
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between text-xs text-gray-600">
+                                  <span>${priceRange[0].toLocaleString('es-CO')}</span>
+                                  <span>${priceRange[1].toLocaleString('es-CO')}</span>
+                                </div>
+                                <div className="px-0.5">
+                                  <Slider
+                                    value={priceRange}
+                                    onValueChange={(value) => setPriceRange(value as [number, number])}
+                                    max={priceBounds.max}
+                                    min={priceBounds.min}
+                                    step={1000}
+                                    className="w-full"
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-gray-400">
+                                  <span>${priceBounds.min.toLocaleString('es-CO')}</span>
+                                  <span>${priceBounds.max.toLocaleString('es-CO')}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Sección de Categorías y Subcategorías (solo para "todos los productos") */}
+                            {selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && (
+                              <>
+                                <div className="space-y-1">
+                                  <label className="text-xs font-medium text-gray-500">Categoría</label>
+                                  <div className="relative">
+                                    <select
+                                      value={selectedProductCategory || ""}
+                                      onChange={(e) => {
+                                        const categoryId = e.target.value ? Number(e.target.value) : null
+                                        setSelectedProductCategory(categoryId)
+                                        setSelectedProductSubcategory(null)
+                                      }}
+                                      className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                    >
+                                      <option value="">Todas</option>
+                                      {categories.map((cat: CategoryType) => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                      ))}
+                                    </select>
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <label className="text-xs font-medium text-gray-500">Subcategoría</label>
+                                  <div className="relative">
+                                    <select
+                                      value={selectedProductSubcategory || ""}
+                                      onChange={(e) => {
+                                        const subcategoryId = e.target.value ? Number(e.target.value) : null
+                                        setSelectedProductSubcategory(subcategoryId)
+                                      }}
+                                      className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                    >
+                                      <option value="">Todas</option>
+                                      {(() => {
+                                        if (selectedProductCategory) {
+                                          const categoryData = productsByCategory.find(cat => cat.categoryId === selectedProductCategory)
+                                          if (categoryData) {
+                                            return categoryData.subcategories.map(sub => (
+                                              <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
+                                            ))
+                                          }
+                                        }
+                                        return productsByCategory.map(cat =>
+                                          cat.subcategories.map(sub => (
+                                            <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
+                                          ))
+                                        )
+                                      })()}
+                                    </select>
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+
+                            {/* Sección de Filtros Especiales */}
+                            <div className="space-y-1">
+                              <label className="text-xs font-medium text-gray-500">Especiales</label>
+                              <div className="relative">
+                                <select
+                                  value={
+                                    showOnlyOffers ? "ofertas" : 
+                                    showOnlyDiscounts ? "descuentos" : 
+                                    "ninguno"
+                                  }
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                    setShowOnlyOffers(value === "ofertas")
+                                    setShowOnlyDiscounts(value === "descuentos")
+                                  }}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                >
+                                  <option value="ninguno">Ninguno</option>
+                                  <option value="ofertas">Ofertas</option>
+                                  <option value="descuentos">Descuentos</option>
+                                </select>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Sección de Ordenamiento */}
+                            <div className="space-y-1">
+                              <label className="text-xs font-medium text-gray-500">Ordenar</label>
+                              <div className="relative">
+                                <select
+                                  value={sortBy}
+                                  onChange={(e) => setSortBy(e.target.value)}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                >
+                                  <option value="Más popular">Más popular</option>
+                                  <option value="Precio: menor a mayor">Precio: menor a mayor</option>
+                                  <option value="Precio: mayor a menor">Precio: mayor a menor</option>
+                                  <option value="Novedades">Novedades</option>
+                                  <option value="Nombre A-Z">Nombre A-Z</option>
+                                </select>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <DrawerFooter className="border-t border-gray-100 pt-3">
+                          <DrawerClose asChild>
+                            <button className="w-full bg-gradient-to-r from-[#196428] to-[#145020] text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity">
+                              Aplicar filtros
+                            </button>
+                          </DrawerClose>
+                        </DrawerFooter>
+                      </DrawerContent>
+                    </Drawer>
 
                     {/* Desktop/Tablet Filters */}
-                    <div className="hidden md:block bg-white rounded-2xl  border border-gray-200 backdrop-blur-sm p-4">
-                      <div className="flex flex-col gap-4">
-                        {/* Header elegante */}
-                        <div className="flex items-center justify-between gap-2 pb-3 border-b border-gray-100">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-gradient-to-br from-[#196428] to-[#145020] rounded-full flex items-center justify-center">
-                              <Tag className="h-3 w-3 text-white" />
-                            </div>
-                            <h3 className="text-base font-bold text-gray-800">Filtros de productos</h3>
-                          </div>
-                          {/* Botón para limpiar filtros avanzados - esquina superior derecha */}
+                    <div className="hidden md:block bg-white rounded-lg border border-gray-100 p-3">
+                      <div className="flex flex-col gap-3">
+                        {/* Header minimalista */}
+                        <div className="flex items-center justify-between pb-2 border-b border-gray-50">
+                          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Filtros</h3>
                           {(() => {
-                            // Solo mostrar el botón si hay filtros aplicados manualmente
                             const hasPriceFilter = Math.abs(priceRange[0] - priceBounds.min) > 10 || Math.abs(priceRange[1] - priceBounds.max) > 10
                             const hasAdvancedFilter = hasPriceFilter || showOnlyOffers || showOnlyDiscounts || selectedBrand || 
                               (selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && (selectedProductCategory || selectedProductSubcategory))
@@ -1424,31 +1718,25 @@ function TiendaPageContent() {
                           })() && (
                             <button
                               onClick={clearAdvancedFilters}
-                              className="group flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 hover:shadow-lg transform hover:scale-105 h-5"
+                              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                             >
-                              <svg className="w-3 h-3 group-hover:rotate-90 transition-transform duration-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                              Limpiar filtros avanzados
+                              Limpiar
                             </button>
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2.5">
                           {/* Sección de Marca */}
-                          <div className="space-y-2">
-                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                              <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
-                              Marca
-                            </label>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-gray-500">Marca</label>
                             <div className="relative">
                               {availableBrands.length > 0 && (
                                 <select
                                   value={selectedBrand || ""}
                                   onChange={(e) => setSelectedBrand(e.target.value ? parseInt(e.target.value) : null)}
-                                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
+                                  className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
                                 >
-                                  <option value="">Todas las marcas</option>
+                                  <option value="">Todas</option>
                                   {availableBrands.map(brand => (
                                     <option key={brand.id} value={brand.id}>
                                       {brand.nombre_marca}
@@ -1456,8 +1744,8 @@ function TiendaPageContent() {
                                   ))}
                                 </select>
                               )}
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
                               </div>
@@ -1465,23 +1753,14 @@ function TiendaPageContent() {
                           </div>
 
                           {/* Sección de Precio */}
-                          <div className="space-y-3">
-                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                              <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
-                              Rango de precio
-                            </label>
-                            <div className="space-y-2">
-                              {/* Labels con valores actuales */}
+                          <div className="space-y-2">
+                            <label className="text-xs font-medium text-gray-500">Precio</label>
+                            <div className="space-y-1.5">
                               <div className="flex items-center justify-between text-xs text-gray-600">
-                                <span className="font-medium">
-                                  ${priceRange[0].toLocaleString('es-CO')}
-                                </span>
-                                <span className="font-medium">
-                                  ${priceRange[1].toLocaleString('es-CO')}
-                                </span>
+                                <span>${priceRange[0].toLocaleString('es-CO')}</span>
+                                <span>${priceRange[1].toLocaleString('es-CO')}</span>
                               </div>
-                              {/* Range Slider */}
-                              <div className="px-1">
+                              <div className="px-0.5">
                                 <Slider
                                   value={priceRange}
                                   onValueChange={(value) => setPriceRange(value as [number, number])}
@@ -1491,14 +1770,9 @@ function TiendaPageContent() {
                                   className="w-full"
                                 />
                               </div>
-                              {/* Información del rango total */}
-                              <div className="flex items-center justify-between text-xs text-gray-500">
-                                <span>
-                                  ${priceBounds.min.toLocaleString('es-CO')}
-                                </span>
-                                <span>
-                                  ${priceBounds.max.toLocaleString('es-CO')}
-                                </span>
+                              <div className="flex items-center justify-between text-xs text-gray-400">
+                                <span>${priceBounds.min.toLocaleString('es-CO')}</span>
+                                <span>${priceBounds.max.toLocaleString('es-CO')}</span>
                               </div>
                             </div>
                           </div>
@@ -1506,40 +1780,33 @@ function TiendaPageContent() {
                           {/* Sección de Categorías y Subcategorías (solo para "todos los productos") */}
                           {selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && (
                             <>
-                              <div className="space-y-2">
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                  <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
-                                  Categoría específica
-                                </label>
+                              <div className="space-y-1">
+                                <label className="text-xs font-medium text-gray-500">Categoría</label>
                                 <div className="relative">
                                   <select
                                     value={selectedProductCategory || ""}
                                     onChange={(e) => {
                                       const categoryId = e.target.value ? Number(e.target.value) : null
                                       setSelectedProductCategory(categoryId)
-                                      // Limpiar subcategoría cuando se cambia la categoría
                                       setSelectedProductSubcategory(null)
                                     }}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
+                                    className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
                                   >
-                                    <option value="">Todas las categorías</option>
+                                    <option value="">Todas</option>
                                     {categories.map((cat: CategoryType) => (
                                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
                                   </select>
-                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="space-y-2">
-                                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                  <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
-                                  Subcategoría específica
-                                </label>
+                              <div className="space-y-1">
+                                <label className="text-xs font-medium text-gray-500">Subcategoría</label>
                                 <div className="relative">
                                   <select
                                     value={selectedProductSubcategory || ""}
@@ -1547,9 +1814,9 @@ function TiendaPageContent() {
                                       const subcategoryId = e.target.value ? Number(e.target.value) : null
                                       setSelectedProductSubcategory(subcategoryId)
                                     }}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
+                                    className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
                                   >
-                                    <option value="">Todas las subcategorías</option>
+                                    <option value="">Todas</option>
                                     {(() => {
                                       // Si hay una categoría seleccionada, mostrar solo sus subcategorías
                                       if (selectedProductCategory) {
@@ -1579,45 +1846,42 @@ function TiendaPageContent() {
                           )}
 
                           {/* Sección de Filtros Especiales */}
-                          <div className="space-y-2">
-                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                              <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
-                              Filtros especiales
-                            </label>
-                            <div className="space-y-2">
-                              <label className="flex items-center gap-3 cursor-pointer group">
-                                <input
-                                  type="checkbox"
-                                  checked={showOnlyOffers}
-                                  onChange={(e) => setShowOnlyOffers(e.target.checked)}
-                                  className="w-4 h-4 text-[#196428] bg-gray-100 border-gray-300 rounded focus:ring-[#196428] focus:ring-2"
-                                />
-                                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Solo ofertas destacadas</span>
-                              </label>
-
-                              <label className="flex items-center gap-3 cursor-pointer group">
-                                <input
-                                  type="checkbox"
-                                  checked={showOnlyDiscounts}
-                                  onChange={(e) => setShowOnlyDiscounts(e.target.checked)}
-                                  className="w-4 h-4 text-[#196428] bg-gray-100 border-gray-300 rounded focus:ring-[#196428] focus:ring-2"
-                                />
-                                <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Solo con descuento</span>
-                              </label>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-gray-500">Especiales</label>
+                            <div className="relative">
+                              <select
+                                value={
+                                  showOnlyOffers ? "ofertas" : 
+                                  showOnlyDiscounts ? "descuentos" : 
+                                  "ninguno"
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  setShowOnlyOffers(value === "ofertas")
+                                  setShowOnlyDiscounts(value === "descuentos")
+                                }}
+                                className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                              >
+                                <option value="ninguno">Ninguno</option>
+                                <option value="ofertas">Ofertas</option>
+                                <option value="descuentos">Descuentos</option>
+                              </select>
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
                             </div>
                           </div>
 
                           {/* Sección de Ordenamiento */}
-                          <div className="space-y-2">
-                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                              <div className="w-1.5 h-1.5 bg-[#196428] rounded-full"></div>
-                              Ordenar por
-                            </label>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-gray-500">Ordenar</label>
                             <div className="relative">
                               <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-transparent transition-all duration-200 appearance-none hover:bg-white hover:shadow-sm"
+                                className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
                               >
                                 <option value="Más popular">Más popular</option>
                                 <option value="Precio: menor a mayor">Precio: menor a mayor</option>
@@ -1625,8 +1889,8 @@ function TiendaPageContent() {
                                 <option value="Novedades">Novedades</option>
                                 <option value="Nombre A-Z">Nombre A-Z</option>
                               </select>
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
                               </div>
@@ -1641,7 +1905,7 @@ function TiendaPageContent() {
 
                   {/* Products Grid - responsive layout */}
                   {displayProducts.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                       {displayProducts.map((product: ProductWithDetails) => {
                         const selectedSizeIndex = selectedSizes[product.id!] || 0;
                         const hasSizes = product.tamano && product.tamano.length > 0;
@@ -1872,9 +2136,19 @@ function TiendaPageContent() {
 
                 return (
                   <div key={categoryData.categoryId}>
-                    <h3 className="text-base font-semibold text-gray-700 mb-2">
+                    <button
+                      onClick={() => {
+                        handleCategoryChange(categoryData.categoryId, 0);
+                        setIsCategoriesDrawerOpen(false);
+                      }}
+                      className={`w-full text-left text-base font-semibold mb-2 transition-colors ${
+                        selectedCategory === categoryData.categoryId && selectedSubcategory === 0
+                          ? "text-[#196428]"
+                          : "text-gray-700 hover:text-[#196428]"
+                      }`}
+                    >
                       {category.name}
-                    </h3>
+                    </button>
                     <div className="space-y-1 ml-2">
                       {categoryData.subcategories.map((subcategory) => (
                         <button

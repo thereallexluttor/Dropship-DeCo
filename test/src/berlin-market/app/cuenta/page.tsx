@@ -43,6 +43,16 @@ const formatPrice = (price: number): string => {
   return formatted.endsWith('.00') ? price.toFixed(0) : formatted;
 };
 
+// Función helper para calcular días transcurridos desde una fecha
+const calcularDiasTranscurridos = (fecha: string): number => {
+  const fechaPedido = new Date(fecha);
+  const fechaActual = new Date();
+  fechaActual.setHours(0, 0, 0, 0);
+  fechaPedido.setHours(0, 0, 0, 0);
+  const diferencia = fechaActual.getTime() - fechaPedido.getTime();
+  return Math.floor(diferencia / (1000 * 60 * 60 * 24));
+};
+
 export default function CuentaPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -468,15 +478,18 @@ export default function CuentaPage() {
                                             ? 'bg-blue-100 text-blue-800 border border-blue-200'
                                             : order.estado === 'pendiente'
                                             ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                            : order.estado === 'cancelado'
+                                            ? 'bg-red-100 text-red-800 border border-red-200'
                                             : 'bg-gray-100 text-gray-800 border border-gray-200'
                                         }`}>
                                           {order.estado === 'completado' ? '✓ Completado' :
                                            order.estado === 'en_transito' ? '🚚 En tránsito' :
                                            order.estado === 'pendiente' ? '⏳ Pendiente' :
+                                           order.estado === 'cancelado' ? '❌ Cancelado' :
                                            order.estado}
                                         </span>
                                       </div>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <div className="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
                                         <Calendar className="h-4 w-4 text-[#196428]" />
                                         <span className="font-medium">
                                       {new Date(order.fecha).toLocaleDateString('es-ES', {
@@ -487,6 +500,18 @@ export default function CuentaPage() {
                                             minute: '2-digit'
                                           })}
                                         </span>
+                                        {(() => {
+                                          const diasTranscurridos = calcularDiasTranscurridos(order.fecha);
+                                          return (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                              {diasTranscurridos === 0 
+                                                ? 'Hoy' 
+                                                : diasTranscurridos === 1 
+                                                ? 'Hace 1 día' 
+                                                : `Hace ${diasTranscurridos} días`}
+                                            </span>
+                                          );
+                                        })()}
                                       </div>
                                     </div>
                                   </div>
