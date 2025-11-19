@@ -225,7 +225,41 @@ const Vacantes = () => {
       }
 
       // Enviar aplicación usando la función de utilidad
-      await enviarAplicacion(applicationData)
+      const savedApplication = await enviarAplicacion(applicationData)
+
+      // Enviar correo de notificación a talentohumano@unisander.com
+      try {
+        const emailResponse = await fetch('/api/send-application-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jobTitle: selectedJob.titulo,
+            jobDepartment: selectedJob.departamento,
+            jobLocation: selectedJob.ubicacion,
+            jobContractType: selectedJob.tipo_contrato,
+            jobSalary: selectedJob.salario,
+            applicantName: formData.nombre,
+            applicantEmail: formData.email,
+            applicantPhone: formData.telefono,
+            applicantExperience: formData.experiencia,
+            applicantAvailability: formData.disponibilidad,
+            applicantMessage: formData.mensaje,
+            cvUrl: cvUrl,
+            applicationId: savedApplication.id,
+            applicationDate: savedApplication.fecha_aplicacion
+          })
+        })
+
+        if (!emailResponse.ok) {
+          console.error('Error al enviar el correo de notificación')
+          // No detener el proceso si falla el envío del correo
+        }
+      } catch (emailError) {
+        console.error('Error al enviar el correo:', emailError)
+        // No detener el proceso si falla el envío del correo
+      }
 
       alert(`¡Aplicación enviada exitosamente para el puesto de ${selectedJob?.titulo || 'trabajo'}! Te contactaremos pronto.`)
 

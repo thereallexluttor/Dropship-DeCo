@@ -142,8 +142,89 @@ body {
   * {
     @apply border-border;
   }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+  html {
+    height: 100%;
+  }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: block;
+  }
+  
+  /* Asegurar que el último elemento del body no tenga espacio */
+  body::after {
+    content: '';
+    display: none;
+    height: 0;
+    margin: 0;
+    padding: 0;
+  }
+  footer {
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    margin-top: auto;
+    position: relative;
+    width: 100%;
+    overflow: visible;
+    bottom: 0;
+  }
+  
+  /* Forzar que no haya espacio después del footer */
+  footer:last-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Eliminar cualquier espacio del contenedor padre después del footer */
+  *:has(> footer:last-child) {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  footer > *:last-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Eliminar cualquier espacio después del footer */
+  footer + * {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* Asegurar que no haya espacio en el body después del footer */
+  body > *:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+  /* Eliminar espacio del contenedor principal después del footer */
+  main + footer {
+    margin-top: 0 !important;
+  }
+  
+  /* Asegurar que el contenedor que tiene el footer no tenga espacio extra */
+  div:has(> footer) {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Asegurar que el footer termine exactamente */
+  footer::after {
+    content: '';
+    display: none;
+    height: 0;
+    line-height: 0;
+  }
+  
+  /* Eliminar cualquier espacio después del último elemento del footer */
+  footer *:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
   }
 }
 

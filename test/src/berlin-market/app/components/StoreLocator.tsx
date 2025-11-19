@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { MapPin, Phone, User, Navigation } from 'lucide-react'
+import { MapPin, Phone } from 'lucide-react'
 import { stores, loadStoresFromSupabase, type Store } from '../lib/stores'
 
 // Dynamically import the Map component to avoid SSR issues
@@ -91,10 +91,6 @@ export default function StoreLocator() {
 
                 <div className={`mt-3 grid grid-cols-1 gap-2 rounded-xl p-3 ${selectedStore?.id === store.id ? 'bg-black/10 backdrop-blur border border-white/20' : 'bg-[#f5fdf5] border border-[#196428]/10'}`}>
                   <div className="flex items-center gap-2 text-xs sm:text-sm">
-                    <User className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
-                    <span className={selectedStore?.id === store.id ? 'text-white/90' : 'text-gray-700'}>{store.contact}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs sm:text-sm">
                     <Phone className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
                     <a
                       href={`tel:${store.phone}`}
@@ -103,12 +99,6 @@ export default function StoreLocator() {
                     >
                       {store.phone}
                     </a>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs sm:text-sm">
-                    <Navigation className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
-                    <span className={selectedStore?.id === store.id ? 'text-white/90' : 'text-gray-700'}>
-                      {store.coords.lat.toFixed(4)}, {store.coords.lng.toFixed(4)}
-                    </span>
                   </div>
                 </div>
               </div>

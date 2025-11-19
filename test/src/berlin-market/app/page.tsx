@@ -26,7 +26,7 @@ import {
   Check,
   Briefcase
 } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { supabase, Producto, UI } from '@/lib/supabase'
 import { useCategories } from './hooks/useCategories'
 import { useProducts } from './hooks/useProducts'
@@ -106,6 +106,7 @@ export default function Home() {
   const [showPopup, setShowPopup] = useState(false)
   const popupVideoRef = useRef<HTMLVideoElement | null>(null)
   const [popupMuted, setPopupMuted] = useState(false)
+  const [showChristmasTheme, setShowChristmasTheme] = useState(false)
   // Estado para manejar el tamaño seleccionado de cada producto
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
 
@@ -258,6 +259,20 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, [uiElements]);
+
+  // Mostrar tema navideño en primera visita
+  useEffect(() => {
+    const hasSeenChristmas = sessionStorage.getItem('hasSeenChristmas');
+    if (!hasSeenChristmas) {
+      setShowChristmasTheme(true);
+      // Guardar después de 30 segundos para que se muestre por un tiempo
+      const timer = setTimeout(() => {
+        sessionStorage.setItem('hasSeenChristmas', 'true');
+        setShowChristmasTheme(false);
+      }, 30000); // 30 segundos
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
 
   // Obtener los slides del carrusel (banners de UI o videos por defecto)
@@ -450,6 +465,26 @@ export default function Home() {
     }
   }, [showPopup, popupMuted])
 
+  // Generar copos de nieve (fuera del condicional para cumplir con las reglas de hooks)
+  const snowflakes = useMemo(() => {
+    return Array.from({ length: 50 }).map((_, i) => {
+      const left = Math.random() * 100;
+      const animationDuration = Math.random() * 3 + 2; // 2-5 segundos
+      const animationDelay = Math.random() * 2;
+      const size = Math.random() * 10 + 10; // 10-20px
+      const opacity = Math.random() * 0.5 + 0.5; // 0.5-1
+
+      return {
+        id: i,
+        left,
+        animationDuration,
+        animationDelay,
+        size,
+        opacity,
+      };
+    });
+  }, [])
+
   // Categorías se cargan dinámicamente desde el hook useCategories
 
   // Mostrar indicador de carga mientras se cargan las categorías
@@ -589,7 +624,7 @@ export default function Home() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+      <div className="flex flex-col flex-1" style={{ backgroundColor: '#FCFFEF', marginBottom: 0, paddingBottom: 0, minHeight: 0 }}>
         {/* Promotional Banner */}
         <div className="bg-[#196428] text-white py-1 overflow-hidden">
           <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
@@ -1000,7 +1035,7 @@ export default function Home() {
 
         </header>
 
-        <main>
+        <main className="flex-1">
           {/* Category Grid */}
           <div className="hidden md:block container mx-auto px-4 py-3 relative">
             <div className="flex flex-col">
@@ -1061,9 +1096,9 @@ export default function Home() {
                               href="/tienda"
                               className="inline-block bg-[#196428] hover:bg-[#196428] text-white
                               text-xs sm:text-sm md:text-base lg:text-lg
-                              py-1.5 sm:py-2 md:py-2.5 lg:py-3
+                              py-0.5 sm:py-1 md:py-1.5 lg:py-2
                               px-4 sm:px-5 md:px-6 lg:px-7
-                              rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg"
+                              rounded-full border-2 border-white transition-all duration-300 transform hover:scale-105 shadow-lg"
                             >
                               click aquí
                             </Link>
@@ -1083,7 +1118,7 @@ export default function Home() {
             <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
               <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
                 <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
-                <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 md:pb-0 md:overflow-x-hidden scroll-container">
+                <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 md:pb-2 md:overflow-x-hidden scroll-container">
                   <style jsx global>{`
                     @media (max-width: 768px) {
                       .scroll-container::-webkit-scrollbar {
@@ -1110,137 +1145,117 @@ export default function Home() {
                     const currentPrice = getCurrentPrice();
 
                     return (
-                    <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[170px] xs:w-[180px] md:w-full block">
-                      <div className="bg-white rounded-[18px] sm:rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
-                        <div className="relative aspect-square flex-shrink-0">
+                    <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[170px] xs:w-[180px] md:w-full block group">
+                      <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                        {/* Imagen del producto */}
+                        <div className="relative aspect-[4/3] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
                           <Image
                             src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 600, 60) : '/placeholder.jpg'}
                             alt={producto.nombre}
                             fill
-                            className="object-contain p-1.5 sm:p-2 md:p-3"
+                            className="object-contain p-3 sm:p-4 md:p-5 transition-transform duration-300 group-hover:scale-105"
                           />
-                          {/* Indicador de descuento */}
-                          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            OFERTA
-                          </div>
-                        </div>
-                      <div className="p-2 sm:p-2.5 md:p-3 flex-1 flex flex-col gap-1.5">
-                        <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 leading-tight line-clamp-2">{producto.nombre}</h3>
-                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed min-h-[40px] sm:min-h-[44px] line-clamp-2 overflow-hidden">
-                          {(() => {
-                            const fallback = 'Producto en oferta especial'
-                            const words = (producto.descripcion?.trim() || fallback).split(/\s+/)
-                            const truncated = words.slice(0, 9).join(' ')
-                            return words.length > 9 ? `${truncated}…` : truncated
-                          })()}
-                        </p>
-
-                        {/* Mostrar tamaños del producto - Seleccionables */}
-                        {hasSizes && (
-                          <div className="mt-1.5">
-                            <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {producto.tamano!.map((tamano, index) => (
-                                <button
-                                  key={index}
-                                  onClick={() => setSelectedSizes({...selectedSizes, [producto.id!]: index})}
-                                  className={`px-1.5 py-0.5 rounded-full text-xs font-medium transition-all ${
-                                    selectedSizeIndex === index
-                                      ? 'bg-[#196428] text-white shadow-sm'
-                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                  }`}
-                                >
-                                  {tamano.cantidad} {tamano.unidad}
-                                </button>
-                              ))}
+                          {/* Badge de oferta - estilo Nike */}
+                          {producto.descuento && (
+                            <div className="absolute top-3 left-3 bg-black text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wide">
+                              OFERTA
                             </div>
-                          </div>
-                        )}
+                          )}
+                          {/* Badge destacado si aplica */}
+                          {producto.destacado && !producto.descuento && (
+                            <div className="absolute top-3 left-3 bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wide">
+                              DESTACADO
+                            </div>
+                          )}
+                          {/* Botón de carrito flotante */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleAddToCart(producto)
+                            }}
+                            className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+                          >
+                            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                          </button>
+                        </div>
+                        
+                        {/* Contenido de la card */}
+                        <div className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5">
+                          {/* Título */}
+                          <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-[#196428] transition-colors">
+                            {producto.nombre}
+                          </h3>
+                          
+                          {/* Descripción */}
+                          <p className="text-xs sm:text-sm text-gray-500 leading-relaxed line-clamp-2">
+                            {(() => {
+                              const fallback = 'Producto de calidad premium'
+                              const words = (producto.descripcion?.trim() || fallback).split(/\s+/)
+                              const truncated = words.slice(0, 8).join(' ')
+                              return words.length > 8 ? `${truncated}…` : truncated
+                            })()}
+                          </p>
 
-                        {/* Mostrar precio según tamaño seleccionado */}
-                        {hasPrices && currentPrice > 0 ? (
-                          <div className="mt-auto flex items-center gap-2">
-                            {producto.descuento_valor && (
-                              <>
-                                <span className="text-sm font-medium text-gray-500 line-through">
+                          {/* Tamaños del producto */}
+                          {hasSizes && (
+                            <div className="mt-1">
+                              <p className="text-[10px] sm:text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">Tamaños</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {producto.tamano!.slice(0, 3).map((tamano, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      setSelectedSizes({...selectedSizes, [producto.id!]: index})
+                                    }}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold transition-all ${
+                                      selectedSizeIndex === index
+                                        ? 'bg-green-200 text-[#196428] border-2 border-[#196428]'
+                                        : 'bg-green-50 text-gray-700'
+                                    }`}
+                                  >
+                                    {tamano.cantidad} {tamano.unidad}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Precio */}
+                          {hasPrices && currentPrice > 0 ? (
+                            <div className="mt-auto pt-2">
+                              {producto.descuento_valor ? (
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-lg sm:text-xl font-black text-gray-900">
+                                    ${(() => {
+                                      const descuentoValor = typeof producto.descuento_valor === 'string' ? parseFloat(producto.descuento_valor) : Number(producto.descuento_valor)
+                                      const precioConDescuento = currentPrice * (1 - (descuentoValor / 100))
+                                      return precioConDescuento.toLocaleString('es-CO')
+                                    })()}
+                                  </span>
+                                  <span className="text-[10px] sm:text-xs font-medium text-gray-400 line-through">
+                                    ${currentPrice.toLocaleString('es-CO')}
+                                  </span>
+                                  <span className="text-[9px] sm:text-[10px] font-semibold text-red-600">
+                                    -{producto.descuento_valor}%
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-lg sm:text-xl font-black text-gray-900">
                                   ${currentPrice.toLocaleString('es-CO')}
                                 </span>
-                                <span className="text-lg font-bold text-red-600">
-                                  ${(() => {
-                                    const descuentoValor = typeof producto.descuento_valor === 'string' ? parseFloat(producto.descuento_valor) : Number(producto.descuento_valor)
-                                    const precioConDescuento = currentPrice * (1 - (descuentoValor / 100))
-                                    return precioConDescuento.toLocaleString('es-CO')
-                                  })()}
-                                </span>
-                              </>
-                            )}
-                            {!producto.descuento_valor && (
-                              <span className="text-lg font-bold text-[#196428]">
-                                ${currentPrice.toLocaleString('es-CO')}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="mt-auto text-gray-400 text-xs italic">Precio no disponible</p>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            handleAddToCart(producto)
-                          }}
-                          className="mt-2 inline-flex items-center justify-center gap-1 rounded-full border border-[#196428] px-3 py-1 text-xs sm:text-sm font-semibold text-[#196428] transition-colors hover:bg-[#196428] hover:text-white"
-                        >
-                          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-                          Agregar al carrito
-                        </button>
-                      </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="mt-auto text-gray-400 text-xs italic">Precio no disponible</p>
+                          )}
+                        </div>
                       </div>
                     </Link>
                     );
                   })}
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Hidden Banner Section - Solo se muestra si hay hidden banners */}
-          {getHiddenBannerSlides().length > 0 && (
-            <section className="relative w-full">
-              <div className="w-full">
-                <div className="relative aspect-[16/2] w-full">
-                  <div className="absolute inset-0">
-                    {getHiddenBannerSlides().map((slide, index) => (
-                      <div
-                        key={index}
-                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                          activeHiddenSlide === index ? "opacity-100" : "opacity-0"
-                        }`}
-                      >
-                        {slide.type === 'video' ? (
-                          <video
-                            src={slide.url}
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            preload="metadata"
-                            className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                          />
-                        ) : (
-                          <div className="relative w-full h-full">
-                            <Image
-                              src={slide.url}
-                              alt={slide.alt}
-                              fill
-                              className="object-cover rounded-lg"
-                              sizes="100vw"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             </section>
@@ -1265,7 +1280,7 @@ export default function Home() {
                   </button>
 
                   {/* Contenedor del carrusel */}
-                  <div className="flex-grow overflow-hidden">
+                  <div className="flex-grow overflow-hidden pb-2">
                     <div
                       className="flex transition-transform duration-500 ease-in-out"
                       style={{ transform: `translateX(-${activeMobileProductSlide * 100}%)` }}
@@ -1277,7 +1292,7 @@ export default function Home() {
                         )
                         return (
                           <div key={slideIndex} className="w-full flex-shrink-0 px-1">
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-3 pb-2">
                               {slideProducts.map((producto) => {
                                 const selectedSizeIndex = selectedSizes[producto.id!] || 0
                                 const hasSizes = producto.tamano && producto.tamano.length > 0
@@ -1293,47 +1308,49 @@ export default function Home() {
                                 const currentPrice = getCurrentPrice()
 
                                 return (
-                                  <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full">
-                                    <div className="bg-white rounded-[18px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200 flex flex-col h-full min-h-[340px]">
-                                      <div className="relative aspect-[4/3] flex-shrink-0">
+                                  <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full group">
+                                    <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 flex flex-col h-full border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                                      <div className="relative aspect-[1/1] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
                                         <Image
                                           src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 400, 60) : '/placeholder.jpg'}
                                           alt={producto.nombre}
                                           fill
-                                          className="object-contain p-2.5"
+                                          className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
                                         />
+                                        {producto.descuento && (
+                                          <div className="absolute top-2 left-2 bg-black text-white px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide">
+                                            -{producto.descuento_valor}%
+                                          </div>
+                                        )}
+                                        {producto.destacado && !producto.descuento && (
+                                          <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide">
+                                            DESTACADO
+                                          </div>
+                                        )}
                                         <button
                                           onClick={(e) => {
                                             e.preventDefault()
                                             e.stopPropagation()
                                             handleAddToCart(producto)
                                           }}
-                                          className="absolute top-2 right-2 bg-[#196428] hover:bg-[#196428] text-white p-1.5 rounded-full shadow-md transition-all duration-300"
+                                          className="absolute top-2 right-2 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-1.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100"
                                         >
                                           <ShoppingCart className="h-3.5 w-3.5" />
                                         </button>
-                                        {producto.descuento && (
-                                          <div className="absolute top-2 left-2">
-                                            <span className="bg-green-600 text-white text-[10px] px-1.5 py-0.5 rounded">
-                                              {producto.descuento_valor}% OFF
-                                            </span>
-                                          </div>
-                                        )}
                                       </div>
-                                      <div className="p-2.5 flex-1 flex flex-col gap-2 min-h-[160px]">
-                                        <h3 className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2 min-h-[36px]">{producto.nombre}</h3>
-                                        <p className="text-xs text-gray-600 leading-relaxed min-h-[48px] line-clamp-3 overflow-hidden">
+                                      <div className="p-2.5 flex-1 flex flex-col gap-1">
+                                        <h3 className="text-xs font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-[#196428] transition-colors">{producto.nombre}</h3>
+                                        <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-2">
                                           {(() => {
                                             if (!producto.descripcion) return ''
                                             const words = producto.descripcion.trim().split(/\s+/)
-                                            const truncated = words.slice(0, 9).join(' ')
-                                            return words.length > 9 ? `${truncated}…` : truncated
+                                            const truncated = words.slice(0, 7).join(' ')
+                                            return words.length > 7 ? `${truncated}…` : truncated
                                           })()}
                                         </p>
 
                                         {hasSizes && (
                                           <div className="mt-0.5 flex-shrink-0">
-                                            <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
                                             <div className="flex flex-wrap gap-1">
                                               {producto.tamano!.slice(0, 2).map((tamano, index) => (
                                                 <button
@@ -1343,10 +1360,10 @@ export default function Home() {
                                                     e.stopPropagation()
                                                     setSelectedSizes({...selectedSizes, [producto.id!]: index})
                                                   }}
-                                                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-all ${
+                                                  className={`px-1.5 py-0.5 rounded-lg text-[9px] font-semibold transition-all ${
                                                     selectedSizeIndex === index
-                                                      ? 'bg-[#196428] text-white'
-                                                      : 'bg-gray-100 text-gray-700'
+                                                      ? 'bg-green-200 text-[#196428] border-2 border-[#196428]'
+                                                      : 'bg-green-50 text-gray-700'
                                                   }`}
                                                 >
                                                   {tamano.cantidad}{tamano.unidad}
@@ -1357,22 +1374,25 @@ export default function Home() {
                                         )}
 
                                         {hasPrices && currentPrice > 0 ? (
-                                          <div className="mt-auto flex items-center gap-2 flex-shrink-0">
+                                          <div className="mt-auto pt-1">
                                             {producto.descuento ? (
-                                              <>
-                                                <p className="text-[#196428] font-medium text-xs">
+                                              <div className="flex items-baseline gap-1.5">
+                                                <span className="text-sm font-black text-gray-900">
                                                   $ {(currentPrice * (1 - Number(producto.descuento_valor || 0)/100)).toLocaleString('es-CO')}
-                                                </p>
-                                                <p className="text-gray-400 text-[11px] line-through">
+                                                </span>
+                                                <span className="text-[9px] font-medium text-gray-400 line-through">
                                                   $ {currentPrice.toLocaleString('es-CO')}
-                                                </p>
-                                              </>
+                                                </span>
+                                                <span className="text-[8px] font-semibold text-red-600">
+                                                  -{producto.descuento_valor}%
+                                                </span>
+                                              </div>
                                             ) : (
-                                              <p className="text-[#196428] font-medium text-xs">$ {currentPrice.toLocaleString('es-CO')}</p>
+                                              <span className="text-sm font-black text-gray-900">$ {currentPrice.toLocaleString('es-CO')}</span>
                                             )}
                                           </div>
                                         ) : (
-                                          <p className="mt-auto text-gray-400 text-xs italic flex-shrink-0">No disponible</p>
+                                          <p className="mt-auto text-gray-400 text-[10px] italic flex-shrink-0">No disponible</p>
                                         )}
                                       </div>
                                     </div>
@@ -1424,14 +1444,14 @@ export default function Home() {
                 </button>
 
                 {/* Contenedor del carrusel */}
-                <div className="flex-grow overflow-hidden">
+                <div className="flex-grow overflow-hidden pb-2">
                   <div
                     className="flex transition-transform duration-500 ease-in-out"
                     style={{ transform: `translateX(-${activeProductSlide * 100}%)` }}
                   >
                     {Array.from({ length: totalProductSlides }).map((_, slideIndex) => (
                       <div key={slideIndex} className="w-full flex-shrink-0">
-                        <div className="grid grid-cols-4 gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+                        <div className="grid grid-cols-4 gap-3 md:gap-4 lg:gap-5 xl:gap-6 pb-2">
                           {productosDestacados.slice(slideIndex * PRODUCTS_PER_SLIDE, slideIndex * PRODUCTS_PER_SLIDE + PRODUCTS_PER_SLIDE).map((producto) => {
                             const selectedSizeIndex = selectedSizes[producto.id!] || 0;
                             const hasSizes = producto.tamano && producto.tamano.length > 0;
@@ -1447,94 +1467,98 @@ export default function Home() {
                             const currentPrice = getCurrentPrice();
 
                             return (
-                            <div key={producto.id} className="bg-white rounded-[20px] md:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
-                              <div className="relative aspect-square">
-                                <Link href={`/producto/${producto.id}`} className="block">
+                            <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full group">
+                              <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                                <div className="relative aspect-[1/1] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
                                   <Image
                                     src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 600, 60) : '/placeholder.jpg'}
                                     alt={producto.nombre}
                                     fill
-                                    className="object-contain p-2 md:p-3"
+                                    className="object-contain p-3 md:p-4 lg:p-5 transition-transform duration-300 group-hover:scale-105"
                                   />
-                                </Link>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    handleAddToCart(producto)
-                                  }}
-                                  className="absolute top-3 md:top-4 right-3 md:right-4 bg-[#196428] hover:bg-[#196428] text-white p-2 rounded-full shadow-md transition-all duration-300"
-                                >
-                                  <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
-                                </button>
-                                {producto.descuento && (
-                                  <div className="absolute top-3 md:top-4 left-3 md:left-4">
-                                    <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
-                                      {producto.descuento_valor}% OFF
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="p-2.5 md:p-3 flex-1 flex flex-col gap-2">
-                                <Link href={`/producto/${producto.id}`} className="block">
-                                  <h3 className="text-base md:text-lg font-semibold leading-tight line-clamp-2 mb-1 hover:text-[#196428] transition-colors">{producto.nombre}</h3>
-                                  <p className="text-sm text-gray-600 leading-relaxed min-h-[44px] line-clamp-2 overflow-hidden">
+                                  {producto.descuento && (
+                                    <div className="absolute top-3 left-3 bg-black text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                                      -{producto.descuento_valor}%
+                                    </div>
+                                  )}
+                                  {producto.destacado && !producto.descuento && (
+                                    <div className="absolute top-3 left-3 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                                      DESTACADO
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      handleAddToCart(producto)
+                                    }}
+                                    className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+                                  >
+                                    <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
+                                  </button>
+                                </div>
+                                <div className="p-3 md:p-4 flex-1 flex flex-col gap-1.5">
+                                  <h3 className="text-base md:text-lg font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-[#196428] transition-colors">{producto.nombre}</h3>
+                                  <p className="text-xs md:text-sm text-gray-500 leading-relaxed line-clamp-2">
                                     {(() => {
                                       if (!producto.descripcion) return ''
                                       const words = producto.descripcion.trim().split(/\s+/)
-                                      const truncated = words.slice(0, 9).join(' ')
-                                      return words.length > 9 ? `${truncated}…` : truncated
+                                      const truncated = words.slice(0, 8).join(' ')
+                                      return words.length > 8 ? `${truncated}…` : truncated
                                     })()}
                                   </p>
-                                </Link>
 
-                                {/* Mostrar tamaños del producto - Seleccionables */}
-                                {hasSizes && (
-                                  <div className="mb-2">
-                                    <p className="text-xs text-gray-500 mb-1">Tamaños:</p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {producto.tamano!.map((tamano, index) => (
-                                        <button
-                                          key={index}
-                                          onClick={(e) => {
-                                            e.preventDefault()
-                                            e.stopPropagation()
-                                            setSelectedSizes({...selectedSizes, [producto.id!]: index})
-                                          }}
-                                          className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
-                                            selectedSizeIndex === index
-                                              ? 'bg-[#196428] text-white shadow-sm'
-                                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                          }`}
-                                        >
-                                          {tamano.cantidad} {tamano.unidad}
-                                        </button>
-                                      ))}
+                                  {hasSizes && (
+                                    <div className="mt-1">
+                                      <p className="text-[10px] md:text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">Tamaños</p>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {producto.tamano!.slice(0, 3).map((tamano, index) => (
+                                          <button
+                                            key={index}
+                                            onClick={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                              setSelectedSizes({...selectedSizes, [producto.id!]: index})
+                                            }}
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                                              selectedSizeIndex === index
+                                                ? 'bg-green-200 text-[#196428] border-2 border-[#196428]'
+                                                : 'bg-green-50 text-gray-700'
+                                            }`}
+                                          >
+                                            {tamano.cantidad} {tamano.unidad}
+                                          </button>
+                                        ))}
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
+                                  )}
 
-                                {/* Mostrar precio según tamaño seleccionado */}
-                                {hasPrices && currentPrice > 0 ? (
-                                  <div className="mt-auto flex items-center gap-2">
-                                    {producto.descuento ? (
-                                      <>
-                                        <p className="text-[#196428] font-medium text-sm">
-                                          $ {(currentPrice * (1 - Number(producto.descuento_valor || 0)/100)).toLocaleString('es-CO')}
-                                        </p>
-                                        <p className="text-gray-400 text-sm line-through">
-                                          $ {currentPrice.toLocaleString('es-CO')}
-                                        </p>
-                                      </>
-                                    ) : (
-                                      <p className="text-[#196428] font-medium text-sm">$ {currentPrice.toLocaleString('es-CO')}</p>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <p className="text-gray-400 text-xs italic mt-auto">Precio no disponible</p>
-                                )}
+                                  {hasPrices && currentPrice > 0 ? (
+                                    <div className="mt-auto pt-2">
+                                      {producto.descuento ? (
+                                        <div className="flex items-baseline gap-2">
+                                          <span className="text-lg md:text-xl font-black text-gray-900">
+                                            ${(currentPrice * (1 - Number(producto.descuento_valor || 0)/100)).toLocaleString('es-CO')}
+                                          </span>
+                                          <span className="text-[10px] md:text-xs font-medium text-gray-400 line-through">
+                                            ${currentPrice.toLocaleString('es-CO')}
+                                          </span>
+                                          <span className="text-[9px] md:text-[10px] font-semibold text-red-600">
+                                            -{producto.descuento_valor}%
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-lg md:text-xl font-black text-gray-900">
+                                          ${currentPrice.toLocaleString('es-CO')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="text-gray-400 text-xs italic mt-auto">Precio no disponible</p>
+                                  )}
+                                </div>
                               </div>
-                            </div>
+                            </Link>
                             );
                           })}
                         </div>
@@ -1555,6 +1579,50 @@ export default function Home() {
               </div>
             </div>
           </section>
+
+          {/* Hidden Banner Section - Solo se muestra si hay hidden banners */}
+          {getHiddenBannerSlides().length > 0 && (
+            <section className="relative w-full mt-6 md:mt-8" style={{ backgroundColor: '#FCFFEF' }}>
+              <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
+                <div className="w-full">
+                  <div className="relative aspect-[16/2] w-full">
+                    <div className="absolute inset-0">
+                      {getHiddenBannerSlides().map((slide, index) => (
+                        <div
+                          key={index}
+                          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                            activeHiddenSlide === index ? "opacity-100" : "opacity-0"
+                          }`}
+                        >
+                          {slide.type === 'video' ? (
+                            <video
+                              src={slide.url}
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              preload="metadata"
+                              className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="relative w-full h-full">
+                              <Image
+                                src={slide.url}
+                                alt={slide.alt}
+                                fill
+                                className="object-cover rounded-lg"
+                                sizes="100vw"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Nuestras marcas */}
           <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
@@ -1676,6 +1744,190 @@ export default function Home() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Tema Navideño - Solo se muestra en primera visita */}
+      {showChristmasTheme && (
+        <>
+          {/* Estilos para animaciones navideñas */}
+          <style jsx global>{`
+            @keyframes snowfall {
+              0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+              }
+              100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+              }
+            }
+
+            @keyframes float {
+              0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+              }
+              50% {
+                transform: translateY(-20px) rotate(5deg);
+              }
+            }
+
+            @keyframes swing {
+              0%, 100% {
+                transform: rotate(-3deg);
+              }
+              50% {
+                transform: rotate(3deg);
+              }
+            }
+
+            .snowflake {
+              position: fixed;
+              top: -10px;
+              color: white;
+              font-size: 1em;
+              font-family: Arial, sans-serif;
+              text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+              animation: snowfall linear infinite;
+              pointer-events: none;
+              z-index: 9999;
+            }
+
+            .candy-cane {
+              animation: swing 3s ease-in-out infinite;
+              filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+            }
+          `}</style>
+
+          {/* Copos de nieve */}
+          {snowflakes.map((snowflake) => (
+            <div
+              key={snowflake.id}
+              className="snowflake"
+              style={{
+                left: `${snowflake.left}%`,
+                animationDuration: `${snowflake.animationDuration}s`,
+                animationDelay: `${snowflake.animationDelay}s`,
+                fontSize: `${snowflake.size}px`,
+                opacity: snowflake.opacity,
+              }}
+            >
+              ❄
+            </div>
+          ))}
+
+          {/* Bastones navideños decorativos */}
+          {/* Bastón izquierdo superior */}
+          <div
+            className="candy-cane fixed top-10 left-4 md:left-8 z-[9998] pointer-events-none"
+            style={{ animationDelay: '0s' }}
+          >
+            <svg width="50" height="140" viewBox="0 0 50 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Cuerpo del bastón con rayas en espiral */}
+              <path
+                d="M25 10 Q15 20, 25 30 Q35 40, 25 50 Q15 60, 25 70 Q35 80, 25 90 Q15 100, 25 110 Q35 120, 25 130"
+                stroke="#DC2626"
+                strokeWidth="10"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path
+                d="M25 10 Q15 20, 25 30 Q35 40, 25 50 Q15 60, 25 70 Q35 80, 25 90 Q15 100, 25 110 Q35 120, 25 130"
+                stroke="white"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="8 8"
+                fill="none"
+              />
+              {/* Gancho superior */}
+              <circle cx="25" cy="10" r="6" fill="#DC2626" />
+              <circle cx="25" cy="10" r="3" fill="white" />
+            </svg>
+          </div>
+
+          {/* Bastón derecho superior */}
+          <div
+            className="candy-cane fixed top-10 right-4 md:right-8 z-[9998] pointer-events-none"
+            style={{ animationDelay: '1.5s' }}
+          >
+            <svg width="50" height="140" viewBox="0 0 50 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Cuerpo del bastón con rayas en espiral */}
+              <path
+                d="M25 10 Q35 20, 25 30 Q15 40, 25 50 Q35 60, 25 70 Q15 80, 25 90 Q35 100, 25 110 Q15 120, 25 130"
+                stroke="#DC2626"
+                strokeWidth="10"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path
+                d="M25 10 Q35 20, 25 30 Q15 40, 25 50 Q35 60, 25 70 Q15 80, 25 90 Q35 100, 25 110 Q15 120, 25 130"
+                stroke="white"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="8 8"
+                fill="none"
+              />
+              {/* Gancho superior */}
+              <circle cx="25" cy="10" r="6" fill="#DC2626" />
+              <circle cx="25" cy="10" r="3" fill="white" />
+            </svg>
+          </div>
+
+          {/* Bastón izquierdo inferior */}
+          <div
+            className="candy-cane fixed bottom-10 left-4 md:left-8 z-[9998] pointer-events-none"
+            style={{ animationDelay: '0.5s' }}
+          >
+            <svg width="50" height="140" viewBox="0 0 50 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Cuerpo del bastón con rayas en espiral */}
+              <path
+                d="M25 10 Q15 20, 25 30 Q35 40, 25 50 Q15 60, 25 70 Q35 80, 25 90 Q15 100, 25 110 Q35 120, 25 130"
+                stroke="#DC2626"
+                strokeWidth="10"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path
+                d="M25 10 Q15 20, 25 30 Q35 40, 25 50 Q15 60, 25 70 Q35 80, 25 90 Q15 100, 25 110 Q35 120, 25 130"
+                stroke="white"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="8 8"
+                fill="none"
+              />
+              {/* Gancho superior */}
+              <circle cx="25" cy="10" r="6" fill="#DC2626" />
+              <circle cx="25" cy="10" r="3" fill="white" />
+            </svg>
+          </div>
+
+          {/* Bastón derecho inferior */}
+          <div
+            className="candy-cane fixed bottom-10 right-4 md:right-8 z-[9998] pointer-events-none"
+            style={{ animationDelay: '2s' }}
+          >
+            <svg width="50" height="140" viewBox="0 0 50 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Cuerpo del bastón con rayas en espiral */}
+              <path
+                d="M25 10 Q35 20, 25 30 Q15 40, 25 50 Q35 60, 25 70 Q15 80, 25 90 Q35 100, 25 110 Q15 120, 25 130"
+                stroke="#DC2626"
+                strokeWidth="10"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path
+                d="M25 10 Q35 20, 25 30 Q15 40, 25 50 Q35 60, 25 70 Q15 80, 25 90 Q35 100, 25 110 Q15 120, 25 130"
+                stroke="white"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="8 8"
+                fill="none"
+              />
+              {/* Gancho superior */}
+              <circle cx="25" cy="10" r="6" fill="#DC2626" />
+              <circle cx="25" cy="10" r="3" fill="white" />
+            </svg>
+          </div>
+        </>
       )}
 
     </MainLayout>

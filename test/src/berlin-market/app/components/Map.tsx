@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { MapPin, Phone, User, Navigation } from 'lucide-react'
+import { MapPin, Phone, Navigation } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import type { Store } from '../lib/stores'
 
@@ -268,49 +268,49 @@ export default function Map({ stores, selectedStore, onStoreSelect, selectedCity
           }}
         >
           <Popup>
-            <div className="text-sm min-w-[230px] max-w-[280px]">
+            <div className="text-sm min-w-[280px] max-w-[320px]">
               <div className="relative overflow-hidden rounded-2xl border border-[#196428]/20 bg-gradient-to-br from-[#196428] via-[#145020] to-[#0d2d15] shadow-xl">
                 <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#196428] via-[#1d7a3a] to-[#0b2611]" />
                 <div className="p-4 text-white">
-                  <div className="flex items-start">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-base font-semibold leading-tight text-white">
-                        {store.name}
-                      </h4>
-                      <p className="mt-1 text-xs text-white">
-                        {store.address}
-                      </p>
-                      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white">
-                        <MapPin className="h-3 w-3 text-white" />
-                        {store.city}
-                      </span>
+                  {/* Header con nombre y ciudad */}
+                  <div className="mb-4">
+                    <h4 className="text-base font-semibold leading-tight text-white mb-2">
+                      {store.name}
+                    </h4>
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin className="h-3.5 w-3.5 text-white flex-shrink-0" />
+                      <span className="text-xs text-white/90">{store.city}</span>
+                    </div>
+                    <p className="text-xs text-white/80 leading-relaxed">
+                      {store.address}
+                    </p>
+                  </div>
+
+                  {/* Grid de información */}
+                  <div className="grid grid-cols-1 gap-3 mb-3">
+                    {/* Teléfono */}
+                    <div className="flex items-center gap-2.5 p-2 rounded-lg bg-white/10 backdrop-blur">
+                      <Phone className="h-4 w-4 text-white flex-shrink-0" />
+                      <a
+                        href={`tel:${store.phone}`}
+                        className="text-xs font-semibold text-white !text-white underline-offset-2 hover:underline hover:!text-white truncate"
+                        style={{ color: '#ffffff' }}
+                      >
+                        {store.phone}
+                      </a>
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-2.5 text-xs text-white">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-white" />
-                      <span className="font-medium text-white">{store.contact}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-white" />
-                      <a
-                        href={`tel:${store.phone}`}
-                        className="font-semibold text-white underline-offset-2 hover:text-white hover:underline"
-                      >
-                        <span className="text-white">{store.phone}</span>
-                      </a>
-                    </div>
-                    <a
-                      href={`https://www.google.com/maps?q=${store.coords.lat},${store.coords.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-xl border border-white/20 bg-black/10 backdrop-blur px-3 py-1.5 text-white transition-colors hover:bg-black/20"
-                    >
-                      <Navigation className="h-4 w-4 text-white" />
-                      <span className="text-xs font-semibold text-white">Ver ruta en Google Maps</span>
-                    </a>
-                  </div>
+                  {/* Botón de Google Maps */}
+                  <a
+                    href={`https://www.google.com/maps?q=${store.coords.lat},${store.coords.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full rounded-xl border border-white/30 bg-white/15 backdrop-blur px-3 py-2.5 text-white transition-all hover:bg-white/25 hover:border-white/40"
+                  >
+                    <Navigation className="h-4 w-4 text-white" />
+                    <span className="text-xs font-semibold text-white">Ver ruta en Google Maps</span>
+                  </a>
                 </div>
               </div>
             </div>

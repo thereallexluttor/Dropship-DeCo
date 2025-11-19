@@ -24,6 +24,7 @@ const AccountForm = () => {
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
+  const [passwordValidation, setPasswordValidation] = useState<{ message: string; isValid: boolean } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -53,17 +54,64 @@ const AccountForm = () => {
     router.push('/cuenta');
   };
 
+  // Función para verificar si el formulario es válido
+  const isFormValid = () => {
+    return (
+      nombre.trim() !== '' &&
+      registerEmail.trim() !== '' &&
+      telefono.trim() !== '' &&
+      direccion.trim() !== '' &&
+      registerPassword.trim() !== '' &&
+      confirmPassword.trim() !== '' &&
+      registerPassword.length >= 8 &&
+      registerPassword === confirmPassword
+    );
+  };
+
   // Función para manejar registro
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (registerPassword !== confirmPassword) {
-      alert("Las contraseñas no coinciden");
+    // Validar que todos los campos estén llenos
+    if (!nombre || !nombre.trim()) {
+      alert("Por favor ingresa tu nombre completo");
       return;
     }
 
-    if (!registerEmail || !registerPassword || !nombre || !telefono || !direccion) {
-      alert("Por favor completa todos los campos");
+    if (!registerEmail || !registerEmail.trim()) {
+      alert("Por favor ingresa tu email");
+      return;
+    }
+
+    if (!telefono || !telefono.trim()) {
+      alert("Por favor ingresa tu teléfono");
+      return;
+    }
+
+    if (!direccion || !direccion.trim()) {
+      alert("Por favor ingresa tu dirección");
+      return;
+    }
+
+    if (!registerPassword || !registerPassword.trim()) {
+      alert("Por favor ingresa una contraseña");
+      return;
+    }
+
+    if (!confirmPassword || !confirmPassword.trim()) {
+      alert("Por favor confirma tu contraseña");
+      return;
+    }
+
+    // Validar longitud de contraseña
+    if (registerPassword.length < 8) {
+      alert("La contraseña debe tener al menos 8 caracteres");
+      return;
+    }
+
+    // Validar que las contraseñas coincidan
+    if (registerPassword !== confirmPassword) {
+      alert("Las contraseñas no coinciden. Por favor verifica que ambas contraseñas sean iguales");
       return;
     }
 
@@ -111,6 +159,7 @@ const AccountForm = () => {
         setNombre("");
         setTelefono("");
         setDireccion("");
+        setPasswordValidation(null);
         setIsRegistering(false);
       }
     } catch (error) {
@@ -339,22 +388,41 @@ const AccountForm = () => {
                 />
               </div>
 
-              <div className="relative">
-                <Lock className="absolute left-3 xs:left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Contraseña"
-                  value={registerPassword}
-                  onChange={(e) => setRegisterPassword(e.target.value)}
-                  className="w-full px-3 xs:px-3 sm:px-4 py-3 xs:py-3 sm:py-3 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm xs:text-sm sm:text-base md:text-sm pl-10 xs:pl-10 sm:pl-12 pr-10 xs:pr-10 sm:pr-12 transition-all duration-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 xs:right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4 xs:h-4 xs:w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />}
-                </button>
+              <div>
+                <div className="relative">
+                  <Lock className="absolute left-3 xs:left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 xs:h-4 xs:w-4 sm:h-5 sm:w-5 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Contraseña"
+                    value={registerPassword}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterPassword(value);
+                      if (value.length > 0) {
+                        if (value.length < 8) {
+                          setPasswordValidation({ message: "La contraseña es muy pequeña (mínimo 8 caracteres)", isValid: false });
+                        } else {
+                          setPasswordValidation({ message: "La contraseña tiene el tamaño correcto", isValid: true });
+                        }
+                      } else {
+                        setPasswordValidation(null);
+                      }
+                    }}
+                    className="w-full px-3 xs:px-3 sm:px-4 py-3 xs:py-3 sm:py-3 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm xs:text-sm sm:text-base md:text-sm pl-10 xs:pl-10 sm:pl-12 pr-10 xs:pr-10 sm:pr-12 transition-all duration-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 xs:right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4 xs:h-4 xs:w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 xs:h-4 xs:w-4 sm:h-5 sm:w-5" />}
+                  </button>
+                </div>
+                {passwordValidation && (
+                  <p className={`mt-1 text-xs ${passwordValidation.isValid ? 'text-green-600' : 'text-red-600'}`} style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                    {passwordValidation.message}
+                  </p>
+                )}
               </div>
 
               <div className="relative">
@@ -377,19 +445,26 @@ const AccountForm = () => {
 
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full bg-[#196428] hover:bg-[#145020] text-white font-semibold py-3 xs:py-3 sm:py-3 md:py-3 rounded-lg transition-all duration-200 text-sm xs:text-sm sm:text-base md:text-sm disabled:opacity-50 hover:shadow-lg"
+                disabled={isLoading || !isFormValid()}
+                className={`w-full font-semibold py-3 xs:py-3 sm:py-3 md:py-3 rounded-lg transition-all duration-200 text-sm xs:text-sm sm:text-base md:text-sm ${
+                  isLoading || !isFormValid()
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                    : 'bg-[#196428] hover:bg-[#145020] text-white hover:shadow-lg'
+                }`}
               >
                 {isLoading ? "Registrando..." : "Crear cuenta"}
               </button>
 
-              <button
-                type="button"
-                onClick={() => setIsRegistering(false)}
-                className="w-full text-[#196428] hover:underline text-xs xs:text-xs sm:text-sm font-medium transition-colors text-center"
-              >
-                ← Volver al inicio de sesión
-              </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegistering(false);
+                setPasswordValidation(null);
+              }}
+              className="w-full text-[#196428] hover:underline text-xs xs:text-xs sm:text-sm font-medium transition-colors text-center"
+            >
+              ← Volver al inicio de sesión
+            </button>
             </form>
           </div>
         )}

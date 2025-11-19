@@ -6,7 +6,7 @@ import { Megaphone } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-[#196428] text-white py-4">
+    <footer className="bg-[#196428] text-white pt-4 pb-4 w-full" style={{ marginBottom: 0, marginTop: 'auto', flexShrink: 0 }}>
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:grid md:grid-cols-4 lg:grid-cols-12 gap-8 md:gap-6 lg:gap-4">
           <div className="md:col-span-1 lg:col-span-2 flex flex-col items-center md:items-start">
@@ -72,7 +72,7 @@ const Footer = () => {
                   <h3 className="text-base font-normal mb-3">Acerca de Unisantander</h3>
                   <ul className="space-y-2 text-sm">
                     <li><Link href="/sobre-nosotros" className="hover:underline">Sobre nosotros</Link></li>
-                    <li><Link href="/carreras" className="hover:underline">Carreras</Link></li>
+                    <li><Link href="/carreras" className="hover:underline">Trabaja con nosotros</Link></li>
                     <li><Link href="/responsabilidad" className="hover:underline">Responsabilidad</Link></li>
                     <li><Link href="/cumplimiento" className="hover:underline">Cumplimiento</Link></li>
                   </ul>
@@ -94,7 +94,7 @@ const Footer = () => {
                 </div>
 
                 {/* Social Media Icons */}
-                <div className="flex justify-center space-x-6 lg:space-x-8 mt-4">
+                <div className="flex justify-center space-x-6 lg:space-x-8 mt-4 mb-0">
                   <Link href="#" className="text-white hover:text-gray-200">
                     <Image src="/icons/facebook.png" alt="Facebook" width={30} height={30} />
                   </Link>

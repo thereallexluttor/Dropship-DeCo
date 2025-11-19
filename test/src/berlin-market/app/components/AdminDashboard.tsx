@@ -87,6 +87,8 @@ const AdminDashboard = () => {
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [filtroEstadoPedidos, setFiltroEstadoPedidos] = useState<string>('todos');
   const [pedidoSearch, setPedidoSearch] = useState<string>('');
+  const [paginaPedidos, setPaginaPedidos] = useState<number>(1);
+  const pedidosPorPagina = 5;
   const [filtroCategoriaSubcategorias, setFiltroCategoriaSubcategorias] = useState<number>(0);
   const [busquedaSubcategorias, setBusquedaSubcategorias] = useState<string>('');
   const [busquedaProductos, setBusquedaProductos] = useState<string>('');
@@ -536,10 +538,30 @@ const AdminDashboard = () => {
 
   // Función para obtener los pedidos filtrados por estado (únicos por pedido_id)
   const getPedidosFiltrados = () => {
-    if (filtroEstadoPedidos === 'todos') {
-      return pedidos;
-    }
-    return pedidos.filter(pedido => pedido.estado_pedido === filtroEstadoPedidos);
+    let pedidosFiltrados = filtroEstadoPedidos === 'todos' 
+      ? pedidos 
+      : pedidos.filter(pedido => pedido.estado_pedido === filtroEstadoPedidos);
+    
+    // Ordenar por fecha descendente (más recientes primero)
+    return pedidosFiltrados.sort((a, b) => {
+      const fechaA = new Date(a.fecha).getTime();
+      const fechaB = new Date(b.fecha).getTime();
+      return fechaB - fechaA; // Descendente (más reciente primero)
+    });
+  };
+
+  // Función para obtener pedidos paginados
+  const getPedidosPaginados = () => {
+    const pedidosFiltrados = getPedidosFiltrados();
+    const inicio = (paginaPedidos - 1) * pedidosPorPagina;
+    const fin = inicio + pedidosPorPagina;
+    return pedidosFiltrados.slice(inicio, fin);
+  };
+
+  // Función para obtener el total de páginas
+  const getTotalPaginasPedidos = () => {
+    const totalPedidos = getPedidosFiltrados().length;
+    return Math.ceil(totalPedidos / pedidosPorPagina);
   };
 
   // Función para obtener el contador de pedidos únicos por estado (no productos)
@@ -2583,290 +2605,402 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-10 items-center max-w-6xl mx-auto rounded-full border border-green-200 bg-green-50 shadow-sm">
-          <TabsTrigger value="categorias" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            
+        <TabsList className="grid w-full grid-cols-10 items-center gap-1.5 max-w-6xl mx-auto rounded-full border border-green-300/50 bg-gradient-to-br from-green-50 to-emerald-50/50 shadow-md backdrop-blur-sm p-1.5 h-12">
+          <TabsTrigger 
+            value="categorias" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Categorías
           </TabsTrigger>
-          <TabsTrigger value="subcategorias" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-           
+          <TabsTrigger 
+            value="subcategorias" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Subcategorías
           </TabsTrigger>
-          <TabsTrigger value="productos" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            
+          <TabsTrigger 
+            value="productos" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Productos
           </TabsTrigger>
-          <TabsTrigger value="marcas" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            
+          <TabsTrigger 
+            value="marcas" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Marcas
           </TabsTrigger>
-          <TabsTrigger value="ui" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            
+          <TabsTrigger 
+            value="ui" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             UI
           </TabsTrigger>
-          <TabsTrigger value="tiendas" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-           
+          <TabsTrigger 
+            value="tiendas" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Tiendas
           </TabsTrigger>
-          <TabsTrigger value="aliados" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            
+          <TabsTrigger 
+            value="aliados" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Aliados
           </TabsTrigger>
-          <TabsTrigger value="vacantes" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            
+          <TabsTrigger 
+            value="vacantes" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Vacantes
           </TabsTrigger>
-          <TabsTrigger value="pedidos" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            
+          <TabsTrigger 
+            value="pedidos" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Pedidos
           </TabsTrigger>
-          <TabsTrigger value="analitica" className="flex items-center gap-2 -mt-[3px] data-[state=active]:rounded-full data-[state=active]:border data-[state=active]:border-gray-300 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-            
+          <TabsTrigger 
+            value="analitica" 
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
+          >
             Analitica
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="categorias" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FolderPlus className="h-5 w-5" />
+        <TabsContent value="categorias" className="space-y-8">
+          <Card className="border-0 shadow-lg bg-white/50 backdrop-blur-sm">
+            <CardHeader className="pb-6 space-y-1">
+              <CardTitle className="text-2xl font-semibold tracking-tight flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-100 text-green-700">
+                  <FolderPlus className="h-5 w-5" />
+                </div>
                 Crear Nueva Categoría
               </CardTitle>
-              <CardDescription>
-                Agrega una nueva categoría al sistema
+              <CardDescription className="text-base text-gray-500 mt-2">
+                Agrega una nueva categoría al sistema con toda su información
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateCategoria} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+            <CardContent className="pt-0">
+              <form onSubmit={handleCreateCategoria} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900 flex items-center gap-2">
                       Nombre de la Categoría
+                      <span className="text-red-500">*</span>
                     </label>
                     <Input
                       value={newCategoria.nombre}
                       onChange={(e) => setNewCategoria({ ...newCategoria, nombre: e.target.value })}
                       placeholder="Ej: Perros, Gatos, etc."
                       required
+                      className="h-11 border-gray-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900 flex items-center gap-2">
                       Descripción
+                      <span className="text-red-500">*</span>
                     </label>
                     <Input
                       value={newCategoria.descripcion}
                       onChange={(e) => setNewCategoria({ ...newCategoria, descripcion: e.target.value })}
                       placeholder="Breve descripción de la categoría"
                       required
+                      className="h-11 border-gray-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
                     />
                   </div>
                 </div>
 
                 {/* Campos para imágenes de marcas */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Imagen Marca 1 (Royal Canin)
-                    </label>
-                    <div className="space-y-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={async (e) => {
-                          const imageUrl = await handleFileSelectMarca(e, 'marca1');
-                          if (imageUrl) {
-                            setNewCategoria({ ...newCategoria, imagen_marca1: imageUrl });
-                          }
-                        }}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
-                      />
-                      {newCategoria.imagen_marca1 && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                          <div className="relative w-20 h-20">
-                            <Image
-                              src={newCategoria.imagen_marca1}
-                              alt="Marca 1 Preview"
-                              fill
-                              className="object-cover rounded-lg border border-gray-300"
-                              sizes="80px"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setNewCategoria({ ...newCategoria, imagen_marca1: '' })}
-                            className="ml-2 text-red-500 text-sm hover:text-red-700"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                    <Tag className="h-4 w-4 text-gray-400" />
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Imágenes de Marcas</h3>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Imagen Marca 2 (Purina)
-                    </label>
-                    <div className="space-y-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={async (e) => {
-                          const imageUrl = await handleFileSelectMarca(e, 'marca2');
-                          if (imageUrl) {
-                            setNewCategoria({ ...newCategoria, imagen_marca2: imageUrl });
-                          }
-                        }}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
-                      />
-                      {newCategoria.imagen_marca2 && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                          <div className="relative w-20 h-20">
-                            <Image
-                              src={newCategoria.imagen_marca2}
-                              alt="Marca 2 Preview"
-                              fill
-                              className="object-cover rounded-lg border border-gray-300"
-                              sizes="80px"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setNewCategoria({ ...newCategoria, imagen_marca2: '' })}
-                            className="ml-2 text-red-500 text-sm hover:text-red-700"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-gray-900 block">
+                        Marca 1 (Royal Canin)
+                      </label>
+                      <div className="relative group">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const imageUrl = await handleFileSelectMarca(e, 'marca1');
+                            if (imageUrl) {
+                              setNewCategoria({ ...newCategoria, imagen_marca1: imageUrl });
+                            }
+                          }}
+                          className="hidden"
+                          id="marca1-upload"
+                        />
+                        <label
+                          htmlFor="marca1-upload"
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer transition-all duration-200 hover:border-green-400 hover:bg-green-50/50 group"
+                        >
+                          {newCategoria.imagen_marca1 ? (
+                            <div className="relative w-full h-full rounded-lg overflow-hidden">
+                              <Image
+                                src={newCategoria.imagen_marca1}
+                                alt="Marca 1 Preview"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, 33vw"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNewCategoria({ ...newCategoria, imagen_marca1: '' });
+                                }}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-3 bg-gray-100 rounded-lg mb-2 group-hover:bg-green-100 transition-colors">
+                                <Tag className="h-6 w-6 text-gray-400 group-hover:text-green-600" />
+                              </div>
+                              <p className="text-xs text-gray-500 text-center px-2">Click para subir</p>
+                            </>
+                          )}
+                        </label>
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Imagen Marca 3
-                    </label>
-                    <div className="space-y-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={async (e) => {
-                          const imageUrl = await handleFileSelectMarca(e, 'marca3');
-                          if (imageUrl) {
-                            setNewCategoria({ ...newCategoria, imagen_marca3: imageUrl });
-                          }
-                        }}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
-                      />
-                      {newCategoria.imagen_marca3 && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                          <div className="relative w-20 h-20">
-                            <Image
-                              src={newCategoria.imagen_marca3}
-                              alt="Marca 3 Preview"
-                              fill
-                              className="object-cover rounded-lg border border-gray-300"
-                              sizes="80px"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setNewCategoria({ ...newCategoria, imagen_marca3: '' })}
-                            className="ml-2 text-red-500 text-sm hover:text-red-700"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      )}
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-gray-900 block">
+                        Marca 2 (Purina)
+                      </label>
+                      <div className="relative group">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const imageUrl = await handleFileSelectMarca(e, 'marca2');
+                            if (imageUrl) {
+                              setNewCategoria({ ...newCategoria, imagen_marca2: imageUrl });
+                            }
+                          }}
+                          className="hidden"
+                          id="marca2-upload"
+                        />
+                        <label
+                          htmlFor="marca2-upload"
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer transition-all duration-200 hover:border-green-400 hover:bg-green-50/50 group"
+                        >
+                          {newCategoria.imagen_marca2 ? (
+                            <div className="relative w-full h-full rounded-lg overflow-hidden">
+                              <Image
+                                src={newCategoria.imagen_marca2}
+                                alt="Marca 2 Preview"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, 33vw"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNewCategoria({ ...newCategoria, imagen_marca2: '' });
+                                }}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-3 bg-gray-100 rounded-lg mb-2 group-hover:bg-green-100 transition-colors">
+                                <Tag className="h-6 w-6 text-gray-400 group-hover:text-green-600" />
+                              </div>
+                              <p className="text-xs text-gray-500 text-center px-2">Click para subir</p>
+                            </>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-gray-900 block">
+                        Marca 3
+                      </label>
+                      <div className="relative group">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const imageUrl = await handleFileSelectMarca(e, 'marca3');
+                            if (imageUrl) {
+                              setNewCategoria({ ...newCategoria, imagen_marca3: imageUrl });
+                            }
+                          }}
+                          className="hidden"
+                          id="marca3-upload"
+                        />
+                        <label
+                          htmlFor="marca3-upload"
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer transition-all duration-200 hover:border-green-400 hover:bg-green-50/50 group"
+                        >
+                          {newCategoria.imagen_marca3 ? (
+                            <div className="relative w-full h-full rounded-lg overflow-hidden">
+                              <Image
+                                src={newCategoria.imagen_marca3}
+                                alt="Marca 3 Preview"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, 33vw"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNewCategoria({ ...newCategoria, imagen_marca3: '' });
+                                }}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-3 bg-gray-100 rounded-lg mb-2 group-hover:bg-green-100 transition-colors">
+                                <Tag className="h-6 w-6 text-gray-400 group-hover:text-green-600" />
+                              </div>
+                              <p className="text-xs text-gray-500 text-center px-2">Click para subir</p>
+                            </>
+                          )}
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Campo para imagen de categoría */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Imagen de la Categoría (Banner)
-                  </label>
-                  <div className="space-y-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const imageUrl = await handleFileSelectCategoria(e);
-                        if (imageUrl) {
-                          setNewCategoria({ ...newCategoria, categoria_imagen: imageUrl });
-                        }
-                      }}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
-                    />
-                    {newCategoria.categoria_imagen && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-600 mb-2">Imagen seleccionada:</p>
-                        <div className="relative w-32 h-32">
-                          <Image
-                            src={newCategoria.categoria_imagen}
-                            alt="Categoría Preview"
-                            fill
-                            className="object-cover rounded-lg border border-gray-300"
-                            sizes="128px"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setNewCategoria({ ...newCategoria, categoria_imagen: '' })}
-                          className="ml-2 text-red-500 text-sm hover:text-red-700"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    )}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                    <Layout className="h-4 w-4 text-gray-400" />
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Banner de Categoría</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-900 block">
+                      Imagen Banner Principal
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const imageUrl = await handleFileSelectCategoria(e);
+                          if (imageUrl) {
+                            setNewCategoria({ ...newCategoria, categoria_imagen: imageUrl });
+                          }
+                        }}
+                        className="hidden"
+                        id="categoria-banner-upload"
+                      />
+                      <label
+                        htmlFor="categoria-banner-upload"
+                        className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer transition-all duration-200 hover:border-green-400 hover:bg-green-50/50 group"
+                      >
+                        {newCategoria.categoria_imagen ? (
+                          <div className="relative w-full h-full rounded-lg overflow-hidden">
+                            <Image
+                              src={newCategoria.categoria_imagen}
+                              alt="Categoría Preview"
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 100vw, 100vw"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNewCategoria({ ...newCategoria, categoria_imagen: '' });
+                              }}
+                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="p-4 bg-gray-100 rounded-lg mb-3 group-hover:bg-green-100 transition-colors">
+                              <Layout className="h-8 w-8 text-gray-400 group-hover:text-green-600" />
+                            </div>
+                            <p className="text-sm text-gray-500 font-medium">Click para subir banner</p>
+                            <p className="text-xs text-gray-400 mt-1">Recomendado: 1200x400px</p>
+                          </>
+                        )}
+                      </label>
+                    </div>
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-[#196428] hover:bg-[#145020] text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Categoría
-                </Button>
+                <div className="pt-4 border-t border-gray-100">
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 transition-all duration-200"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Crear Categoría
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Categorías Existentes</CardTitle>
-              <CardDescription>
-                Gestiona las categorías actuales del sistema
+          <Card className="border-0 shadow-lg bg-white/50 backdrop-blur-sm">
+            <CardHeader className="pb-6 space-y-1">
+              <CardTitle className="text-2xl font-semibold tracking-tight flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
+                  <FolderOpen className="h-5 w-5" />
+                </div>
+                Categorías Existentes
+              </CardTitle>
+              <CardDescription className="text-base text-gray-500 mt-2">
+                Gestiona y edita las categorías actuales del sistema
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {categorias.length === 0 ? (
-                <div className="text-center py-8">
-                  <FolderPlus className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No hay categorías registradas</p>
+                <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                  <div className="inline-flex p-4 bg-gray-100 rounded-full mb-4">
+                    <FolderPlus className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600 font-medium mb-1">No hay categorías registradas</p>
+                  <p className="text-sm text-gray-400">Crea tu primera categoría usando el formulario de arriba</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {categorias.map((categoria) => (
-                    <Card key={categoria.id} className="border-l-4 border-l-[#196428]">
-                      <CardContent className="p-4">
+                    <Card key={categoria.id} className="border border-gray-200 hover:border-green-300 hover:shadow-md transition-all duration-200 bg-white">
+                      <CardContent className="p-6">
                         {editingCategoria?.id === categoria.id ? (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <Input
-                                value={editingCategoria?.nombre || ''}
-                                onChange={(e) => setEditingCategoria({ ...editingCategoria!, nombre: e.target.value })}
-                                placeholder="Nombre de la categoría"
-                              />
-                              <Input
-                                value={editingCategoria?.descripcion || ''}
-                                onChange={(e) => setEditingCategoria({ ...editingCategoria!, descripcion: e.target.value })}
-                                placeholder="Descripción"
-                              />
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-900">Nombre de la Categoría</label>
+                                <Input
+                                  value={editingCategoria?.nombre || ''}
+                                  onChange={(e) => setEditingCategoria({ ...editingCategoria!, nombre: e.target.value })}
+                                  placeholder="Ej: Perros, Gatos, etc."
+                                  className="h-11 border-gray-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-900">Descripción</label>
+                                <Input
+                                  value={editingCategoria?.descripcion || ''}
+                                  onChange={(e) => setEditingCategoria({ ...editingCategoria!, descripcion: e.target.value })}
+                                  placeholder="Breve descripción de la categoría"
+                                  className="h-11 border-gray-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                                />
+                              </div>
                             </div>
 
                             {/* Campos para imágenes de marcas */}
@@ -3033,55 +3167,129 @@ const AdminDashboard = () => {
                               </div>
                             </div>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-3 pt-4 border-t border-gray-100">
                               <Button
                                 onClick={() => handleUpdateCategoria(editingCategoria!)}
                                 size="sm"
-                                className="bg-[#196428] hover:bg-[#145020] text-white"
+                                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md"
                               >
-                                <Save className="h-4 w-4 mr-1" />
-                                Guardar
+                                <Save className="h-4 w-4 mr-2" />
+                                Guardar Cambios
                               </Button>
                               <Button
                                 onClick={cancelEditCategoria}
                                 variant="outline"
                                 size="sm"
+                                className="border-gray-300 hover:bg-gray-50"
                               >
-                                <X className="h-4 w-4 mr-1" />
+                                <X className="h-4 w-4 mr-2" />
                                 Cancelar
                               </Button>
                             </div>
                           </div>
                         ) : (
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                {categoria.nombre}
-                              </h3>
-                              <p className="text-gray-600 text-sm">
-                                {categoria.descripcion}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-2">
-                                ID: {categoria.id} • Creado: {new Date(categoria.created_at || '').toLocaleDateString()}
-                              </p>
+                          <div className="flex items-start justify-between gap-6">
+                              <div className="flex-1 space-y-4">
+                                <div>
+                                  <h3 className="text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                    {categoria.categoria_imagen ? (
+                                      <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-gray-200 shadow-sm flex-shrink-0">
+                                        <Image
+                                          src={categoria.categoria_imagen}
+                                          alt={categoria.nombre}
+                                          fill
+                                          className="object-cover"
+                                          sizes="32px"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm font-bold">
+                                        {categoria.nombre.charAt(0).toUpperCase()}
+                                      </span>
+                                    )}
+                                    {categoria.nombre.toUpperCase()}
+                                  </h3>
+                                  <p className="text-gray-600 text-sm leading-relaxed pl-10">
+                                    {categoria.descripcion}
+                                  </p>
+                                </div>
+                                
+                                {/* Imágenes de Marcas */}
+                                {(categoria.imagen_marca1 || categoria.imagen_marca2 || categoria.imagen_marca3) && (
+                                  <div className="pl-10 space-y-2">
+                                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Marcas Asociadas</p>
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                      {categoria.imagen_marca1 && (
+                                        <div className="relative w-16 h-16 rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                                          <Image
+                                            src={categoria.imagen_marca1}
+                                            alt="Marca 1"
+                                            fill
+                                            className="object-contain p-2"
+                                            sizes="64px"
+                                          />
+                                        </div>
+                                      )}
+                                      {categoria.imagen_marca2 && (
+                                        <div className="relative w-16 h-16 rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                                          <Image
+                                            src={categoria.imagen_marca2}
+                                            alt="Marca 2"
+                                            fill
+                                            className="object-contain p-2"
+                                            sizes="64px"
+                                          />
+                                        </div>
+                                      )}
+                                      {categoria.imagen_marca3 && (
+                                        <div className="relative w-16 h-16 rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                                          <Image
+                                            src={categoria.imagen_marca3}
+                                            alt="Marca 3"
+                                            fill
+                                            className="object-contain p-2"
+                                            sizes="64px"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                <div className="flex items-center gap-4 pl-10 text-xs text-gray-500">
+                                  <span className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                                    ID: <span className="font-medium text-gray-700">{categoria.id}</span>
+                                  </span>
+                                  {categoria.created_at && !isNaN(new Date(categoria.created_at).getTime()) && (
+                                    <span className="flex items-center gap-1.5">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                                      Creado: <span className="font-medium text-gray-700">{new Date(categoria.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-2 flex-shrink-0">
+                                <Button
+                                  onClick={() => startEditCategoria(categoria)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all"
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Editar
+                                </Button>
+                                <Button
+                                  onClick={() => handleDeleteCategoria(categoria.id || 0)}
+                                  size="sm"
+                                  variant="destructive"
+                                  className="bg-red-500 hover:bg-red-600 text-white shadow-sm"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Eliminar
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                onClick={() => startEditCategoria(categoria)}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                onClick={() => handleDeleteCategoria(categoria.id || 0)}
-                                size="sm"
-                                variant="destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
                         )}
                       </CardContent>
                     </Card>
@@ -5760,7 +5968,10 @@ const AdminDashboard = () => {
                         <input
                           type="text"
                           value={pedidoSearch}
-                          onChange={(e) => setPedidoSearch(e.target.value)}
+                          onChange={(e) => {
+                            setPedidoSearch(e.target.value);
+                            setPaginaPedidos(1); // Resetear a página 1 al buscar
+                          }}
                           placeholder="Buscar por #pedido"
                           className="w-full p-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
                         />
@@ -5769,42 +5980,60 @@ const AdminDashboard = () => {
 
                     <div className="flex flex-wrap gap-2">
                       <Button
-                        onClick={() => setFiltroEstadoPedidos('todos')}
+                        onClick={() => {
+                          setFiltroEstadoPedidos('todos');
+                          setPaginaPedidos(1);
+                        }}
                         className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('todos')}`}
                       >
                         📋 Todos ({getContadorPedidosPorEstado('todos')})
                       </Button>
 
                       <Button
-                        onClick={() => setFiltroEstadoPedidos('pendiente')}
+                        onClick={() => {
+                          setFiltroEstadoPedidos('pendiente');
+                          setPaginaPedidos(1);
+                        }}
                         className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('pendiente')}`}
                       >
                         ⏳ Pendientes ({getContadorPedidosPorEstado('pendiente')})
                       </Button>
 
                       <Button
-                        onClick={() => setFiltroEstadoPedidos('pagado')}
+                        onClick={() => {
+                          setFiltroEstadoPedidos('pagado');
+                          setPaginaPedidos(1);
+                        }}
                         className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('pagado')}`}
                       >
                         💳 Pagados ({getContadorPedidosPorEstado('pagado')})
                       </Button>
 
                       <Button
-                        onClick={() => setFiltroEstadoPedidos('enviado')}
+                        onClick={() => {
+                          setFiltroEstadoPedidos('enviado');
+                          setPaginaPedidos(1);
+                        }}
                         className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('enviado')}`}
                       >
                         📦 Enviados ({getContadorPedidosPorEstado('enviado')})
                       </Button>
 
                       <Button
-                        onClick={() => setFiltroEstadoPedidos('entregado')}
+                        onClick={() => {
+                          setFiltroEstadoPedidos('entregado');
+                          setPaginaPedidos(1);
+                        }}
                         className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('entregado')}`}
                       >
                         ✅ Entregados ({getContadorPedidosPorEstado('entregado')})
                       </Button>
 
                       <Button
-                        onClick={() => setFiltroEstadoPedidos('cancelado')}
+                        onClick={() => {
+                          setFiltroEstadoPedidos('cancelado');
+                          setPaginaPedidos(1);
+                        }}
                         className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('cancelado')}`}
                       >
                         ❌ Cancelados ({getContadorPedidosPorEstado('cancelado')})
@@ -5840,38 +6069,57 @@ const AdminDashboard = () => {
                       </p>
                     </div>
                   ) : (
-                    /* Agrupar pedidos por pedido_id */
-                    Object.entries(
-                    getPedidosFiltrados().reduce((acc: any, pedido: any) => {
-                      if (!acc[pedido.pedido_id]) {
-                        acc[pedido.pedido_id] = {
-                          pedido_id: pedido.pedido_id,
-                          nombre: pedido.nombre,
-                          correo: pedido.correo,
-                          telefono: pedido.telefono,
-                          direccion: pedido.direccion,
-                          estado_pedido: pedido.estado_pedido,
-                          fecha: pedido.fecha,
-                          total: pedido.total,
-                          productos: []
-                        };
-                      }
-                      acc[pedido.pedido_id].productos.push({
-                        id_detalle_pedido: pedido.id_detalle_pedido,
-                        producto_id: pedido.producto_id,
-                        nombre_producto: pedido.nombre_producto,
-                        imagen_producto: pedido.imagen_producto,
-                        cantidad: pedido.cantidad,
-                        subtotal: pedido.subtotal
-                      });
-                      return acc;
-                    }, {}))
-                  .filter(([pedidoId]) => {
-                    const needle = (pedidoSearch || '').replace(/[^0-9]/g, '').trim();
-                    if (!needle) return true;
-                    return pedidoId.toString().includes(needle);
-                  })
-                  .map(([pedidoId, pedido]: [string, any], ordenIndex: number) => (
+                    <>
+                      {/* Agrupar pedidos por pedido_id, ordenar por fecha y paginar */}
+                      {(() => {
+                        // Agrupar pedidos por pedido_id
+                        const pedidosAgrupados = getPedidosFiltrados().reduce((acc: any, pedido: any) => {
+                          if (!acc[pedido.pedido_id]) {
+                            acc[pedido.pedido_id] = {
+                              pedido_id: pedido.pedido_id,
+                              nombre: pedido.nombre,
+                              correo: pedido.correo,
+                              telefono: pedido.telefono,
+                              direccion: pedido.direccion,
+                              estado_pedido: pedido.estado_pedido,
+                              fecha: pedido.fecha,
+                              total: pedido.total,
+                              productos: []
+                            };
+                          }
+                          acc[pedido.pedido_id].productos.push({
+                            id_detalle_pedido: pedido.id_detalle_pedido,
+                            producto_id: pedido.producto_id,
+                            nombre_producto: pedido.nombre_producto,
+                            imagen_producto: pedido.imagen_producto,
+                            cantidad: pedido.cantidad,
+                            subtotal: pedido.subtotal
+                          });
+                          return acc;
+                        }, {});
+
+                        // Convertir a array y ordenar por fecha descendente
+                        const pedidosArray = Object.entries(pedidosAgrupados)
+                          .filter(([pedidoId]) => {
+                            const needle = (pedidoSearch || '').replace(/[^0-9]/g, '').trim();
+                            if (!needle) return true;
+                            return pedidoId.toString().includes(needle);
+                          })
+                          .sort(([, a]: [string, any], [, b]: [string, any]) => {
+                            const fechaA = new Date(a.fecha).getTime();
+                            const fechaB = new Date(b.fecha).getTime();
+                            return fechaB - fechaA; // Descendente (más reciente primero)
+                          });
+
+                        // Aplicar paginación
+                        const inicio = (paginaPedidos - 1) * pedidosPorPagina;
+                        const fin = inicio + pedidosPorPagina;
+                        const pedidosPaginados = pedidosArray.slice(inicio, fin);
+                        const totalPaginas = Math.ceil(pedidosArray.length / pedidosPorPagina);
+
+                        return (
+                          <>
+                            {pedidosPaginados.map(([pedidoId, pedido]: [string, any], ordenIndex: number) => (
                     <Card key={pedidoId} className="border-l-4 border-l-[#196428] shadow-lg">
                       <CardContent className="p-6">
                         {/* Header del Pedido */}
@@ -6060,7 +6308,59 @@ const AdminDashboard = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  ))
+                            ))}
+                            
+                            {/* Controles de Paginación */}
+                            {totalPaginas > 1 && (
+                              <div className="flex flex-col sm:flex-row items-center justify-between mt-8 pt-6 border-t border-gray-200 gap-4">
+                                <div className="text-sm text-gray-600">
+                                  Mostrando {inicio + 1} - {Math.min(fin, pedidosArray.length)} de {pedidosArray.length} pedidos
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    onClick={() => setPaginaPedidos(paginaPedidos - 1)}
+                                    disabled={paginaPedidos === 1}
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <ChevronUp className="h-4 w-4 mr-1 rotate-[-90deg]" />
+                                    Anterior
+                                  </Button>
+                                  <div className="flex items-center gap-1">
+                                    {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
+                                      <Button
+                                        key={num}
+                                        onClick={() => setPaginaPedidos(num)}
+                                        variant={paginaPedidos === num ? "default" : "outline"}
+                                        size="sm"
+                                        className={`${
+                                          paginaPedidos === num
+                                            ? "bg-[#196428] hover:bg-[#145020] text-white"
+                                            : "border-gray-300"
+                                        }`}
+                                      >
+                                        {num}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                  <Button
+                                    onClick={() => setPaginaPedidos(paginaPedidos + 1)}
+                                    disabled={paginaPedidos === totalPaginas}
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Siguiente
+                                    <ChevronDown className="h-4 w-4 ml-1 rotate-[-90deg]" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </>
                   )}
                 </div>
               )}

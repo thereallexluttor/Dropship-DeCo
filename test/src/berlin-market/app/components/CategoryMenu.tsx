@@ -169,9 +169,9 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                     <Link
                       key={subcategory.name}
                       href={subcategory.href}
-                      className="flex items-center justify-between py-1.5 sm:py-2 px-2 sm:px-3 text-[11px] sm:text-xs lg:text-sm text-gray-600 hover:bg-gray-50 hover:text-[#196428] rounded-md transition-colors"
+                      className="flex items-center justify-between py-1.5 sm:py-2 px-2 sm:px-3 text-[10px] sm:text-[11px] lg:text-xs text-gray-600 hover:bg-gray-50 hover:text-[#196428] rounded-md transition-colors"
                     >
-                      <span>{subcategory.name}</span>
+                      <span className="lowercase">{subcategory.name}</span>
                       <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                     </Link>
                   ))}
@@ -203,7 +203,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                           <div className="flex items-center space-x-4">
                             <Image src={promo.icon} alt="" width={32} height={32} className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8" />
                             <div>
-                              <h4 className="text-[11px] sm:text-xs lg:text-sm font-medium text-gray-900 group-hover:text-[#196428] transition-colors duration-300">
+                              <h4 className="text-[10px] sm:text-[11px] lg:text-xs font-medium text-gray-900 group-hover:text-[#196428] transition-colors duration-300 lowercase">
                                 {promo.type === 'offer' ? 'Ofertas' : 'Novedades'}
                               </h4>
                               <p className="mt-1 text-[11px] sm:text-xs lg:text-sm text-gray-500">

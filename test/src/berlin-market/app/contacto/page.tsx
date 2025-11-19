@@ -6,7 +6,7 @@ import Header from "../components/Header"
 import Footer from "../components/Footer"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { MapPin, Phone, User, Navigation } from "lucide-react"
+import { MapPin, Phone, User } from "lucide-react"
 import { stores, loadStoresFromSupabase, type Store } from "../lib/stores"
 
 const Map = dynamic(() => import("../components/Map"), { ssr: false })
@@ -141,12 +141,6 @@ export default function ContactoPage() {
                             >
                               {store.phone}
                             </a>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs sm:text-sm">
-                            <Navigation className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
-                            <span className={selectedStore?.id === store.id ? 'text-white/90' : 'text-gray-700'}>
-                              {store.coords.lat.toFixed(4)}, {store.coords.lng.toFixed(4)}
-                            </span>
                           </div>
                         </div>
                       </div>

@@ -18,7 +18,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-white relative">
+      <div className="bg-white relative flex flex-col" style={{ minHeight: '100vh', marginBottom: 0, paddingBottom: 0, height: 'auto' }}>
         {children}
 
         {/* WhatsApp floating button */}

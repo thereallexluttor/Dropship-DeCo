@@ -114,24 +114,6 @@ export default function AboutUs() {
               Sobre Nosotros
             </h1>
 
-            {/* Banner después del título Sobre Nosotros */}
-            <div className="mb-20">
-              <div className="relative h-48 sm:h-56 md:h-64 bg-gray-100 rounded-lg overflow-hidden">
-                <video
-                  src="/farm1.mp4"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent"></div>
-                <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 text-white">
-                  <p className="text-sm sm:text-base font-medium drop-shadow-lg">{datos.banner_texto}</p>
-                </div>
-              </div>
-            </div>
-            
             {/* Misión y Visión */}
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 mb-20">
               {/* Misión */}
@@ -164,25 +146,7 @@ export default function AboutUs() {
             {/* Valores Corporativos */}
             <div className="space-y-12">
               <div className="text-center">
-                <h2 className="text-3xl sm:text-4xl font-light text-gray-900 mb-8">{datos.identidad_titulo}</h2>
-
-                {/* Banner después del título Identidad Corporativa */}
-                <div className="mb-12">
-                  <div className="relative h-32 sm:h-40 md:h-48 bg-gray-100 rounded-lg overflow-hidden">
-                    <video
-                      src="/farm2.mp4"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
-                    <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 text-white">
-                      <p className="text-xs sm:text-sm font-medium drop-shadow-lg">{datos.identidad_banner_texto}</p>
-                    </div>
-                  </div>
-                </div>
+                <h2 className="text-4xl sm:text-5xl md:text-6xl text-gray-900 mb-12" style={{ fontFamily: 'HelveticaNeueHeavy, sans-serif', fontWeight: '900' }}>{datos.identidad_titulo}</h2>
 
                 <p className="text-xl sm:text-2xl text-gray-600">{datos.valores_titulo}</p>
               </div>

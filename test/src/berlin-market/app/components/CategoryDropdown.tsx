@@ -98,9 +98,9 @@ export default function CategoryDropdown({ category, isOpen, onMouseEnter, onMou
                 <Link
                   key={subcategory.name}
                   href={subcategory.href}
-                  className="flex items-center justify-between px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#196428]"
+                  className="flex items-center justify-between px-4 py-1.5 text-xs text-gray-600 hover:bg-gray-50 hover:text-[#196428]"
                 >
-                  {subcategory.name}
+                  <span className="lowercase">{subcategory.name}</span>
                   <ChevronRight className="h-4 w-4 text-gray-400" />
                 </Link>
               ))}

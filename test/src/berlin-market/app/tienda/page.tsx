@@ -632,13 +632,13 @@ function TiendaPageContent() {
               <button
                 key={subcategory.subcategoryId}
                 onClick={() => handleCategoryChange(categoryData.categoryId, subcategory.subcategoryId)}
-                className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
                   selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId
                     ? "text-[#196428] font-medium bg-[#196428]/5"
                     : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                 }`}
               >
-                {subcategory.subcategoryName}
+                <span className="lowercase">{subcategory.subcategoryName}</span>
               </button>
             ))}
             {/* Subcategorías especiales por categoría: Ofertas y Novedades (excluye Tienda, Ofertas, Especiales) */}
@@ -650,23 +650,23 @@ function TiendaPageContent() {
                 <>
                   <button
                     onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
-                    className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                    className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
                       selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
                         ? "text-[#196428] font-medium bg-[#196428]/5"
                         : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                     }`}
                   >
-                    Ofertas
+                    <span className="lowercase">Ofertas</span>
                   </button>
                   <button
                     onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
-                    className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                    className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
                       selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES
                         ? "text-[#196428] font-medium bg-[#196428]/5"
                         : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                     }`}
                   >
-                    Novedades
+                    <span className="lowercase">Novedades</span>
                   </button>
                 </>
               );
@@ -1341,13 +1341,13 @@ function TiendaPageContent() {
                         <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Tienda</h3>
                         <button
                           onClick={() => handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS)}
-                          className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                          className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
                             selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && selectedSubcategory === CATEGORIES.TODOS_LOS_PRODUCTOS
                               ? "text-[#196428] font-medium bg-[#196428]/5"
                               : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                           }`}
                         >
-                          Todos los productos
+                          <span className="lowercase">Todos los productos</span>
                         </button>
                       </div>
 
@@ -1356,13 +1356,13 @@ function TiendaPageContent() {
                         <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Ofertas</h3>
                         <button
                           onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
-                          className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                          className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
                             selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
                               ? "text-[#196428] font-medium bg-[#196428]/5"
                               : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                           }`}
                         >
-                          Productos con descuento
+                          <span className="lowercase">Productos con descuento</span>
                         </button>
                       </div>
 
@@ -1375,23 +1375,23 @@ function TiendaPageContent() {
                         <div className="space-y-1">
                           <button
                             onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
-                            className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                            className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
                               selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
                                 ? "text-[#196428] font-medium bg-[#196428]/5"
                                 : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                             }`}
                           >
-                            Ofertas
+                            <span className="lowercase">Ofertas</span>
                           </button>
                           <button
                             onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
-                            className={`w-full text-left text-sm py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                            className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
                               selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES
                                 ? "text-[#196428] font-medium bg-[#196428]/5"
                                 : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                             }`}
                           >
-                            Novedades
+                            <span className="lowercase">Novedades</span>
                           </button>
                         </div>
                       </div>
@@ -1504,9 +1504,14 @@ function TiendaPageContent() {
                     {/* Mobile Filters Drawer */}
                     <Drawer open={isFiltersDrawerOpen} onOpenChange={setIsFiltersDrawerOpen}>
                       <DrawerContent className="max-h-[90vh]">
-                        <DrawerHeader className="border-b border-gray-100 pb-3">
+                        <DrawerHeader className="border-b border-gray-100 pb-4">
                           <div className="flex items-center justify-between">
-                            <DrawerTitle className="text-base font-semibold text-gray-800">Filtros</DrawerTitle>
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-[#196428]/10 rounded-lg">
+                                <Tag className="w-4 h-4 text-[#196428]" />
+                              </div>
+                              <DrawerTitle className="text-base font-semibold text-gray-800">Filtros</DrawerTitle>
+                            </div>
                             {(() => {
                               const hasPriceFilter = Math.abs(priceRange[0] - priceBounds.min) > 10 || Math.abs(priceRange[1] - priceBounds.max) > 10
                               const hasAdvancedFilter = hasPriceFilter || showOnlyOffers || showOnlyDiscounts || selectedBrand || 
@@ -1515,26 +1520,29 @@ function TiendaPageContent() {
                             })() && (
                               <button
                                 onClick={clearAdvancedFilters}
-                                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                className="text-xs font-medium text-[#196428] hover:text-[#145020] transition-colors px-2 py-1 rounded-md hover:bg-[#196428]/5"
                               >
-                                Limpiar
+                                Limpiar todo
                               </button>
                             )}
                           </div>
                         </DrawerHeader>
-                        <div className="overflow-y-auto px-4 py-4">
-                          <div className="flex flex-col gap-4">
+                        <div className="overflow-y-auto px-4 py-5">
+                          <div className="flex flex-col gap-5">
                             {/* Sección de Marca */}
-                            <div className="space-y-1">
-                              <label className="text-xs font-medium text-gray-500">Marca</label>
+                            <div className="space-y-2.5">
+                              <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                                <span className="w-1 h-1 rounded-full bg-[#196428]"></span>
+                                Marca
+                              </label>
                               <div className="relative">
                                 {availableBrands.length > 0 && (
                                   <select
                                     value={selectedBrand || ""}
                                     onChange={(e) => setSelectedBrand(e.target.value ? parseInt(e.target.value) : null)}
-                                    className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white shadow-sm"
                                   >
-                                    <option value="">Todas</option>
+                                    <option value="">Todas las marcas</option>
                                     {availableBrands.map(brand => (
                                       <option key={brand.id} value={brand.id}>
                                         {brand.nombre_marca}
@@ -1542,8 +1550,8 @@ function TiendaPageContent() {
                                     ))}
                                   </select>
                                 )}
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                   </svg>
                                 </div>
@@ -1551,14 +1559,24 @@ function TiendaPageContent() {
                             </div>
 
                             {/* Sección de Precio */}
-                            <div className="space-y-2">
-                              <label className="text-xs font-medium text-gray-500">Precio</label>
-                              <div className="space-y-1.5">
-                                <div className="flex items-center justify-between text-xs text-gray-600">
-                                  <span>${priceRange[0].toLocaleString('es-CO')}</span>
-                                  <span>${priceRange[1].toLocaleString('es-CO')}</span>
+                            <div className="space-y-3">
+                              <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                                <span className="w-1 h-1 rounded-full bg-[#196428]"></span>
+                                Precio
+                              </label>
+                              <div className="space-y-2.5 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-medium text-gray-500">Desde</span>
+                                    <span className="text-sm font-semibold text-[#196428]">${priceRange[0].toLocaleString('es-CO')}</span>
+                                  </div>
+                                  <div className="w-px h-4 bg-gray-300"></div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs font-medium text-gray-500">Hasta</span>
+                                    <span className="text-sm font-semibold text-[#196428]">${priceRange[1].toLocaleString('es-CO')}</span>
+                                  </div>
                                 </div>
-                                <div className="px-0.5">
+                                <div className="px-1">
                                   <Slider
                                     value={priceRange}
                                     onValueChange={(value) => setPriceRange(value as [number, number])}
@@ -1568,7 +1586,7 @@ function TiendaPageContent() {
                                     className="w-full"
                                   />
                                 </div>
-                                <div className="flex items-center justify-between text-xs text-gray-400">
+                                <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
                                   <span>${priceBounds.min.toLocaleString('es-CO')}</span>
                                   <span>${priceBounds.max.toLocaleString('es-CO')}</span>
                                 </div>
@@ -1578,8 +1596,11 @@ function TiendaPageContent() {
                             {/* Sección de Categorías y Subcategorías (solo para "todos los productos") */}
                             {selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && (
                               <>
-                                <div className="space-y-1">
-                                  <label className="text-xs font-medium text-gray-500">Categoría</label>
+                                <div className="space-y-2.5">
+                                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-[#196428]"></span>
+                                    Categoría
+                                  </label>
                                   <div className="relative">
                                     <select
                                       value={selectedProductCategory || ""}
@@ -1588,23 +1609,26 @@ function TiendaPageContent() {
                                         setSelectedProductCategory(categoryId)
                                         setSelectedProductSubcategory(null)
                                       }}
-                                      className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white shadow-sm"
                                     >
-                                      <option value="">Todas</option>
+                                      <option value="">Todas las categorías</option>
                                       {categories.map((cat: CategoryType) => (
                                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                                       ))}
                                     </select>
-                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                       </svg>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="space-y-1">
-                                  <label className="text-xs font-medium text-gray-500">Subcategoría</label>
+                                <div className="space-y-2.5">
+                                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                                    <span className="w-1 h-1 rounded-full bg-[#196428]"></span>
+                                    Subcategoría
+                                  </label>
                                   <div className="relative">
                                     <select
                                       value={selectedProductSubcategory || ""}
@@ -1612,9 +1636,9 @@ function TiendaPageContent() {
                                         const subcategoryId = e.target.value ? Number(e.target.value) : null
                                         setSelectedProductSubcategory(subcategoryId)
                                       }}
-                                      className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white shadow-sm"
                                     >
-                                      <option value="">Todas</option>
+                                      <option value="">Todas las subcategorías</option>
                                       {(() => {
                                         if (selectedProductCategory) {
                                           const categoryData = productsByCategory.find(cat => cat.categoryId === selectedProductCategory)
@@ -1631,8 +1655,8 @@ function TiendaPageContent() {
                                         )
                                       })()}
                                     </select>
-                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                       </svg>
                                     </div>
@@ -1642,8 +1666,11 @@ function TiendaPageContent() {
                             )}
 
                             {/* Sección de Filtros Especiales */}
-                            <div className="space-y-1">
-                              <label className="text-xs font-medium text-gray-500">Especiales</label>
+                            <div className="space-y-2.5">
+                              <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                                <span className="w-1 h-1 rounded-full bg-[#196428]"></span>
+                                Especiales
+                              </label>
                               <div className="relative">
                                 <select
                                   value={
@@ -1656,14 +1683,14 @@ function TiendaPageContent() {
                                     setShowOnlyOffers(value === "ofertas")
                                     setShowOnlyDiscounts(value === "descuentos")
                                   }}
-                                  className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white shadow-sm"
                                 >
-                                  <option value="ninguno">Ninguno</option>
-                                  <option value="ofertas">Ofertas</option>
-                                  <option value="descuentos">Descuentos</option>
+                                  <option value="ninguno">Sin filtro especial</option>
+                                  <option value="ofertas">Solo ofertas</option>
+                                  <option value="descuentos">Solo descuentos</option>
                                 </select>
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                   </svg>
                                 </div>
@@ -1671,13 +1698,16 @@ function TiendaPageContent() {
                             </div>
 
                             {/* Sección de Ordenamiento */}
-                            <div className="space-y-1">
-                              <label className="text-xs font-medium text-gray-500">Ordenar</label>
+                            <div className="space-y-2.5">
+                              <label className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                                <span className="w-1 h-1 rounded-full bg-[#196428]"></span>
+                                Ordenar por
+                              </label>
                               <div className="relative">
                                 <select
                                   value={sortBy}
                                   onChange={(e) => setSortBy(e.target.value)}
-                                  className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white shadow-sm"
                                 >
                                   <option value="Más popular">Más popular</option>
                                   <option value="Precio: menor a mayor">Precio: menor a mayor</option>
@@ -1685,8 +1715,8 @@ function TiendaPageContent() {
                                   <option value="Novedades">Novedades</option>
                                   <option value="Nombre A-Z">Nombre A-Z</option>
                                 </select>
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                   </svg>
                                 </div>
@@ -1694,9 +1724,9 @@ function TiendaPageContent() {
                             </div>
                           </div>
                         </div>
-                        <DrawerFooter className="border-t border-gray-100 pt-3">
+                        <DrawerFooter className="border-t border-gray-100 pt-4 pb-4">
                           <DrawerClose asChild>
-                            <button className="w-full bg-gradient-to-r from-[#196428] to-[#145020] text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity">
+                            <button className="w-full bg-gradient-to-r from-[#196428] to-[#145020] text-white px-4 py-3 rounded-lg font-semibold text-sm hover:opacity-90 transition-all shadow-md hover:shadow-lg">
                               Aplicar filtros
                             </button>
                           </DrawerClose>
@@ -1705,11 +1735,16 @@ function TiendaPageContent() {
                     </Drawer>
 
                     {/* Desktop/Tablet Filters */}
-                    <div className="hidden md:block bg-white rounded-lg border border-gray-100 p-3">
-                      <div className="flex flex-col gap-3">
-                        {/* Header minimalista */}
-                        <div className="flex items-center justify-between pb-2 border-b border-gray-50">
-                          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Filtros</h3>
+                    <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm p-3">
+                      <div className="flex flex-col gap-2.5">
+                        {/* Header mejorado */}
+                        <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
+                          <div className="flex items-center gap-1.5">
+                            <div className="p-1 bg-[#196428]/10 rounded">
+                              <Tag className="w-3 h-3 text-[#196428]" />
+                            </div>
+                            <h3 className="text-xs font-semibold text-gray-800">Filtros</h3>
+                          </div>
                           {(() => {
                             const hasPriceFilter = Math.abs(priceRange[0] - priceBounds.min) > 10 || Math.abs(priceRange[1] - priceBounds.max) > 10
                             const hasAdvancedFilter = hasPriceFilter || showOnlyOffers || showOnlyDiscounts || selectedBrand || 
@@ -1718,23 +1753,26 @@ function TiendaPageContent() {
                           })() && (
                             <button
                               onClick={clearAdvancedFilters}
-                              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                              className="text-[10px] font-medium text-[#196428] hover:text-[#145020] transition-colors px-1.5 py-0.5 rounded hover:bg-[#196428]/5"
                             >
                               Limpiar
                             </button>
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2.5">
-                          {/* Sección de Marca */}
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-gray-500">Marca</label>
+                        <div className="grid grid-cols-3 gap-2.5">
+                          {/* Fila 1 - Columna 1: Marca */}
+                          <div className="space-y-1 flex flex-col">
+                            <label className="text-[10px] font-semibold text-gray-700 flex items-center gap-1">
+                              <span className="w-0.5 h-0.5 rounded-full bg-[#196428]"></span>
+                              Marca
+                            </label>
                             <div className="relative">
                               {availableBrands.length > 0 && (
                                 <select
                                   value={selectedBrand || ""}
                                   onChange={(e) => setSelectedBrand(e.target.value ? parseInt(e.target.value) : null)}
-                                  className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                  className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-[11px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white"
                                 >
                                   <option value="">Todas</option>
                                   {availableBrands.map(brand => (
@@ -1752,102 +1790,66 @@ function TiendaPageContent() {
                             </div>
                           </div>
 
-                          {/* Sección de Precio */}
-                          <div className="space-y-2">
-                            <label className="text-xs font-medium text-gray-500">Precio</label>
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between text-xs text-gray-600">
-                                <span>${priceRange[0].toLocaleString('es-CO')}</span>
-                                <span>${priceRange[1].toLocaleString('es-CO')}</span>
-                              </div>
-                              <div className="px-0.5">
-                                <Slider
-                                  value={priceRange}
-                                  onValueChange={(value) => setPriceRange(value as [number, number])}
-                                  max={priceBounds.max}
-                                  min={priceBounds.min}
-                                  step={1000}
-                                  className="w-full"
-                                />
-                              </div>
-                              <div className="flex items-center justify-between text-xs text-gray-400">
-                                <span>${priceBounds.min.toLocaleString('es-CO')}</span>
-                                <span>${priceBounds.max.toLocaleString('es-CO')}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Sección de Categorías y Subcategorías (solo para "todos los productos") */}
-                          {selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS && (
-                            <>
-                              <div className="space-y-1">
-                                <label className="text-xs font-medium text-gray-500">Categoría</label>
-                                <div className="relative">
-                                  <select
-                                    value={selectedProductCategory || ""}
-                                    onChange={(e) => {
-                                      const categoryId = e.target.value ? Number(e.target.value) : null
-                                      setSelectedProductCategory(categoryId)
-                                      setSelectedProductSubcategory(null)
-                                    }}
-                                    className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
-                                  >
-                                    <option value="">Todas</option>
-                                    {categories.map((cat: CategoryType) => (
-                                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                  </select>
-                                  <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="text-xs font-medium text-gray-500">Subcategoría</label>
-                                <div className="relative">
-                                  <select
-                                    value={selectedProductSubcategory || ""}
-                                    onChange={(e) => {
-                                      const subcategoryId = e.target.value ? Number(e.target.value) : null
-                                      setSelectedProductSubcategory(subcategoryId)
-                                    }}
-                                    className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
-                                  >
-                                    <option value="">Todas</option>
-                                    {(() => {
-                                      // Si hay una categoría seleccionada, mostrar solo sus subcategorías
-                                      if (selectedProductCategory) {
-                                        const categoryData = productsByCategory.find(cat => cat.categoryId === selectedProductCategory)
-                                        if (categoryData) {
-                                          return categoryData.subcategories.map(sub => (
-                                            <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
-                                          ))
-                                        }
-                                      }
-                                      // Si no hay categoría seleccionada, mostrar todas las subcategorías
-                                      return productsByCategory.map(cat =>
-                                        cat.subcategories.map(sub => (
+                          {/* Fila 1 - Columna 2: Subcategoría */}
+                          {selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS ? (
+                            <div className="space-y-1 flex flex-col">
+                              <label className="text-[10px] font-semibold text-gray-700 flex items-center gap-1">
+                                <span className="w-0.5 h-0.5 rounded-full bg-[#196428]"></span>
+                                Subcategoría
+                              </label>
+                              <div className="relative">
+                                <select
+                                  value={selectedProductSubcategory || ""}
+                                  onChange={(e) => {
+                                    const subcategoryId = e.target.value ? Number(e.target.value) : null
+                                    setSelectedProductSubcategory(subcategoryId)
+                                  }}
+                                  className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-[11px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white"
+                                >
+                                  <option value="">Todas</option>
+                                  {(() => {
+                                    if (selectedProductCategory) {
+                                      const categoryData = productsByCategory.find(cat => cat.categoryId === selectedProductCategory)
+                                      if (categoryData) {
+                                        return categoryData.subcategories.map(sub => (
                                           <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
                                         ))
-                                      )
-                                    })()}
-                                  </select>
-                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </div>
+                                      }
+                                    }
+                                    return productsByCategory.map(cat =>
+                                      cat.subcategories.map(sub => (
+                                        <option key={sub.subcategoryId} value={sub.subcategoryId}>{sub.subcategoryName}</option>
+                                      ))
+                                    )
+                                  })()}
+                                </select>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
                                 </div>
                               </div>
-                            </>
+                            </div>
+                          ) : (
+                            <div className="space-y-1 flex flex-col">
+                              <label className="text-[10px] font-semibold text-gray-700 flex items-center gap-1">
+                                <span className="w-0.5 h-0.5 rounded-full bg-[#196428]"></span>
+                                Subcategoría
+                              </label>
+                              <div className="relative">
+                                <select disabled className="w-full px-2 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-[11px] text-gray-400 cursor-not-allowed">
+                                  <option>N/A</option>
+                                </select>
+                              </div>
+                            </div>
                           )}
 
-                          {/* Sección de Filtros Especiales */}
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-gray-500">Especiales</label>
+                          {/* Fila 1 - Columna 3: Especiales */}
+                          <div className="space-y-1 flex flex-col">
+                            <label className="text-[10px] font-semibold text-gray-700 flex items-center gap-1">
+                              <span className="w-0.5 h-0.5 rounded-full bg-[#196428]"></span>
+                              Especiales
+                            </label>
                             <div className="relative">
                               <select
                                 value={
@@ -1860,7 +1862,7 @@ function TiendaPageContent() {
                                   setShowOnlyOffers(value === "ofertas")
                                   setShowOnlyDiscounts(value === "descuentos")
                                 }}
-                                className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-[11px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white"
                               >
                                 <option value="ninguno">Ninguno</option>
                                 <option value="ofertas">Ofertas</option>
@@ -1874,14 +1876,60 @@ function TiendaPageContent() {
                             </div>
                           </div>
 
-                          {/* Sección de Ordenamiento */}
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-gray-500">Ordenar</label>
+                          {/* Fila 2 - Columna 1: Categoría */}
+                          {selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS ? (
+                            <div className="space-y-1 flex flex-col">
+                              <label className="text-[10px] font-semibold text-gray-700 flex items-center gap-1">
+                                <span className="w-0.5 h-0.5 rounded-full bg-[#196428]"></span>
+                                Categoría
+                              </label>
+                              <div className="relative">
+                                <select
+                                  value={selectedProductCategory || ""}
+                                  onChange={(e) => {
+                                    const categoryId = e.target.value ? Number(e.target.value) : null
+                                    setSelectedProductCategory(categoryId)
+                                    setSelectedProductSubcategory(null)
+                                  }}
+                                  className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-[11px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white"
+                                >
+                                  <option value="">Todas</option>
+                                  {categories.map((cat: CategoryType) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-1 flex flex-col">
+                              <label className="text-[10px] font-semibold text-gray-700 flex items-center gap-1">
+                                <span className="w-0.5 h-0.5 rounded-full bg-[#196428]"></span>
+                                Categoría
+                              </label>
+                              <div className="relative">
+                                <select disabled className="w-full px-2 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-[11px] text-gray-400 cursor-not-allowed">
+                                  <option>N/A</option>
+                                </select>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Fila 2 - Columna 2: Ordenar por */}
+                          <div className="space-y-1 flex flex-col">
+                            <label className="text-[10px] font-semibold text-gray-700 flex items-center gap-1">
+                              <span className="w-0.5 h-0.5 rounded-full bg-[#196428]"></span>
+                              Ordenar por
+                            </label>
                             <div className="relative">
                               <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-700 focus:outline-none focus:border-[#196428] transition-colors appearance-none hover:border-gray-300"
+                                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-[11px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#196428]/20 focus:border-[#196428] transition-all appearance-none hover:border-gray-300 hover:bg-white"
                               >
                                 <option value="Más popular">Más popular</option>
                                 <option value="Precio: menor a mayor">Precio: menor a mayor</option>
@@ -1897,6 +1945,31 @@ function TiendaPageContent() {
                             </div>
                           </div>
 
+                          {/* Fila 2 - Columna 3: Precio */}
+                          <div className="space-y-1 flex flex-col">
+                            <label className="text-[10px] font-semibold text-gray-700 flex items-center gap-1">
+                              <span className="w-0.5 h-0.5 rounded-full bg-[#196428]"></span>
+                              Precio
+                            </label>
+                            <div className="space-y-1 bg-gray-50 rounded-md p-1.5 border border-gray-100 flex-1 flex flex-col justify-center">
+                              <div className="flex items-center justify-between gap-1 mb-0.5">
+                                <span className="text-[10px] font-medium text-[#196428]">${priceRange[0].toLocaleString('es-CO')}</span>
+                                <span className="text-[8px] text-gray-400">-</span>
+                                <span className="text-[10px] font-medium text-[#196428]">${priceRange[1].toLocaleString('es-CO')}</span>
+                              </div>
+                              <div className="px-0.5">
+                                <Slider
+                                  value={priceRange}
+                                  onValueChange={(value) => setPriceRange(value as [number, number])}
+                                  max={priceBounds.max}
+                                  min={priceBounds.min}
+                                  step={1000}
+                                  className="w-full"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
                         </div>
                       </div>
                     </div>
@@ -1905,7 +1978,7 @@ function TiendaPageContent() {
 
                   {/* Products Grid - responsive layout */}
                   {displayProducts.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 pb-2">
                       {displayProducts.map((product: ProductWithDetails) => {
                         const selectedSizeIndex = selectedSizes[product.id!] || 0;
                         const hasSizes = product.tamano && product.tamano.length > 0;
@@ -1922,112 +1995,107 @@ function TiendaPageContent() {
                         const currentPrice = getCurrentPrice();
 
                         return (
-                        <div key={product.id} className="bg-white rounded-[20px] sm:rounded-[25px] overflow-hidden shadow-sm border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                          <div className="relative aspect-square">
-                            <Link href={`/producto/${product.id}`} className="block">
+                        <Link key={product.id} href={`/producto/${product.id}`} className="block h-full group">
+                          <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                            <div className="relative aspect-[4/3] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
                               <Image
-                                  src={product.imagen_url || "/placeholder.jpg"}
-                                  alt={product.nombre}
+                                src={product.imagen_url || "/placeholder.jpg"}
+                                alt={product.nombre}
                                 fill
                                 quality={60}
                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                 placeholder="blur"
                                 blurDataURL={'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiNlZWVlZWUiIC8+PC9zdmc+'}
                                 loading="lazy"
-                                className="object-contain p-3 sm:p-4"
+                                className="object-contain p-3 sm:p-4 md:p-5 transition-transform duration-300 group-hover:scale-105"
                               />
-                            </Link>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                handleAddToCart(product)
-                              }}
-                              className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-[#196428] hover:bg-[#145020] text-white p-2 sm:p-2.5 rounded-full shadow-md transition-all duration-300"
-                            >
-                              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                            </button>
-                           {product.descuento && (
-                           <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                               <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-                                 Oferta
-                               </span>
-                             </div>
-                           )}
-                           {product.destacado && !product.descuento && (
-                             <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                               <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                                 Destacado
-                               </span>
-                             </div>
-                           )}
-                           {product.novedad && !product.descuento && !product.destacado && (
-                             <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                               <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
-                                 Nuevo
-                             </span>
-                           </div>
-                         )}
-                       </div>
-                       <div className="p-3 sm:p-4">
-                           <Link href={`/producto/${product.id}`} className="block">
-                             <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2 hover:text-[#196428] transition-colors">{product.nombre}</h3>
-                             <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{product.descripcion || "Descripción del producto"}</p>
-                           </Link>
+                              {product.descuento && (
+                                <div className="absolute top-3 left-3 bg-black text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wide">
+                                  -{product.descuento_valor}%
+                                </div>
+                              )}
+                              {product.destacado && !product.descuento && (
+                                <div className="absolute top-3 left-3 bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wide">
+                                  DESTACADO
+                                </div>
+                              )}
+                              {product.novedad && !product.descuento && !product.destacado && (
+                                <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold tracking-wide">
+                                  NUEVO
+                                </div>
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  handleAddToCart(product)
+                                }}
+                                className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+                              >
+                                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                              </button>
+                            </div>
+                            <div className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5">
+                              <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-[#196428] transition-colors">{product.nombre}</h3>
+                              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed line-clamp-2">
+                                {product.descripcion || "Producto de calidad premium"}
+                              </p>
 
-                           {/* Mostrar tamaños del producto - Seleccionables */}
-                           {hasSizes && (
-                             <div className="mb-3">
-                               <p className="text-xs text-gray-500 mb-1">Tamaños disponibles:</p>
-                               <div className="flex flex-wrap gap-1.5">
-                                 {product.tamano!.map((tamano, index) => (
-                                   <button
-                                     key={index}
-                                     onClick={(e) => {
-                                       e.preventDefault()
-                                       e.stopPropagation()
-                                       setSelectedSizes({...selectedSizes, [product.id!]: index})
-                                     }}
-                                     className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
-                                       selectedSizeIndex === index
-                                         ? 'bg-[#196428] text-white shadow-sm'
-                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                     }`}
-                                   >
-                                     {tamano.cantidad} {tamano.unidad}
-                                   </button>
-                                 ))}
-                               </div>
-                             </div>
-                           )}
+                              {hasSizes && (
+                                <div className="mt-1">
+                                  <p className="text-[10px] sm:text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">Tamaños</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {product.tamano!.slice(0, 3).map((tamano, index) => (
+                                      <button
+                                        key={index}
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                          setSelectedSizes({...selectedSizes, [product.id!]: index})
+                                        }}
+                                        className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold transition-all ${
+                                          selectedSizeIndex === index
+                                            ? 'bg-green-200 text-[#196428] border-2 border-[#196428]'
+                                            : 'bg-green-50 text-gray-700'
+                                        }`}
+                                      >
+                                        {tamano.cantidad} {tamano.unidad}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
 
-                           {/* Mostrar precio según tamaño seleccionado */}
-                           {hasPrices && currentPrice > 0 ? (
-                             product.descuento && product.descuento_valor ? (
-                               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                 <p className="text-red-500 font-medium text-xs sm:text-sm line-through">
-                                   $ {currentPrice.toLocaleString('es-CO')}
-                                 </p>
-                                 <p className="text-[#196428] font-medium text-sm sm:text-base">
-                                   $ {(() => {
-                                     const descuentoValor = typeof product.descuento_valor === 'string' ? parseFloat(product.descuento_valor) : Number(product.descuento_valor)
-                                     const precioConDescuento = currentPrice * (1 - (descuentoValor / 100))
-                                     return precioConDescuento.toLocaleString('es-CO')
-                                   })()}
-                                 </p>
-                               </div>
-                             ) : (
-                               <p className="text-[#196428] font-medium text-sm sm:text-base">
-                                 $ {currentPrice.toLocaleString('es-CO')}
-                               </p>
-                             )
-                           ) : (
-                             <p className="text-gray-400 text-xs sm:text-sm italic">
-                               Precio no disponible
-                             </p>
-                           )}
-                       </div>
-                       </div>
+                              {hasPrices && currentPrice > 0 ? (
+                                <div className="mt-auto pt-2">
+                                  {product.descuento && product.descuento_valor ? (
+                                    <div className="flex items-baseline gap-2">
+                                      <span className="text-lg sm:text-xl font-black text-gray-900">
+                                        ${(() => {
+                                          const descuentoValor = typeof product.descuento_valor === 'string' ? parseFloat(product.descuento_valor) : Number(product.descuento_valor)
+                                          const precioConDescuento = currentPrice * (1 - (descuentoValor / 100))
+                                          return precioConDescuento.toLocaleString('es-CO')
+                                        })()}
+                                      </span>
+                                      <span className="text-[10px] sm:text-xs font-medium text-gray-400 line-through">
+                                        ${currentPrice.toLocaleString('es-CO')}
+                                      </span>
+                                      <span className="text-[9px] sm:text-[10px] font-semibold text-red-600">
+                                        -{product.descuento_valor}%
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-lg sm:text-xl font-black text-gray-900">
+                                      ${currentPrice.toLocaleString('es-CO')}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="mt-auto text-gray-400 text-xs italic">Precio no disponible</p>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
                         );
                       })}
                   </div>
@@ -2157,9 +2225,9 @@ function TiendaPageContent() {
                             handleCategoryChange(categoryData.categoryId, subcategory.subcategoryId);
                             setIsCategoriesDrawerOpen(false);
                           }}
-                          className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                          className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
                         >
-                          {subcategory.subcategoryName}
+                          <span className="lowercase">{subcategory.subcategoryName}</span>
                         </button>
                       ))}
                     {/* Subcategorías especiales por categoría: Ofertas y Novedades (excluye Tienda, Ofertas, Especiales) */}
@@ -2204,18 +2272,18 @@ function TiendaPageContent() {
                       handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS);
                       setIsCategoriesDrawerOpen(false);
                     }}
-                    className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                    className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
                   >
-                    Ofertas
+                    <span className="lowercase">Ofertas</span>
                   </button>
                   <button
                     onClick={() => {
                       handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES);
                       setIsCategoriesDrawerOpen(false);
                     }}
-                    className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                    className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
                   >
-                    Novedades
+                    <span className="lowercase">Novedades</span>
                   </button>
                 </div>
               </div>
