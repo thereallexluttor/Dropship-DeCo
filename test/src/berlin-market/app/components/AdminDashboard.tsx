@@ -3539,38 +3539,41 @@ const AdminDashboard = () => {
                         <p className="text-sm text-gray-500">No hay subcategorías disponibles</p>
                       ) : (
                         <div className="space-y-2">
-                          {subcategorias.map((subcategoria) => {
-                            const categoria = categorias.find(c => c.id === subcategoria.categories_id);
-                            const isSelected = newProducto.subcategorias_id.includes(subcategoria.id);
-                            return (
-                              <label
-                                key={subcategoria.id}
-                                className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setNewProducto({
-                                        ...newProducto,
-                                        subcategorias_id: [...newProducto.subcategorias_id, subcategoria.id]
-                                      });
-                                    } else {
-                                      setNewProducto({
-                                        ...newProducto,
-                                        subcategorias_id: newProducto.subcategorias_id.filter(id => id !== subcategoria.id)
-                                      });
-                                    }
-                                  }}
-                                  className="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
-                                />
-                                <span className="text-sm text-gray-700">
-                                  {categoria?.nombre} - {subcategoria.nombre}
-                                </span>
-                              </label>
-                            );
-                          })}
+                          {subcategorias
+                            .filter(subcategoria => subcategoria.id !== undefined)
+                            .map((subcategoria) => {
+                              const subcategoriaId = subcategoria.id!; // Ya filtramos los undefined
+                              const categoria = categorias.find(c => c.id === subcategoria.categories_id);
+                              const isSelected = newProducto.subcategorias_id.includes(subcategoriaId);
+                              return (
+                                <label
+                                  key={subcategoriaId}
+                                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setNewProducto({
+                                          ...newProducto,
+                                          subcategorias_id: [...newProducto.subcategorias_id, subcategoriaId]
+                                        });
+                                      } else {
+                                        setNewProducto({
+                                          ...newProducto,
+                                          subcategorias_id: newProducto.subcategorias_id.filter(id => id !== subcategoriaId)
+                                        });
+                                      }
+                                    }}
+                                    className="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
+                                  />
+                                  <span className="text-sm text-gray-700">
+                                    {categoria?.nombre} - {subcategoria.nombre}
+                                  </span>
+                                </label>
+                              );
+                            })}
                         </div>
                       )}
                     </div>
