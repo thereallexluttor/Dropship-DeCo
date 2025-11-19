@@ -4111,7 +4111,7 @@ const AdminDashboard = () => {
                                     </label>
                                     <Button
                                       type="button"
-                                      onClick={() => editingProducto && agregarTamano(editingProducto, setEditingProducto)}
+                                      onClick={() => editingProducto && agregarTamano(editingProducto, (producto) => setEditingProducto(producto as Producto))}
                                       variant="outline"
                                       size="sm"
                                       className="text-gray-900 border-gray-900 hover:bg-gray-900 hover:text-white"
@@ -4132,7 +4132,7 @@ const AdminDashboard = () => {
                                             <Input
                                               type="text"
                                               value={tamano.cantidad}
-                                              onChange={(e) => editingProducto && actualizarTamano(editingProducto, setEditingProducto, index, 'cantidad', e.target.value)}
+                                              onChange={(e) => editingProducto && actualizarTamano(editingProducto, (producto) => setEditingProducto(producto as Producto), index, 'cantidad', e.target.value)}
                                               placeholder="500"
                                               className="w-full"
                                             />
@@ -4143,7 +4143,7 @@ const AdminDashboard = () => {
                                             </label>
                                             <select
                                               value={tamano.unidad}
-                                              onChange={(e) => editingProducto && actualizarTamano(editingProducto, setEditingProducto, index, 'unidad', e.target.value)}
+                                              onChange={(e) => editingProducto && actualizarTamano(editingProducto, (producto) => setEditingProducto(producto as Producto), index, 'unidad', e.target.value)}
                                               className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                                             >
                                               <option value="ML">Mililitros (ML)</option>
@@ -4169,7 +4169,7 @@ const AdminDashboard = () => {
                                             <Input
                                               type="text"
                                               value={editingProducto.precios?.[index] || ''}
-                                              onChange={(e) => editingProducto && actualizarPrecio(editingProducto, setEditingProducto, index, e.target.value)}
+                                              onChange={(e) => editingProducto && actualizarPrecio(editingProducto, (producto) => setEditingProducto(producto as Producto), index, e.target.value)}
                                               placeholder="0.00"
                                               className="w-full"
                                             />
@@ -4181,14 +4181,14 @@ const AdminDashboard = () => {
                                             <Input
                                               type="text"
                                               value={editingProducto.stocks?.[index]?.stock || 0}
-                                              onChange={(e) => editingProducto && actualizarStock(editingProducto, setEditingProducto, index, parseInt(e.target.value) || 0)}
+                                              onChange={(e) => editingProducto && actualizarStock(editingProducto, (producto) => setEditingProducto(producto as Producto), index, parseInt(e.target.value) || 0)}
                                               placeholder="0"
                                               className="w-full"
                                             />
                                           </div>
                                           <Button
                                             type="button"
-                                            onClick={() => editingProducto && eliminarTamano(editingProducto, setEditingProducto as any, index)}
+                                            onClick={() => editingProducto && eliminarTamano(editingProducto, (producto) => setEditingProducto(producto as Producto), index)}
                                             variant="outline"
                                             size="sm"
                                             className="text-red-500 border-red-300 hover:bg-red-50 hover:border-red-500 mt-5"
