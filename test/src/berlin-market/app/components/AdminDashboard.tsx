@@ -28,7 +28,7 @@ interface AplicacionConTrabajo {
 
 // Tipos para formularios internos
 interface ProductoForm {
-  subcategorias_id: number
+  subcategorias_id: number[]  // Cambiado a array para permitir múltiples subcategorías
   nombre: string
   descripcion: string
   imagen_url: string
@@ -48,7 +48,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown, Briefcase, Users, FileText, Eye, Download, MapPin, ShoppingBag, ClipboardList, Search, TrendingUp, DollarSign, BarChart3, PieChart, Activity } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown, Briefcase, Users, User, Mail, Phone, FileText, Eye, Download, MapPin, ShoppingBag, ClipboardList, Search, TrendingUp, DollarSign, BarChart3, PieChart, Activity, RefreshCw } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 // Función helper para formatear precios sin ceros decimales innecesarios
 const formatPrice = (price: number): string => {
@@ -143,7 +146,7 @@ const AdminDashboard = () => {
   const [newSubcategoria, setNewSubcategoria] = useState({ categories_id: 0, nombre: '', descripcion: '' });
   const [editingSubcategoria, setEditingSubcategoria] = useState<Subcategoria | null>(null);
   const [newProducto, setNewProducto] = useState<ProductoForm>({
-    subcategorias_id: 0,
+    subcategorias_id: [],  // Cambiado a array vacío
     nombre: '',
     descripcion: '',
     imagen_url: '',
@@ -578,7 +581,7 @@ const AdminDashboard = () => {
   // Función para obtener el color del filtro activo
   const getFiltroPedidosColor = (estado: string) => {
     if (filtroEstadoPedidos === estado || (filtroEstadoPedidos === 'todos' && estado === 'todos')) {
-      return 'bg-[#196428] text-white hover:bg-[#145020]';
+      return 'bg-gray-900 text-white hover:bg-black';
     }
     return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
   };
@@ -1438,10 +1441,10 @@ const AdminDashboard = () => {
       alert('Espera a que termine de subirse la imagen antes de guardar.');
       return;
     }
-    if (!newProducto.subcategorias_id ||
+    if (!newProducto.subcategorias_id || newProducto.subcategorias_id.length === 0 ||
         !newProducto.nombre.trim() ||
         !newProducto.descripcion.trim()) {
-      alert('Por favor completa todos los campos obligatorios');
+      alert('Por favor completa todos los campos obligatorios, incluyendo al menos una subcategoría');
       return;
     }
 
@@ -1481,35 +1484,39 @@ const AdminDashboard = () => {
       }
     }
 
-    // Convertir ProductoForm a Producto para enviar a Supabase
-    const productoParaEnviar: Omit<Producto, 'id' | 'created_at' | 'updated_at'> = {
-      subcategorias_id: newProducto.subcategorias_id,
-      nombre: newProducto.nombre,
-      descripcion: newProducto.descripcion,
-      imagen_url: newProducto.imagen_url || null,
-      descuento: newProducto.descuento || false,
-      descuento_valor: newProducto.descuento_valor ? parseFloat(newProducto.descuento_valor) : undefined,
-      destacado: newProducto.destacado || false,
-      novedad: newProducto.novedad || false,
-      id_marca: newProducto.id_marca || null,
-      stocks: newProducto.stocks && newProducto.stocks.length > 0 ? newProducto.stocks : null,
-      // Campos antiguos mantenidos para compatibilidad durante la transición
-      tamano: newProducto.tamano && newProducto.tamano.length > 0 ? newProducto.tamano : null,
-      precios: newProducto.precios && newProducto.precios.length > 0 ? newProducto.precios : null
-    };
+    // Crear un producto por cada subcategoría seleccionada
+    const productosParaEnviar: Omit<Producto, 'id' | 'created_at' | 'updated_at'>[] = 
+      newProducto.subcategorias_id.map(subcategoriaId => ({
+        subcategorias_id: subcategoriaId,
+        nombre: newProducto.nombre,
+        descripcion: newProducto.descripcion,
+        imagen_url: newProducto.imagen_url || null,
+        descuento: newProducto.descuento || false,
+        descuento_valor: newProducto.descuento_valor ? parseFloat(newProducto.descuento_valor) : undefined,
+        destacado: newProducto.destacado || false,
+        novedad: newProducto.novedad || false,
+        id_marca: newProducto.id_marca || null,
+        stocks: newProducto.stocks && newProducto.stocks.length > 0 ? newProducto.stocks : null,
+        // Campos antiguos mantenidos para compatibilidad durante la transición
+        tamano: newProducto.tamano && newProducto.tamano.length > 0 ? newProducto.tamano : null,
+        precios: newProducto.precios && newProducto.precios.length > 0 ? newProducto.precios : null
+      }));
 
     try {
-      const { data, error } = await supabase
+      // Crear todos los productos (uno por cada subcategoría)
+      const { data: productosData, error: productosError } = await supabase
         .from('productos')
-        .insert([productoParaEnviar])
-        .select()
-        .single();
+        .insert(productosParaEnviar)
+        .select();
 
-      if (error) throw error;
+      if (productosError) throw productosError;
 
-      setProductos([...productos, data]);
+      // Guardar el número de subcategorías antes de resetear el estado
+      const numSubcategorias = newProducto.subcategorias_id.length;
+      
+      setProductos([...productos, ...(productosData || [])]);
       setNewProducto({
-        subcategorias_id: 0,
+        subcategorias_id: [],
         nombre: '',
         descripcion: '',
         imagen_url: '',
@@ -1522,7 +1529,7 @@ const AdminDashboard = () => {
         tamano: [],
         precios: []
       } as ProductoForm);
-      alert('Producto creado exitosamente');
+      alert(`Producto creado exitosamente${numSubcategorias > 1 ? ` en ${numSubcategorias} subcategorías` : ''}`);
     } catch (error: any) {
       console.error('Error creando producto:', error);
       if (error?.message?.includes('relation "productos" does not exist')) {
@@ -2270,14 +2277,8 @@ const AdminDashboard = () => {
   const handleCreateTienda = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTienda.nombre.trim() || !newTienda.direccion.trim() || !newTienda.ciudad.trim() || 
-        !newTienda.telefono.trim() || !newTienda.contacto.trim()) {
+        !newTienda.telefono.trim()) {
       alert('Por favor completa todos los campos obligatorios');
-      return;
-    }
-
-    // Validar coordenadas
-    if (newTienda.lat === 0 || newTienda.lng === 0) {
-      alert('Por favor ingresa coordenadas GPS válidas');
       return;
     }
 
@@ -2312,14 +2313,8 @@ const AdminDashboard = () => {
     if (!editingTienda) return;
 
     if (!editingTienda.nombre.trim() || !editingTienda.direccion.trim() || !editingTienda.ciudad.trim() || 
-        !editingTienda.telefono.trim() || !editingTienda.contacto.trim()) {
+        !editingTienda.telefono.trim()) {
       alert('Por favor completa todos los campos obligatorios');
-      return;
-    }
-
-    // Validar coordenadas
-    if (editingTienda.lat === 0 || editingTienda.lng === 0) {
-      alert('Por favor ingresa coordenadas GPS válidas');
       return;
     }
 
@@ -2330,10 +2325,7 @@ const AdminDashboard = () => {
           nombre: editingTienda.nombre,
           direccion: editingTienda.direccion,
           ciudad: editingTienda.ciudad,
-          telefono: editingTienda.telefono,
-          contacto: editingTienda.contacto,
-          lat: editingTienda.lat,
-          lng: editingTienda.lng
+          telefono: editingTienda.telefono
         })
         .eq('id', editingTienda.id);
 
@@ -2566,7 +2558,7 @@ const AdminDashboard = () => {
   if (isLoading) {
     return (
       <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428] mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
         <p className="mt-4 text-gray-600">Cargando dashboard...</p>
       </div>
     );
@@ -2588,7 +2580,7 @@ const AdminDashboard = () => {
               setTablesConfigured(null);
               loadData();
             }}
-            className="bg-[#196428] hover:bg-[#145020] text-white px-6 py-2 rounded-lg transition-colors"
+            className="bg-gray-900 hover:bg-black text-white px-6 py-2 rounded-lg transition-colors"
           >
             Reintentar
           </button>
@@ -2598,81 +2590,102 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Panel de Administración</h2>
-        <p className="text-gray-600">Gestiona categorías, subcategorías, productos, marcas, elementos UI, aliados y vacantes del sistema</p>
-      </div>
+    <div className="flex h-screen w-full bg-white overflow-hidden font-sans text-gray-900">
+      <Tabs defaultValue="categorias" className="flex w-full h-full" orientation="vertical">
+        <div className="w-64 flex-shrink-0 border-r border-gray-100 bg-gray-50/40 flex flex-col">
+          <TabsList className="flex flex-col h-full w-full items-stretch gap-1 p-3 bg-transparent space-y-0.5 overflow-y-auto">
+            <div className="px-3 py-2">
+               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Gestión</p>
+            </div>
+            <TabsTrigger 
+              value="categorias" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <FolderOpen className="h-4 w-4" />
+              Categorías
+            </TabsTrigger>
+            <TabsTrigger 
+              value="subcategorias" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <FolderPlus className="h-4 w-4" />
+              Subcategorías
+            </TabsTrigger>
+            <TabsTrigger 
+              value="productos" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <Package className="h-4 w-4" />
+              Productos
+            </TabsTrigger>
+            <TabsTrigger 
+              value="marcas" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <Tag className="h-4 w-4" />
+              Marcas
+            </TabsTrigger>
+            
+            <div className="px-3 py-2 mt-4">
+               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Operaciones</p>
+            </div>
+            <TabsTrigger 
+              value="pedidos" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Pedidos
+            </TabsTrigger>
+             <TabsTrigger 
+              value="analitica" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analítica
+            </TabsTrigger>
 
-      <Tabs defaultValue="categorias" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-10 items-center gap-1.5 max-w-6xl mx-auto rounded-full border border-green-300/50 bg-gradient-to-br from-green-50 to-emerald-50/50 shadow-md backdrop-blur-sm p-1.5 h-12">
-          <TabsTrigger 
-            value="categorias" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Categorías
-          </TabsTrigger>
-          <TabsTrigger 
-            value="subcategorias" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Subcategorías
-          </TabsTrigger>
-          <TabsTrigger 
-            value="productos" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Productos
-          </TabsTrigger>
-          <TabsTrigger 
-            value="marcas" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Marcas
-          </TabsTrigger>
-          <TabsTrigger 
-            value="ui" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            UI
-          </TabsTrigger>
-          <TabsTrigger 
-            value="tiendas" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Tiendas
-          </TabsTrigger>
-          <TabsTrigger 
-            value="aliados" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Aliados
-          </TabsTrigger>
-          <TabsTrigger 
-            value="vacantes" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Vacantes
-          </TabsTrigger>
-          <TabsTrigger 
-            value="pedidos" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Pedidos
-          </TabsTrigger>
-          <TabsTrigger 
-            value="analitica" 
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 ease-in-out data-[state=active]:bg-white data-[state=active]:text-green-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-green-200 data-[state=active]:font-semibold data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-green-600 data-[state=inactive]:hover:bg-white/60"
-          >
-            Analitica
-          </TabsTrigger>
-        </TabsList>
+            <div className="px-3 py-2 mt-4">
+               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Configuración</p>
+            </div>
+            <TabsTrigger 
+              value="ui" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <Layout className="h-4 w-4" />
+              Interfaz UI
+            </TabsTrigger>
+            <TabsTrigger 
+              value="tiendas" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <MapPin className="h-4 w-4" />
+              Tiendas
+            </TabsTrigger>
+            <TabsTrigger 
+              value="aliados" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <Users className="h-4 w-4" />
+              Aliados
+            </TabsTrigger>
+            <TabsTrigger 
+              value="vacantes" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <Briefcase className="h-4 w-4" />
+              Vacantes
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <div className="flex-1 overflow-y-auto bg-gray-50/30">
+          <div className="max-w-7xl mx-auto px-10 py-8 pb-20 w-full">
 
         <TabsContent value="categorias" className="space-y-8">
-          <Card className="border-0 shadow-lg bg-white/50 backdrop-blur-sm">
+          <Card className="border border-gray-200 shadow-sm bg-white">
             <CardHeader className="pb-6 space-y-1">
               <CardTitle className="text-2xl font-semibold tracking-tight flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100 text-green-700">
+                <div className="p-2 rounded-lg bg-gray-100 text-gray-900">
                   <FolderPlus className="h-5 w-5" />
                 </div>
                 Crear Nueva Categoría
@@ -2694,7 +2707,7 @@ const AdminDashboard = () => {
                       onChange={(e) => setNewCategoria({ ...newCategoria, nombre: e.target.value })}
                       placeholder="Ej: Perros, Gatos, etc."
                       required
-                      className="h-11 border-gray-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                      className="h-11 border-gray-200 focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
                     />
                   </div>
                   <div className="space-y-2">
@@ -2707,7 +2720,7 @@ const AdminDashboard = () => {
                       onChange={(e) => setNewCategoria({ ...newCategoria, descripcion: e.target.value })}
                       placeholder="Breve descripción de la categoría"
                       required
-                      className="h-11 border-gray-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                      className="h-11 border-gray-200 focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
                     />
                   </div>
                 </div>
@@ -2944,7 +2957,7 @@ const AdminDashboard = () => {
                 <div className="pt-4 border-t border-gray-100">
                   <Button 
                     type="submit" 
-                    className="w-full h-12 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 transition-all duration-200"
+                    className="w-full h-12 bg-gray-900 hover:bg-black text-white font-medium shadow-sm transition-all duration-200"
                   >
                     <Plus className="h-5 w-5 mr-2" />
                     Crear Categoría
@@ -2954,7 +2967,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/50 backdrop-blur-sm">
+          <Card className="border border-gray-200 shadow-sm bg-white">
             <CardHeader className="pb-6 space-y-1">
               <CardTitle className="text-2xl font-semibold tracking-tight flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
@@ -2978,7 +2991,7 @@ const AdminDashboard = () => {
               ) : (
                 <div className="space-y-3">
                   {categorias.map((categoria) => (
-                    <Card key={categoria.id} className="border border-gray-200 hover:border-green-300 hover:shadow-md transition-all duration-200 bg-white">
+                    <Card key={categoria.id} className="border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 bg-white">
                       <CardContent className="p-6">
                         {editingCategoria?.id === categoria.id ? (
                           <div className="space-y-6">
@@ -2989,7 +3002,7 @@ const AdminDashboard = () => {
                                   value={editingCategoria?.nombre || ''}
                                   onChange={(e) => setEditingCategoria({ ...editingCategoria!, nombre: e.target.value })}
                                   placeholder="Ej: Perros, Gatos, etc."
-                                  className="h-11 border-gray-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                                  className="h-11 border-gray-200 focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
                                 />
                               </div>
                               <div className="space-y-2">
@@ -2998,7 +3011,7 @@ const AdminDashboard = () => {
                                   value={editingCategoria?.descripcion || ''}
                                   onChange={(e) => setEditingCategoria({ ...editingCategoria!, descripcion: e.target.value })}
                                   placeholder="Breve descripción de la categoría"
-                                  className="h-11 border-gray-200 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200"
+                                  className="h-11 border-gray-200 focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
                                 />
                               </div>
                             </div>
@@ -3019,7 +3032,7 @@ const AdminDashboard = () => {
                                         setEditingCategoria({ ...editingCategoria, imagen_marca1: imageUrl });
                                       }
                                     }}
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-[#145020]"
                                   />
                                   {editingCategoria?.imagen_marca1 && (
                                     <div className="mt-2">
@@ -3059,7 +3072,7 @@ const AdminDashboard = () => {
                                         setEditingCategoria({ ...editingCategoria, imagen_marca2: imageUrl });
                                       }
                                     }}
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-[#145020]"
                                   />
                                   {editingCategoria?.imagen_marca2 && (
                                     <div className="mt-2">
@@ -3099,7 +3112,7 @@ const AdminDashboard = () => {
                                         setEditingCategoria({ ...editingCategoria, imagen_marca3: imageUrl });
                                       }
                                     }}
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-[#145020]"
                                   />
                                   {editingCategoria?.imagen_marca3 && (
                                     <div className="mt-2">
@@ -3141,7 +3154,7 @@ const AdminDashboard = () => {
                                       setEditingCategoria({ ...editingCategoria, categoria_imagen: imageUrl });
                                     }
                                   }}
-                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020]"
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-[#145020]"
                                 />
                                 {editingCategoria?.categoria_imagen && (
                                   <div className="mt-2">
@@ -3171,7 +3184,7 @@ const AdminDashboard = () => {
                               <Button
                                 onClick={() => handleUpdateCategoria(editingCategoria!)}
                                 size="sm"
-                                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md"
+                                className="bg-gray-900 hover:bg-black text-white shadow-sm"
                               >
                                 <Save className="h-4 w-4 mr-2" />
                                 Guardar Cambios
@@ -3203,7 +3216,7 @@ const AdminDashboard = () => {
                                         />
                                       </div>
                                     ) : (
-                                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 text-green-700 text-sm font-bold">
+                                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-900 text-sm font-bold">
                                         {categoria.nombre.charAt(0).toUpperCase()}
                                       </span>
                                     )}
@@ -3301,27 +3314,21 @@ const AdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="subcategorias" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FolderOpen className="h-5 w-5" />
-                Crear Nueva Subcategoría
-              </CardTitle>
-              <CardDescription>
-                Agrega una nueva subcategoría a una categoría existente
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateSubcategoria} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Categoría
-                    </label>
+          <div className="flex flex-col gap-6">
+            <section className="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Nuevo registro</p>
+                <h3 className="text-2xl font-semibold text-gray-900">Crear subcategoría</h3>
+                <p className="text-sm text-gray-500">Define una categoría madre, un nombre y una breve descripción.</p>
+              </div>
+              <form onSubmit={handleCreateSubcategoria} className="mt-6 space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Categoría</label>
+                  <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-2">
                     <select
                       value={newSubcategoria.categories_id}
                       onChange={(e) => setNewSubcategoria({ ...newSubcategoria, categories_id: parseInt(e.target.value) })}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                       required
                     >
                       <option value={0}>Seleccionar categoría</option>
@@ -3332,204 +3339,181 @@ const AdminDashboard = () => {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre de la Subcategoría
-                    </label>
-                    <Input
-                      value={newSubcategoria.nombre}
-                      onChange={(e) => setNewSubcategoria({ ...newSubcategoria, nombre: e.target.value })}
-                      placeholder="Ej: Comida para perros, Juguetes, etc."
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción
-                    </label>
-                    <Input
-                      value={newSubcategoria.descripcion}
-                      onChange={(e) => setNewSubcategoria({ ...newSubcategoria, descripcion: e.target.value })}
-                      placeholder="Breve descripción"
-                      required
-                    />
-                  </div>
                 </div>
-                <Button type="submit" className="w-full bg-[#196428] hover:bg-[#145020] text-white">
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Nombre</label>
+                  <Input
+                    value={newSubcategoria.nombre}
+                    onChange={(e) => setNewSubcategoria({ ...newSubcategoria, nombre: e.target.value })}
+                    placeholder="Ej: Accesorios premium"
+                    className="rounded-xl border-gray-200"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Descripción</label>
+                  <Input
+                    value={newSubcategoria.descripcion}
+                    onChange={(e) => setNewSubcategoria({ ...newSubcategoria, descripcion: e.target.value })}
+                    placeholder="Una frase corta y clara"
+                    className="rounded-xl border-gray-200"
+                    required
+                  />
+                </div>
+
+                <Button type="submit" className="w-full h-11 rounded-xl bg-gray-900 text-white hover:bg-black">
                   <Plus className="h-4 w-4 mr-2" />
-                  Crear Subcategoría
+                  Guardar subcategoría
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+            </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Subcategorías Existentes</CardTitle>
-              <CardDescription>
-                Gestiona las subcategorías actuales del sistema
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Filtros de búsqueda y categoría */}
-              <div className="mb-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Buscar subcategoría por nombre..."
-                      value={busquedaSubcategorias}
-                      onChange={(e) => setBusquedaSubcategorias(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Select
-                    value={filtroCategoriaSubcategorias.toString()}
-                    onValueChange={(value) => setFiltroCategoriaSubcategorias(parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filtrar por categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Todas las categorías</SelectItem>
-                      {(() => {
-                        const filteredCategorias = categorias.filter((cat): cat is typeof cat & { id: number } => cat.id !== undefined && cat.id !== null);
-                        return filteredCategorias.map((categoria) => (
-                          <SelectItem key={categoria.id} value={categoria.id.toString()}>
-                            {categoria.nombre}
-                          </SelectItem>
-                        ));
-                      })()}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <section className="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Inventario</p>
+                <h3 className="text-2xl font-semibold text-gray-900">Subcategorías existentes</h3>
+                <p className="text-sm text-gray-500">Filtra por categoría o haz una búsqueda rápida.</p>
               </div>
 
-              {(() => {
-                // Filtrar subcategorías según los filtros
-                const subcategoriasFiltradas = subcategorias.filter((subcategoria) => {
-                  const coincideCategoria = filtroCategoriaSubcategorias === 0 || subcategoria.categories_id === filtroCategoriaSubcategorias;
-                  const coincideBusqueda = busquedaSubcategorias === '' || 
-                    subcategoria.nombre.toLowerCase().includes(busquedaSubcategorias.toLowerCase()) ||
-                    subcategoria.descripcion?.toLowerCase().includes(busquedaSubcategorias.toLowerCase());
-                  return coincideCategoria && coincideBusqueda;
-                });
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar por nombre..."
+                    value={busquedaSubcategorias}
+                    onChange={(e) => setBusquedaSubcategorias(e.target.value)}
+                    className="pl-10 rounded-xl border-gray-200"
+                  />
+                </div>
+                <Select
+                  value={filtroCategoriaSubcategorias.toString()}
+                  onValueChange={(value) => setFiltroCategoriaSubcategorias(parseInt(value))}
+                >
+                  <SelectTrigger className="rounded-xl border-gray-200">
+                    <SelectValue placeholder="Categorías" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Todas</SelectItem>
+                    {(() => {
+                      const filteredCategorias = categorias.filter((cat): cat is typeof cat & { id: number } => cat.id !== undefined && cat.id !== null);
+                      return filteredCategorias.map((categoria) => (
+                        <SelectItem key={categoria.id} value={categoria.id.toString()}>
+                          {categoria.nombre}
+                        </SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                if (subcategorias.length === 0) {
-                  return (
-                    <div className="text-center py-8">
-                      <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No hay subcategorías registradas</p>
-                    </div>
-                  );
-                }
+              <div className="mt-6 space-y-4">
+                {(() => {
+                  const subcategoriasFiltradas = subcategorias.filter((subcategoria) => {
+                    const coincideCategoria = filtroCategoriaSubcategorias === 0 || subcategoria.categories_id === filtroCategoriaSubcategorias;
+                    const coincideBusqueda =
+                      busquedaSubcategorias === '' ||
+                      subcategoria.nombre.toLowerCase().includes(busquedaSubcategorias.toLowerCase()) ||
+                      subcategoria.descripcion?.toLowerCase().includes(busquedaSubcategorias.toLowerCase());
+                    return coincideCategoria && coincideBusqueda;
+                  });
 
-                if (subcategoriasFiltradas.length === 0) {
-                  return (
-                    <div className="text-center py-8">
-                      <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No se encontraron subcategorías con los filtros aplicados</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="space-y-4">
-                    {subcategoriasFiltradas.map((subcategoria) => {
-                    const categoria = categorias.find(c => c.id === subcategoria.categories_id);
+                  if (subcategorias.length === 0) {
                     return (
-                      <Card key={subcategoria.id} className="border-l-4 border-l-blue-500">
-                        <CardContent className="p-4">
-                          {editingSubcategoria?.id === subcategoria.id ? (
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <select
-                                  value={editingSubcategoria?.categories_id || ''}
-                                  onChange={(e) => setEditingSubcategoria({ ...editingSubcategoria!, categories_id: parseInt(e.target.value) })}
-                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
-                                >
-                                  {categorias.map((categoria) => (
-                                    <option key={categoria.id} value={categoria.id}>
-                                      {categoria.nombre}
-                                    </option>
-                                  ))}
-                                </select>
-                                <Input
-                                  value={editingSubcategoria?.nombre || ''}
-                                  onChange={(e) => setEditingSubcategoria({ ...editingSubcategoria!, nombre: e.target.value })}
-                                  placeholder="Nombre de la subcategoría"
-                                />
-                                <Input
-                                  value={editingSubcategoria?.descripcion || ''}
-                                  onChange={(e) => setEditingSubcategoria({ ...editingSubcategoria!, descripcion: e.target.value })}
-                                  placeholder="Descripción"
-                                />
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={() => handleUpdateSubcategoria(editingSubcategoria!)}
-                                  size="sm"
-                                  className="bg-[#196428] hover:bg-[#145020] text-white"
-                                >
-                                  <Save className="h-4 w-4 mr-1" />
-                                  Guardar
-                                </Button>
-                                <Button
-                                  onClick={cancelEditSubcategoria}
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  <X className="h-4 w-4 mr-1" />
-                                  Cancelar
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-sm font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                                    {categoria?.nombre}
-                                  </span>
-                                </div>
-                                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                                  {subcategoria.nombre}
-                                </h3>
-                                <p className="text-gray-600 text-sm">
-                                  {subcategoria.descripcion}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-2">
-                                  ID: {subcategoria.id} • Creado: {new Date(subcategoria.created_at || '').toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div className="flex gap-2 ml-4">
-                                <Button
-                                  onClick={() => startEditSubcategoria(subcategoria)}
-                                  size="sm"
-                                  variant="outline"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  onClick={() => handleDeleteSubcategoria(subcategoria.id || 0, subcategoria.categories_id)}
-                                  size="sm"
-                                  variant="destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
+                      <div className="rounded-2xl border border-dashed border-gray-200 px-6 py-10 text-center">
+                        <FolderOpen className="mx-auto mb-4 h-10 w-10 text-gray-300" />
+                        <p className="text-sm text-gray-500">No hay registros todavía.</p>
+                      </div>
                     );
-                  })}
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
+                  }
+
+                  if (subcategoriasFiltradas.length === 0) {
+                    return (
+                      <div className="rounded-2xl border border-dashed border-gray-200 px-6 py-10 text-center">
+                        <FolderOpen className="mx-auto mb-4 h-10 w-10 text-gray-300" />
+                        <p className="text-sm text-gray-500">Sin coincidencias con los filtros actuales.</p>
+                      </div>
+                    );
+                  }
+
+                  return subcategoriasFiltradas.map((subcategoria) => {
+                    const categoria = categorias.find((c) => c.id === subcategoria.categories_id);
+                    const isEditing = editingSubcategoria?.id === subcategoria.id;
+
+                    return (
+                      <div key={subcategoria.id} className="rounded-2xl border border-gray-100 bg-white/80 p-5 shadow-sm hover:border-gray-200">
+                        {isEditing ? (
+                          <>
+                            <div className="grid gap-3 md:grid-cols-3">
+                              <select
+                                value={editingSubcategoria?.categories_id || ''}
+                                onChange={(e) =>
+                                  setEditingSubcategoria({ ...editingSubcategoria!, categories_id: parseInt(e.target.value) })
+                                }
+                                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                              >
+                                {categorias.map((categoria) => (
+                                  <option key={categoria.id} value={categoria.id}>
+                                    {categoria.nombre}
+                                  </option>
+                                ))}
+                              </select>
+                              <Input
+                                value={editingSubcategoria?.nombre || ''}
+                                onChange={(e) => setEditingSubcategoria({ ...editingSubcategoria!, nombre: e.target.value })}
+                                placeholder="Nombre"
+                                className="rounded-xl border-gray-200"
+                              />
+                              <Input
+                                value={editingSubcategoria?.descripcion || ''}
+                                onChange={(e) => setEditingSubcategoria({ ...editingSubcategoria!, descripcion: e.target.value })}
+                                placeholder="Descripción"
+                                className="rounded-xl border-gray-200"
+                              />
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                              <Button onClick={() => handleUpdateSubcategoria(editingSubcategoria!)} size="sm" className="rounded-lg bg-gray-900 hover:bg-black text-white">
+                                <Save className="mr-1 h-4 w-4" />
+                                Guardar
+                              </Button>
+                              <Button onClick={cancelEditSubcategoria} size="sm" variant="outline" className="rounded-lg">
+                                <X className="mr-1 h-4 w-4" />
+                                Cancelar
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{categoria?.nombre || 'Sin categoría'}</p>
+                              <h4 className="text-lg font-semibold text-gray-900">{subcategoria.nombre}</h4>
+                              <p className="text-sm text-gray-500">{subcategoria.descripcion}</p>
+                              <p className="text-xs text-gray-400 mt-2">ID {subcategoria.id}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button onClick={() => startEditSubcategoria(subcategoria)} size="sm" variant="outline" className="rounded-lg">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteSubcategoria(subcategoria.id || 0, subcategoria.categories_id)}
+                                size="sm"
+                                variant="destructive"
+                                className="rounded-lg"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </section>
+          </div>
         </TabsContent>
 
         <TabsContent value="productos" className="space-y-6">
@@ -3548,24 +3532,53 @@ const AdminDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Subcategoría
+                      Subcategorías (selecciona una o más)
                     </label>
-                    <select
-                      value={newProducto.subcategorias_id}
-                      onChange={(e) => setNewProducto({ ...newProducto, subcategorias_id: parseInt(e.target.value) })}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
-                      required
-                    >
-                      <option value={0}>Seleccionar subcategoría</option>
-                      {subcategorias.map((subcategoria) => {
-                        const categoria = categorias.find(c => c.id === subcategoria.categories_id);
-                        return (
-                          <option key={subcategoria.id} value={subcategoria.id}>
-                            {categoria?.nombre} - {subcategoria.nombre}
-                          </option>
-                        );
-                      })}
-                    </select>
+                    <div className="w-full p-3 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-gray-900 max-h-60 overflow-y-auto bg-white">
+                      {subcategorias.length === 0 ? (
+                        <p className="text-sm text-gray-500">No hay subcategorías disponibles</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {subcategorias.map((subcategoria) => {
+                            const categoria = categorias.find(c => c.id === subcategoria.categories_id);
+                            const isSelected = newProducto.subcategorias_id.includes(subcategoria.id);
+                            return (
+                              <label
+                                key={subcategoria.id}
+                                className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setNewProducto({
+                                        ...newProducto,
+                                        subcategorias_id: [...newProducto.subcategorias_id, subcategoria.id]
+                                      });
+                                    } else {
+                                      setNewProducto({
+                                        ...newProducto,
+                                        subcategorias_id: newProducto.subcategorias_id.filter(id => id !== subcategoria.id)
+                                      });
+                                    }
+                                  }}
+                                  className="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
+                                />
+                                <span className="text-sm text-gray-700">
+                                  {categoria?.nombre} - {subcategoria.nombre}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    {newProducto.subcategorias_id.length > 0 && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        {newProducto.subcategorias_id.length} subcategoría{newProducto.subcategorias_id.length > 1 ? 's' : ''} seleccionada{newProducto.subcategorias_id.length > 1 ? 's' : ''}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -3596,7 +3609,7 @@ const AdminDashboard = () => {
                     <select
                       value={newProducto.id_marca}
                       onChange={(e) => setNewProducto({ ...newProducto, id_marca: parseInt(e.target.value) })}
-                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                     >
                       <option value={0}>Seleccionar marca</option>
                       {marcas.map((marca) => (
@@ -3612,7 +3625,7 @@ const AdminDashboard = () => {
                       id="descuento"
                       checked={newProducto.descuento || false}
                       onChange={(e) => setNewProducto({ ...newProducto, descuento: e.target.checked })}
-                      className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                      className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                     />
                     <label htmlFor="descuento" className="text-sm font-medium text-gray-700">
                       ¿Tiene descuento?
@@ -3637,7 +3650,7 @@ const AdminDashboard = () => {
                       id="destacado"
                       checked={newProducto.destacado || false}
                       onChange={(e) => setNewProducto({ ...newProducto, destacado: e.target.checked })}
-                      className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                      className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                     />
                     <label htmlFor="destacado" className="text-sm font-medium text-gray-700">
                       Producto destacado
@@ -3649,7 +3662,7 @@ const AdminDashboard = () => {
                       id="novedad"
                       checked={newProducto.novedad || false}
                       onChange={(e) => setNewProducto({ ...newProducto, novedad: e.target.checked })}
-                      className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                      className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                     />
                     <label htmlFor="novedad" className="text-sm font-medium text-gray-700">
                       Producto nuevo/novedad
@@ -3670,7 +3683,7 @@ const AdminDashboard = () => {
                           }
                         }}
                         disabled={imageUploading}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                       {imageUploading && (
                         <p className="text-xs text-gray-500">Subiendo imagen...</p>
@@ -3711,7 +3724,7 @@ const AdminDashboard = () => {
                       onClick={() => agregarTamano(newProducto, setNewProducto as any)}
                       variant="outline"
                       size="sm"
-                      className="text-[#196428] border-[#196428] hover:bg-[#196428] hover:text-white"
+                      className="text-gray-900 border-gray-900 hover:bg-gray-900 hover:text-white"
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Agregar Tamaño
@@ -3741,7 +3754,7 @@ const AdminDashboard = () => {
                             <select
                               value={tamano.unidad}
                               onChange={(e) => actualizarTamano(newProducto, setNewProducto as any, index, 'unidad', e.target.value)}
-                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                             >
                               <option value="ML">Mililitros (ML)</option>
                               <option value="L">Litros (L)</option>
@@ -3808,7 +3821,7 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
-                <Button type="submit" disabled={imageUploading} className="w-full bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed">
+                <Button type="submit" disabled={imageUploading} className="w-full bg-gray-900 hover:bg-black text-white disabled:opacity-60 disabled:cursor-not-allowed">
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Producto
                 </Button>
@@ -3942,7 +3955,7 @@ const AdminDashboard = () => {
                                     ...editingProducto,
                                     subcategorias_id: parseInt(e.target.value)
                                   })}
-                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                                 >
                                   {subcategorias.map((subcategoria) => {
                                     const categoria = categorias.find(c => c.id === subcategoria.categories_id);
@@ -3976,7 +3989,7 @@ const AdminDashboard = () => {
                                     ...editingProducto,
                                     id_marca: e.target.value ? parseInt(e.target.value) : null
                                   })}
-                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                                 >
                                   <option value="">Seleccionar marca</option>
                                   {marcas.map((marca) => (
@@ -3994,7 +4007,7 @@ const AdminDashboard = () => {
                                       ...editingProducto,
                                       descuento: e.target.checked
                                     })}
-                                    className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                                   />
                                   <label htmlFor="edit-descuento" className="text-sm font-medium text-gray-700">
                                     ¿Tiene descuento?
@@ -4020,7 +4033,7 @@ const AdminDashboard = () => {
                                       ...editingProducto,
                                       destacado: e.target.checked
                                     })}
-                                    className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                                   />
                                   <label htmlFor="edit-destacado" className="text-sm font-medium text-gray-700">
                                     Producto destacado
@@ -4035,7 +4048,7 @@ const AdminDashboard = () => {
                                       ...editingProducto,
                                       novedad: e.target.checked
                                     })}
-                                    className="rounded border-gray-300 text-[#196428] focus:ring-[#196428]"
+                                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                                   />
                                   <label htmlFor="edit-novedad" className="text-sm font-medium text-gray-700">
                                     Producto nuevo/novedad
@@ -4058,7 +4071,7 @@ const AdminDashboard = () => {
                                         }
                                       }}
                                       disabled={imageUploading}
-                                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
+                                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                     {imageUploading && (
                                       <p className="text-xs text-gray-500">Subiendo imagen...</p>
@@ -4098,7 +4111,7 @@ const AdminDashboard = () => {
                                       onClick={() => editingProducto && agregarTamano(editingProducto, setEditingProducto)}
                                       variant="outline"
                                       size="sm"
-                                      className="text-[#196428] border-[#196428] hover:bg-[#196428] hover:text-white"
+                                      className="text-gray-900 border-gray-900 hover:bg-gray-900 hover:text-white"
                                     >
                                       <Plus className="h-4 w-4 mr-1" />
                                       Agregar Tamaño
@@ -4128,7 +4141,7 @@ const AdminDashboard = () => {
                                             <select
                                               value={tamano.unidad}
                                               onChange={(e) => editingProducto && actualizarTamano(editingProducto, setEditingProducto, index, 'unidad', e.target.value)}
-                                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                                             >
                                               <option value="ML">Mililitros (ML)</option>
                                               <option value="L">Litros (L)</option>
@@ -4204,7 +4217,7 @@ const AdminDashboard = () => {
                                   }}
                                   size="sm"
                                   disabled={imageUploading}
-                                  className="bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                                  className="bg-gray-900 hover:bg-black text-white disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                   <Save className="h-4 w-4 mr-1" />
                                   Guardar
@@ -4223,7 +4236,7 @@ const AdminDashboard = () => {
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-sm font-medium text-[#196428] bg-green-100 px-2 py-1 rounded">
+                                  <span className="text-sm font-medium text-gray-900 bg-green-100 px-2 py-1 rounded">
                                     {categoria?.nombre} - {subcategoria?.nombre}
                                   </span>
                                   {marca && (
@@ -4369,28 +4382,32 @@ const AdminDashboard = () => {
                   No hay marcas registradas aún. Crea la primera marca arriba.
                 </p>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
                   {marcas.map((marca) => (
-                    <div key={marca.id} className="flex items-center justify-between p-4 border rounded-lg bg-white hover:bg-gray-50 transition-colors">
+                    <div key={marca.id} className="flex flex-col p-4 border rounded-lg bg-white hover:bg-gray-50 transition-colors">
                       <div className="flex-1">
                         {editingMarca && editingMarca.id === marca.id ? (
-                          <form onSubmit={handleUpdateMarca} className="flex items-center gap-3 w-full">
+                          <form onSubmit={handleUpdateMarca} className="space-y-3">
                             <Input
                               value={editingMarca.nombre_marca}
                               onChange={(e) => setEditingMarca({ ...editingMarca, nombre_marca: e.target.value })}
-                              className="flex-1"
+                              className="w-full"
                               required
                             />
-                            <Button type="submit" size="sm">
-                              <Save className="h-4 w-4" />
-                            </Button>
-                            <Button type="button" onClick={cancelEditMarca} size="sm" variant="outline">
-                              <X className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button type="submit" size="sm" className="flex-1">
+                                <Save className="h-4 w-4 mr-1" />
+                                Guardar
+                              </Button>
+                              <Button type="button" onClick={cancelEditMarca} size="sm" variant="outline" className="flex-1">
+                                <X className="h-4 w-4 mr-1" />
+                                Cancelar
+                              </Button>
+                            </div>
                           </form>
                         ) : (
                           <div>
-                            <h4 className="font-medium text-gray-900">{marca.nombre_marca}</h4>
+                            <h4 className="font-medium text-gray-900 mb-1">{marca.nombre_marca}</h4>
                             <p className="text-xs text-gray-400">
                               ID: {marca.id} • Creado: {marca.created_at ? new Date(marca.created_at).toLocaleDateString() : 'N/A'}
                             </p>
@@ -4398,20 +4415,24 @@ const AdminDashboard = () => {
                         )}
                       </div>
                       {(!editingMarca || editingMarca.id !== marca.id) && (
-                        <div className="flex gap-2 ml-4">
+                        <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
                           <Button
                             onClick={() => startEditMarca(marca)}
                             size="sm"
                             variant="outline"
+                            className="flex-1"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
                           </Button>
                           <Button
                             onClick={() => handleDeleteMarca(marca.id || 0)}
                             size="sm"
                             variant="destructive"
+                            className="flex-1"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Eliminar
                           </Button>
                         </div>
                       )}
@@ -4431,7 +4452,7 @@ const AdminDashboard = () => {
               type="button"
               onClick={() => setUiCategory('inicio')}
               variant={uiCategory === 'inicio' ? 'default' : 'outline'}
-              className={uiCategory === 'inicio' ? 'bg-[#196428] hover:bg-[#145020]' : ''}
+              className={uiCategory === 'inicio' ? 'bg-gray-900 hover:bg-black' : ''}
             >
               Inicio (Banners y Popups)
             </Button>
@@ -4439,7 +4460,7 @@ const AdminDashboard = () => {
               type="button"
               onClick={() => setUiCategory('sobre-nosotros')}
               variant={uiCategory === 'sobre-nosotros' ? 'default' : 'outline'}
-              className={uiCategory === 'sobre-nosotros' ? 'bg-[#196428] hover:bg-[#145020]' : ''}
+              className={uiCategory === 'sobre-nosotros' ? 'bg-gray-900 hover:bg-black' : ''}
             >
               Sobre Nosotros
             </Button>
@@ -4704,7 +4725,7 @@ const AdminDashboard = () => {
                   <Button 
                     type="submit" 
                     disabled={imageUploading}
-                    className="bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="bg-gray-900 hover:bg-black text-white disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {editingUI ? (
                       <>
@@ -4861,7 +4882,7 @@ const AdminDashboard = () => {
                   <div className="space-y-4">
                     <Button
                       onClick={startEditSobreNosotros}
-                      className="bg-[#196428] hover:bg-[#145020] text-white"
+                      className="bg-gray-900 hover:bg-black text-white"
                     >
                       <Edit className="h-4 w-4 mr-2" />
                       Editar Contenido
@@ -4957,7 +4978,7 @@ const AdminDashboard = () => {
                           value={editingSobreNosotros.mision_parrafo1 || ''}
                           onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, mision_parrafo1: e.target.value })}
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                           placeholder="Primer párrafo de la misión..."
                         />
                       </div>
@@ -4969,7 +4990,7 @@ const AdminDashboard = () => {
                           value={editingSobreNosotros.mision_parrafo2 || ''}
                           onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, mision_parrafo2: e.target.value })}
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                           placeholder="Segundo párrafo de la misión..."
                         />
                       </div>
@@ -4996,7 +5017,7 @@ const AdminDashboard = () => {
                           value={editingSobreNosotros.vision_parrafo1 || ''}
                           onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, vision_parrafo1: e.target.value })}
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                           placeholder="Primer párrafo de la visión..."
                         />
                       </div>
@@ -5008,7 +5029,7 @@ const AdminDashboard = () => {
                           value={editingSobreNosotros.vision_parrafo2 || ''}
                           onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, vision_parrafo2: e.target.value })}
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                           placeholder="Segundo párrafo de la visión..."
                         />
                       </div>
@@ -5069,7 +5090,7 @@ const AdminDashboard = () => {
                             value={editingSobreNosotros.valor1_descripcion || ''}
                             onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, valor1_descripcion: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                             placeholder="Descripción del valor..."
                           />
                         </div>
@@ -5091,7 +5112,7 @@ const AdminDashboard = () => {
                             value={editingSobreNosotros.valor2_descripcion || ''}
                             onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, valor2_descripcion: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                             placeholder="Descripción del valor..."
                           />
                         </div>
@@ -5113,7 +5134,7 @@ const AdminDashboard = () => {
                             value={editingSobreNosotros.valor3_descripcion || ''}
                             onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, valor3_descripcion: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                             placeholder="Descripción del valor..."
                           />
                         </div>
@@ -5135,7 +5156,7 @@ const AdminDashboard = () => {
                             value={editingSobreNosotros.valor4_descripcion || ''}
                             onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, valor4_descripcion: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                             placeholder="Descripción del valor..."
                           />
                         </div>
@@ -5157,7 +5178,7 @@ const AdminDashboard = () => {
                             value={editingSobreNosotros.valor5_descripcion || ''}
                             onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, valor5_descripcion: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                             placeholder="Descripción del valor..."
                           />
                         </div>
@@ -5179,7 +5200,7 @@ const AdminDashboard = () => {
                             value={editingSobreNosotros.valor6_descripcion || ''}
                             onChange={(e) => setEditingSobreNosotros({ ...editingSobreNosotros, valor6_descripcion: e.target.value })}
                             rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
                             placeholder="Descripción del valor..."
                           />
                         </div>
@@ -5189,7 +5210,7 @@ const AdminDashboard = () => {
                     <div className="flex gap-3">
                       <Button 
                         type="submit" 
-                        className="bg-[#196428] hover:bg-[#145020] text-white"
+                        className="bg-gray-900 hover:bg-black text-white"
                       >
                         <Save className="h-4 w-4 mr-2" />
                         Guardar Cambios
@@ -5268,48 +5289,8 @@ const AdminDashboard = () => {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre de Contacto *
-                    </label>
-                    <Input
-                      value={newTienda.contacto}
-                      onChange={(e) => setNewTienda({ ...newTienda, contacto: e.target.value })}
-                      placeholder="Ej: Marsheri Lozano"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Latitud (GPS) *
-                    </label>
-                    <Input
-                      type="number"
-                      step="any"
-                      value={newTienda.lat}
-                      onChange={(e) => setNewTienda({ ...newTienda, lat: parseFloat(e.target.value) || 0 })}
-                      placeholder="Ej: 7.1249"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Longitud (GPS) *
-                    </label>
-                    <Input
-                      type="number"
-                      step="any"
-                      value={newTienda.lng}
-                      onChange={(e) => setNewTienda({ ...newTienda, lng: parseFloat(e.target.value) || 0 })}
-                      placeholder="Ej: -73.1229"
-                      required
-                    />
-                  </div>
                 </div>
-                <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
-                  <strong>💡 Tip:</strong> Puedes obtener las coordenadas GPS desde Google Maps haciendo clic derecho en la ubicación y seleccionando las coordenadas que aparecen.
-                </div>
-                <Button type="submit" className="w-full bg-[#196428] hover:bg-[#145020] text-white">
+                <Button type="submit" className="w-full bg-gray-900 hover:bg-black text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Tienda
                 </Button>
@@ -5363,34 +5344,12 @@ const AdminDashboard = () => {
                                 placeholder="Teléfono"
                                 required
                               />
-                              <Input
-                                value={editingTienda?.contacto || ''}
-                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, contacto: e.target.value })}
-                                placeholder="Nombre de contacto"
-                                required
-                              />
-                              <Input
-                                type="number"
-                                step="any"
-                                value={editingTienda?.lat || 0}
-                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, lat: parseFloat(e.target.value) || 0 })}
-                                placeholder="Latitud"
-                                required
-                              />
-                              <Input
-                                type="number"
-                                step="any"
-                                value={editingTienda?.lng || 0}
-                                onChange={(e) => editingTienda && setEditingTienda({ ...editingTienda, lng: parseFloat(e.target.value) || 0 })}
-                                placeholder="Longitud"
-                                required
-                              />
                             </div>
                             <div className="flex gap-2">
                               <Button
                                 type="submit"
                                 size="sm"
-                                className="bg-[#196428] hover:bg-[#145020] text-white"
+                                className="bg-gray-900 hover:bg-black text-white"
                               >
                                 <Save className="h-4 w-4 mr-1" />
                                 Guardar
@@ -5424,12 +5383,6 @@ const AdminDashboard = () => {
                                 </p>
                                 <p>
                                   <strong>Teléfono:</strong> {tienda.telefono}
-                                </p>
-                                <p>
-                                  <strong>Contacto:</strong> {tienda.contacto}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                  <strong>GPS:</strong> {tienda.lat.toFixed(6)}, {tienda.lng.toFixed(6)}
                                 </p>
                                 <p className="text-xs text-gray-400 mt-2">
                                   ID: {tienda.id} • Creado: {new Date(tienda.created_at || '').toLocaleDateString()}
@@ -5503,7 +5456,7 @@ const AdminDashboard = () => {
                           }
                         }}
                         disabled={imageUploading}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
                         required
                       />
                       {imageUploading && (
@@ -5533,7 +5486,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <Button type="submit" disabled={imageUploading} className="w-full bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed">
+                <Button type="submit" disabled={imageUploading} className="w-full bg-gray-900 hover:bg-black text-white disabled:opacity-60 disabled:cursor-not-allowed">
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Aliado
                 </Button>
@@ -5555,121 +5508,129 @@ const AdminDashboard = () => {
                   <p className="text-gray-500">No hay aliados registrados</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {aliados.map((aliado) => (
-                    <Card key={aliado.id} className="border-l-4 border-l-[#196428]">
-                      <CardContent className="p-4">
-                        {editingAliado?.id === aliado.id ? (
-                          <form onSubmit={handleUpdateAliado} className="space-y-4">
-                            <Input
-                              value={editingAliado?.nombre || ''}
-                              onChange={(e) => editingAliado && setEditingAliado({ ...editingAliado, nombre: e.target.value })}
-                              placeholder="Nombre del aliado"
-                              required
-                            />
-                            <div className="space-y-2">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={async (e) => {
-                                  const imageUrl = await handleFileSelectAliado(e);
-                                  if (imageUrl && editingAliado) {
-                                    setEditingAliado({ ...editingAliado, imagen_url: imageUrl });
-                                  }
-                                }}
-                                disabled={imageUploading}
-                                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#196428] file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-[#196428] file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
-                              />
-                              {imageUploading && (
-                                <p className="text-xs text-gray-500">Subiendo imagen...</p>
-                              )}
-                              {editingAliado?.imagen_url && (
-                                <div className="mt-2">
-                                  <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
-                                  <div className="relative w-32 h-20">
-                                    <Image
-                                      src={editingAliado.imagen_url}
-                                      alt="Aliado Preview"
-                                      fill
-                                      className="object-contain rounded-lg border border-gray-300"
-                                      sizes="128px"
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <tbody>
+                      {aliados.map((aliado) => (
+                        <tr key={aliado.id} className="border-b">
+                          <td className="p-4 align-top w-full">
+                            <Card className="border-l-4 border-l-[#196428]">
+                              <CardContent className="p-4">
+                                {editingAliado?.id === aliado.id ? (
+                                  <form onSubmit={handleUpdateAliado} className="space-y-4">
+                                    <Input
+                                      value={editingAliado?.nombre || ''}
+                                      onChange={(e) => editingAliado && setEditingAliado({ ...editingAliado, nombre: e.target.value })}
+                                      placeholder="Nombre del aliado"
+                                      required
                                     />
+                                    <div className="space-y-2">
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={async (e) => {
+                                          const imageUrl = await handleFileSelectAliado(e);
+                                          if (imageUrl && editingAliado) {
+                                            setEditingAliado({ ...editingAliado, imagen_url: imageUrl });
+                                          }
+                                        }}
+                                        disabled={imageUploading}
+                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-l-md file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-white hover:file:bg-[#145020] disabled:opacity-60 disabled:cursor-not-allowed"
+                                      />
+                                      {imageUploading && (
+                                        <p className="text-xs text-gray-500">Subiendo imagen...</p>
+                                      )}
+                                      {editingAliado?.imagen_url && (
+                                        <div className="mt-2">
+                                          <p className="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                                          <div className="relative w-32 h-20">
+                                            <Image
+                                              src={editingAliado.imagen_url}
+                                              alt="Aliado Preview"
+                                              fill
+                                              className="object-contain rounded-lg border border-gray-300"
+                                              sizes="128px"
+                                            />
+                                          </div>
+                                          <button
+                                            type="button"
+                                            onClick={() => editingAliado && setEditingAliado({ ...editingAliado, imagen_url: '' })}
+                                            className="ml-2 text-red-500 text-sm hover:text-red-700"
+                                          >
+                                            Eliminar
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        type="submit"
+                                        size="sm"
+                                        disabled={imageUploading}
+                                        className="bg-gray-900 hover:bg-black text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                                      >
+                                        <Save className="h-4 w-4 mr-1" />
+                                        Guardar
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        onClick={cancelEditAliado}
+                                        variant="outline"
+                                        size="sm"
+                                      >
+                                        <X className="h-4 w-4 mr-1" />
+                                        Cancelar
+                                      </Button>
+                                    </div>
+                                  </form>
+                                ) : (
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-3 mb-2">
+                                        <div className="relative w-16 h-10">
+                                          <Image
+                                            src={aliado.imagen_url}
+                                            alt={aliado.nombre}
+                                            fill
+                                            className="object-contain rounded-lg border border-gray-300"
+                                            sizes="64px"
+                                          />
+                                        </div>
+                                        <div>
+                                          <h3 className="font-semibold text-lg text-gray-900">
+                                            {aliado.nombre}
+                                          </h3>
+                                          <p className="text-xs text-gray-400">
+                                            ID: {aliado.id} • Creado: {new Date(aliado.created_at || '').toLocaleDateString()}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2 ml-4">
+                                      <Button
+                                        onClick={() => startEditAliado(aliado)}
+                                        size="sm"
+                                        variant="outline"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        onClick={() => handleDeleteAliado(aliado.id)}
+                                        size="sm"
+                                        variant="destructive"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => editingAliado && setEditingAliado({ ...editingAliado, imagen_url: '' })}
-                                    className="ml-2 text-red-500 text-sm hover:text-red-700"
-                                  >
-                                    Eliminar
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                type="submit"
-                                size="sm"
-                                disabled={imageUploading}
-                                className="bg-[#196428] hover:bg-[#145020] text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                              >
-                                <Save className="h-4 w-4 mr-1" />
-                                Guardar
-                              </Button>
-                              <Button
-                                type="button"
-                                onClick={cancelEditAliado}
-                                variant="outline"
-                                size="sm"
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancelar
-                              </Button>
-                            </div>
-                          </form>
-                        ) : (
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <div className="relative w-16 h-10">
-                                  <Image
-                                    src={aliado.imagen_url}
-                                    alt={aliado.nombre}
-                                    fill
-                                    className="object-contain rounded-lg border border-gray-300"
-                                    sizes="64px"
-                                  />
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-lg text-gray-900">
-                                    {aliado.nombre}
-                                  </h3>
-                                  <p className="text-xs text-gray-400">
-                                    ID: {aliado.id} • Creado: {new Date(aliado.created_at || '').toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                onClick={() => startEditAliado(aliado)}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                onClick={() => handleDeleteAliado(aliado.id)}
-                                size="sm"
-                                variant="destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                                )}
+                              </CardContent>
+                            </Card>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
@@ -5688,14 +5649,17 @@ const AdminDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 {/* Lista de Trabajos */}
                 <div onClick={handleDeselectTrabajo}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold">Ofertas de Trabajo Disponibles</h3>
                     <button
-                      onClick={handleCreateJob}
-                      className="bg-[#196428] hover:bg-[#2d7a3d] text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCreateJob();
+                      }}
+                      className="bg-gray-900 hover:bg-[#2d7a3d] text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Nueva Oferta</span>
@@ -5713,7 +5677,7 @@ const AdminDashboard = () => {
                           key={trabajo.id}
                           className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
                             selectedTrabajo?.id === trabajo.id
-                              ? 'border-[#196428] bg-green-50/50 ring-1 ring-[#196428]/20'
+                              ? 'border-gray-900 bg-green-50/50 ring-1 ring-gray-900/20'
                               : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
                           }`}
                           onClick={(e) => {
@@ -5726,7 +5690,7 @@ const AdminDashboard = () => {
                               <div className="flex items-center gap-2 mb-2">
                                 <h4 className="font-semibold text-gray-900 truncate">{trabajo.titulo}</h4>
                                 <span className={`px-2 py-0.5 text-xs rounded-full ${
-                                  trabajo.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                  trabajo.activo ? 'bg-gray-100 text-gray-900' : 'bg-red-100 text-red-700'
                               }`}>
                                 {trabajo.activo ? 'Activo' : 'Inactivo'}
                               </span>
@@ -5775,6 +5739,203 @@ const AdminDashboard = () => {
                       ))}
                     </div>
                   )}
+
+                  {/* Formulario para crear/editar trabajo */}
+                  {isJobFormOpen && (
+                    <div className="mt-6 bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {editingJob ? 'Editar Oferta de Trabajo' : 'Crear Nueva Oferta de Trabajo'}
+                        </h3>
+                        <button
+                          onClick={resetJobForm}
+                          className="text-gray-400 hover:text-gray-600 p-1"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSubmitJob} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Título del puesto *
+                            </label>
+                            <input
+                              type="text"
+                              name="titulo"
+                              value={jobFormData.titulo}
+                              onChange={handleJobInputChange}
+                              required
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                              placeholder="Ej: Desarrollador Frontend"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Departamento *
+                            </label>
+                            <select
+                              name="departamento"
+                              value={jobFormData.departamento}
+                              onChange={handleJobInputChange}
+                              required
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                            >
+                              <option value="">Seleccionar departamento</option>
+                              <option value="Tecnología">Tecnología</option>
+                              <option value="Ventas">Ventas</option>
+                              <option value="Marketing">Marketing</option>
+                              <option value="Recursos Humanos">Recursos Humanos</option>
+                              <option value="Operaciones">Operaciones</option>
+                              <option value="Finanzas">Finanzas</option>
+                              <option value="Atención al Cliente">Atención al Cliente</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Ubicación *
+                            </label>
+                            <input
+                              type="text"
+                              name="ubicacion"
+                              value={jobFormData.ubicacion}
+                              onChange={handleJobInputChange}
+                              required
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                              placeholder="Ej: Madrid, España"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Tipo de contrato *
+                            </label>
+                            <select
+                              name="tipo_contrato"
+                              value={jobFormData.tipo_contrato}
+                              onChange={handleJobInputChange}
+                              required
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                            >
+                              <option value="">Seleccionar tipo</option>
+                              <option value="Tiempo completo">Tiempo completo</option>
+                              <option value="Medio tiempo">Medio tiempo</option>
+                              <option value="Por horas">Por horas</option>
+                              <option value="Temporal">Temporal</option>
+                              <option value="Freelance">Freelance</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Salario *
+                          </label>
+                          <input
+                            type="text"
+                            name="salario"
+                            value={jobFormData.salario}
+                            onChange={handleJobInputChange}
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                            placeholder="Ej: 30.000 - 35.000 €/año"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Descripción del puesto *
+                          </label>
+                          <textarea
+                            name="descripcion"
+                            value={jobFormData.descripcion}
+                            onChange={handleJobInputChange}
+                            rows={4}
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                            placeholder="Describe las responsabilidades y funciones del puesto..."
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Requisitos (uno por línea)
+                            </label>
+                            <textarea
+                              value={jobFormData.requisitos.join('\n')}
+                              onChange={handleRequisitosChange}
+                              rows={4}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                              placeholder="Experiencia mínima de 2 años&#10;Conocimientos de JavaScript&#10;Licenciatura en Informática"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Beneficios (uno por línea)
+                            </label>
+                            <textarea
+                              value={jobFormData.beneficios.join('\n')}
+                              onChange={handleBeneficiosChange}
+                              rows={4}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                              placeholder="Seguro médico&#10;Flexibilidad horaria&#10;Formación continua"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="activo"
+                            name="activo"
+                            checked={jobFormData.activo}
+                            onChange={(e) => setJobFormData(prev => ({ ...prev, activo: e.target.checked }))}
+                            className="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
+                          />
+                          <label htmlFor="activo" className="ml-2 block text-sm text-gray-700">
+                            Publicar oferta inmediatamente
+                          </label>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                          <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex-1 bg-gray-900 hover:bg-[#2d7a3d] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-md transition-colors flex items-center justify-center text-sm"
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                <span>{editingJob ? 'Actualizando...' : 'Creando...'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="w-4 h-4 mr-2" />
+                                <span>{editingJob ? 'Actualizar Oferta' : 'Crear Oferta'}</span>
+                              </>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={resetJobForm}
+                            disabled={isSubmitting}
+                            className="flex-1 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed text-gray-700 font-medium py-2.5 px-4 rounded-md transition-colors text-sm"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
                 </div>
 
                 {/* Aplicaciones del Trabajo Seleccionado */}
@@ -5801,7 +5962,7 @@ const AdminDashboard = () => {
                                   <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                                     aplicacion.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-700' :
                                     aplicacion.estado === 'revisando' ? 'bg-blue-100 text-blue-700' :
-                                    aplicacion.estado === 'aceptado' ? 'bg-green-100 text-green-700' :
+                                    aplicacion.estado === 'aceptado' ? 'bg-gray-100 text-gray-900' :
                                     'bg-red-100 text-red-700'
                                   }`}>
                                     {aplicacion.estado === 'pendiente' ? 'Pendiente' :
@@ -5889,7 +6050,7 @@ const AdminDashboard = () => {
                               )}
 
                               {aplicacion.estado === 'aceptado' && (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-900 rounded-full text-xs font-medium">
                                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                   </svg>
@@ -5924,23 +6085,25 @@ const AdminDashboard = () => {
 
         {/* Nueva pestaña de Pedidos */}
         <TabsContent value="pedidos" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
+          <Card className="rounded-2xl border border-gray-200 bg-white/90 shadow-sm">
+            <CardHeader className="border-b border-gray-100 pb-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400 mb-1">Operaciones</p>
+                  <CardTitle className="flex items-center gap-2 text-2xl font-semibold text-gray-900">
                     <ShoppingBag className="h-5 w-5" />
-                    Gestión de Pedidos
+                    Gestión de pedidos
                   </CardTitle>
-                  <CardDescription>
-                    Visualiza y gestiona todos los pedidos de los clientes
+                  <CardDescription className="text-sm text-gray-500 mt-1">
+                    Visualiza y actualiza el estado de cada pedido desde un panel limpio y enfocado.
                   </CardDescription>
                 </div>
                 <Button
                   onClick={loadPedidos}
-                  className="bg-[#196428] hover:bg-[#145020] text-white"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-black"
                 >
-                  Recargar Pedidos
+                  <RefreshCw className="h-4 w-4" />
+                  Recargar
                 </Button>
               </div>
             </CardHeader>
@@ -5954,90 +6117,58 @@ const AdminDashboard = () => {
               ) : (
                 <div className="space-y-6">
                   {/* Filtros de Estado */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">Filtrar por estado:</span>
-                      <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">
-                        Total: {getContadorPedidosPorEstado('todos')} pedido{getContadorPedidosPorEstado('todos') !== 1 ? 's' : ''}
-                      </span>
+                  <div className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Filtrar por estado</p>
+                        <p className="text-xs text-gray-500">
+                          Total: {getContadorPedidosPorEstado('todos')} pedido{getContadorPedidosPorEstado('todos') !== 1 ? 's' : ''}
+                        </p>
                       </div>
 
-                      {/* Mini buscador por #pedido */}
-                      <div className="w-full lg:w-64">
+                      <div className="relative w-full lg:w-64">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                         <input
                           type="text"
                           value={pedidoSearch}
                           onChange={(e) => {
                             setPedidoSearch(e.target.value);
-                            setPaginaPedidos(1); // Resetear a página 1 al buscar
+                            setPaginaPedidos(1);
                           }}
                           placeholder="Buscar por #pedido"
-                          className="w-full p-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm"
+                          className="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
                         />
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        onClick={() => {
-                          setFiltroEstadoPedidos('todos');
-                          setPaginaPedidos(1);
-                        }}
-                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('todos')}`}
-                      >
-                        📋 Todos ({getContadorPedidosPorEstado('todos')})
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          setFiltroEstadoPedidos('pendiente');
-                          setPaginaPedidos(1);
-                        }}
-                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('pendiente')}`}
-                      >
-                        ⏳ Pendientes ({getContadorPedidosPorEstado('pendiente')})
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          setFiltroEstadoPedidos('pagado');
-                          setPaginaPedidos(1);
-                        }}
-                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('pagado')}`}
-                      >
-                        💳 Pagados ({getContadorPedidosPorEstado('pagado')})
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          setFiltroEstadoPedidos('enviado');
-                          setPaginaPedidos(1);
-                        }}
-                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('enviado')}`}
-                      >
-                        📦 Enviados ({getContadorPedidosPorEstado('enviado')})
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          setFiltroEstadoPedidos('entregado');
-                          setPaginaPedidos(1);
-                        }}
-                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('entregado')}`}
-                      >
-                        ✅ Entregados ({getContadorPedidosPorEstado('entregado')})
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          setFiltroEstadoPedidos('cancelado');
-                          setPaginaPedidos(1);
-                        }}
-                        className={`text-sm px-4 py-2 rounded-full transition-colors ${getFiltroPedidosColor('cancelado')}`}
-                      >
-                        ❌ Cancelados ({getContadorPedidosPorEstado('cancelado')})
-                      </Button>
+                      {[
+                        { value: 'todos', icon: '📋', label: 'Todos' },
+                        { value: 'pendiente', icon: '⏳', label: 'Pendientes' },
+                        { value: 'pagado', icon: '💳', label: 'Pagados' },
+                        { value: 'enviado', icon: '📦', label: 'Enviados' },
+                        { value: 'entregado', icon: '✅', label: 'Entregados' },
+                        { value: 'cancelado', icon: '❌', label: 'Cancelados' },
+                      ].map((estado) => {
+                        const isActive = filtroEstadoPedidos === estado.value;
+                        return (
+                          <button
+                            key={estado.value}
+                            onClick={() => {
+                              setFiltroEstadoPedidos(estado.value);
+                              setPaginaPedidos(1);
+                            }}
+                            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                              isActive
+                                ? 'border-gray-900 bg-gray-900 text-white shadow-sm'
+                                : 'border-transparent bg-white text-gray-600 hover:border-gray-200'
+                            }`}
+                          >
+                            <span>{estado.icon}</span>
+                            {estado.label} ({getContadorPedidosPorEstado(estado.value)})
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -6120,84 +6251,91 @@ const AdminDashboard = () => {
                         return (
                           <>
                             {pedidosPaginados.map(([pedidoId, pedido]: [string, any], ordenIndex: number) => (
-                    <Card key={pedidoId} className="border-l-4 border-l-[#196428] shadow-lg">
-                      <CardContent className="p-6">
-                        {/* Header del Pedido */}
-                        <div className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-6">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-4">
-                                
+                    <Card key={pedidoId} className="group relative bg-white rounded-xl border border-gray-200 shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
+                      <div className="border-b border-gray-100 bg-gray-50/30 p-5 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white border border-gray-100 shadow-sm text-gray-900 font-bold font-mono text-lg">
+                            #{pedido.pedido_id}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-gray-900">Pedido #{pedido.pedido_id}</h3>
+                              {(() => {
+                                const dias = calcularDiasTranscurridos(pedido.fecha);
+                                return (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${
+                                    dias === 0 ? 'bg-green-50 text-green-700 border-green-100' : 
+                                    dias <= 2 ? 'bg-blue-50 text-blue-700 border-blue-100' : 
+                                    'bg-gray-100 text-gray-600 border-gray-200'
+                                  }`}>
+                                    {dias === 0 ? 'Hoy' : dias === 1 ? 'Hace 1 día' : `Hace ${dias} días`}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                            <p className="text-sm text-gray-500 mt-0.5 capitalize">
+                              {new Date(pedido.fecha).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
 
-                                
-                                <div>
-                                  <h3 className="text-2xl font-bold text-gray-900">Pedido #{pedido.pedido_id}</h3>
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="text-sm text-gray-600">
-                                      {new Date(pedido.fecha).toLocaleDateString('es-ES', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
-                                    </p>
-                                    {(() => {
-                                      const diasTranscurridos = calcularDiasTranscurridos(pedido.fecha);
-                                      return (
-                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                          {diasTranscurridos === 0 
-                                            ? 'Hoy' 
-                                            : diasTranscurridos === 1 
-                                            ? 'Hace 1 día' 
-                                            : `Hace ${diasTranscurridos} días`}
-                                        </span>
-                                      );
-                                    })()}
-                                  </div>
-                                </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+                        {/* Customer Info Section */}
+                        <div className="lg:col-span-2 p-6">
+                          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Información del Cliente</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+                            <div className="flex gap-3">
+                              <div className="mt-1 h-8 w-8 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                <User className="h-4 w-4" />
                               </div>
-
-                            {/* Información del Cliente */}
-                            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                              <h4 className="font-semibold text-gray-900 mb-3">Información del Cliente</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                <div>
-                                  <span className="text-gray-600">Nombre:</span>
-                                  <span className="ml-2 font-medium text-gray-900">{pedido.nombre}</span>
-                                </div>
-                                <div>
-                                  <span className="text-gray-600">Correo:</span>
-                                  <span className="ml-2 font-medium text-gray-900">{pedido.correo}</span>
-                                </div>
-                                <div>
-                                  <span className="text-gray-600">Teléfono:</span>
-                                  <span className="ml-2 font-medium text-gray-900">{pedido.telefono}</span>
-                                </div>
-                                <div className="md:col-span-2">
-                                  <span className="text-gray-600">Dirección de entrega:</span>
-                                  <span className="ml-2 font-medium text-gray-900">{pedido.direccion}</span>
-                                </div>
+                              <div>
+                                <p className="text-xs font-medium text-gray-500">Nombre</p>
+                                <p className="text-sm font-medium text-gray-900">{pedido.nombre}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-3">
+                              <div className="mt-1 h-8 w-8 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                <Mail className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium text-gray-500">Correo</p>
+                                <p className="text-sm font-medium text-gray-900 break-all">{pedido.correo}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-3">
+                              <div className="mt-1 h-8 w-8 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                <Phone className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium text-gray-500">Teléfono</p>
+                                <p className="text-sm font-medium text-gray-900">{pedido.telefono}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-3 md:col-span-2">
+                              <div className="mt-1 h-8 w-8 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                <MapPin className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium text-gray-500">Dirección de entrega</p>
+                                <p className="text-sm font-medium text-gray-900">{pedido.direccion}</p>
                               </div>
                             </div>
                           </div>
+                        </div>
 
-                          {/* Total y Estado */}
-                          <div className="text-center">
-                            <div className="bg-[#196428] text-white px-4 py-2 rounded-lg shadow-lg mb-4">
-                              <p className="text-xs font-medium text-green-100 mb-1">Total del Pedido</p>
-                              <p className="font-black text-2xl">${formatPrice(pedido.total || 0)}</p>
-                            </div>
-
-                            {/* Selector de Estado */}
-                            <div className="space-y-2">
-                              <p className="text-xs font-semibold text-gray-700 mb-2">Estado del Pedido:</p>
+                        {/* Summary/Total Section */}
+                        <div className="p-6 bg-gray-50/50 lg:bg-transparent flex flex-col justify-center">
+                          <div className="space-y-6">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Estado</p>
                               <Select
                                 value={pedido.estado_pedido}
                                 onValueChange={(value) => handleUpdateEstadoPedido(pedido.pedido_id, value)}
                               >
-                                <SelectTrigger className="w-full text-sm">
+                                <SelectTrigger className="w-full bg-white border-gray-200 text-sm h-10">
                                   <SelectValue>
-                                    <span className={`font-semibold ${getEstadoColor(pedido.estado_pedido)}`}>
+                                    <span className={`font-semibold flex items-center gap-2 ${getEstadoColor(pedido.estado_pedido)}`}>
                                       {pedido.estado_pedido === 'pendiente' && '⏳ '}
                                       {pedido.estado_pedido === 'pagado' && '💳 '}
                                       {pedido.estado_pedido === 'enviado' && '📦 '}
@@ -6236,27 +6374,36 @@ const AdminDashboard = () => {
                                 </SelectContent>
                               </Select>
                             </div>
+                            
+                            <div className="pt-6 border-t border-gray-100">
+                              <div className="flex items-baseline justify-between">
+                                <span className="text-sm font-medium text-gray-600">Total</span>
+                                <span className="text-2xl font-bold text-gray-900">${formatPrice(pedido.total || 0)}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                      </div>
 
-                        {/* Separador */}
-                        <div className="relative mb-6">
-                          <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-200"></div>
-                          </div>
-                          <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white text-gray-500 font-medium">Productos del Pedido</span>
-                          </div>
+                      {/* Separador */}
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-100"></div>
                         </div>
+                        <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                          <span className="px-4 bg-white text-gray-400 font-medium">Productos</span>
+                        </div>
+                      </div>
 
                         {/* Lista de Productos */}
-                        <div className="space-y-3">
+                        <div className="p-6 bg-gray-50/30">
+                          <div className="space-y-3">
                           {pedido.productos.map((producto: any, index: number) => (
                             <div
                               key={producto.id_detalle_pedido}
-                              className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-4 hover:border-[#196428] hover:shadow-md transition-all duration-200"
+                              className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-900 hover:shadow-md transition-all duration-200"
                             >
-                              <div className="bg-green-50 text-[#196428] p-2 rounded-lg font-bold text-sm">
+                              <div className="bg-gray-100 text-gray-900 p-2 rounded-lg font-semibold text-sm">
                                 {index + 1}
                               </div>
                               
@@ -6275,7 +6422,7 @@ const AdminDashboard = () => {
                               <div className="flex-1">
                                 <h4 className="font-semibold text-gray-900">{producto.nombre_producto}</h4>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                     Cantidad: {producto.cantidad}
                                   </span>
                                   {producto.cantidad > 1 && (
@@ -6287,7 +6434,7 @@ const AdminDashboard = () => {
                               </div>
                               
                               <div className="text-right">
-                                <span className="font-bold text-[#196428] text-lg">${formatPrice(producto.subtotal)}</span>
+                                <span className="font-bold text-gray-900 text-lg">${formatPrice(producto.subtotal)}</span>
                               </div>
                             </div>
                           ))}
@@ -6306,7 +6453,7 @@ const AdminDashboard = () => {
                             </span>
                           </div>
                         </div>
-                      </CardContent>
+                      </div>
                     </Card>
                             ))}
                             
@@ -6336,7 +6483,7 @@ const AdminDashboard = () => {
                                         size="sm"
                                         className={`${
                                           paginaPedidos === num
-                                            ? "bg-[#196428] hover:bg-[#145020] text-white"
+                                            ? "bg-gray-900 hover:bg-black text-white"
                                             : "border-gray-300"
                                         }`}
                                       >
@@ -6373,126 +6520,174 @@ const AdminDashboard = () => {
             const metricasPedidos = calcularMetricasPedidos();
             const metricasProductos = calcularMetricasProductos();
 
+            const pedidosPorMesEntries = Object.entries(metricasPedidos.pedidosPorMes || {});
+            const pedidosPorMesData = pedidosPorMesEntries.map(([mes, cantidad]) => ({
+              mes,
+              shortLabel: mes.split(' ')[0],
+              value: Number(cantidad) || 0,
+            }));
+            const pedidosPorMesChartConfig: ChartConfig = {
+              value: {
+                label: 'Pedidos',
+                color: '#111827',
+              },
+            };
+
             return (
               <>
                 {/* Métricas Clave de Pedidos */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Métricas de Pedidos
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {/* Total de Pedidos */}
-                      <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex flex-col items-center justify-center text-center">
-                          <p className="text-sm font-medium text-black mb-2">Total de Pedidos</p>
-                          <p className="text-3xl font-bold text-black">{formatNumber(metricasPedidos.totalPedidos)}</p>
-                        </div>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  {/* Total de Pedidos */}
+                  <Card className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="w-full">
+                        <p className="text-sm font-medium text-gray-500 mb-2">Total de Pedidos</p>
+                        <p className="text-lg md:text-xl font-bold text-gray-900 tracking-tight leading-tight break-words overflow-hidden">
+                          {formatNumber(metricasPedidos.totalPedidos)}
+                        </p>
                       </div>
+                    </CardContent>
+                  </Card>
 
-                      {/* Ingresos Totales */}
-                      <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex flex-col items-center justify-center text-center">
-                          <p className="text-sm font-medium text-black mb-2">Ingresos Totales</p>
-                          <p className="text-3xl font-bold text-black">${formatNumber(metricasPedidos.ingresosTotales)}</p>
-                        </div>
+                  {/* Ingresos Totales */}
+                  <Card className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="w-full">
+                        <p className="text-sm font-medium text-gray-500 mb-2">Ingresos Totales</p>
+                        <p className="text-lg md:text-xl font-bold text-gray-900 tracking-tight leading-tight break-words overflow-hidden">
+                          ${formatNumber(metricasPedidos.ingresosTotales)}
+                        </p>
                       </div>
+                    </CardContent>
+                  </Card>
 
-                      {/* Promedio por Pedido */}
-                      <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex flex-col items-center justify-center text-center">
-                          <p className="text-sm font-medium text-black mb-2">Promedio por Pedido</p>
-                          <p className="text-3xl font-bold text-black">${formatNumber(metricasPedidos.promedioValor)}</p>
-                        </div>
+                  {/* Promedio por Pedido */}
+                  <Card className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="w-full">
+                        <p className="text-sm font-medium text-gray-500 mb-2">Promedio por Pedido</p>
+                        <p className="text-lg md:text-xl font-bold text-gray-900 tracking-tight leading-tight break-words overflow-hidden">
+                          ${formatNumber(metricasPedidos.promedioValor)}
+                        </p>
                       </div>
+                    </CardContent>
+                  </Card>
 
-                      {/* Tasa de Cancelación */}
-                      <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex flex-col items-center justify-center text-center">
-                          <p className="text-sm font-medium text-black mb-2">Tasa de Cancelación</p>
-                          <p className="text-3xl font-bold text-black">{Math.round(metricasPedidos.tasaCancelacion)}%</p>
-                        </div>
+                  {/* Tasa de Cancelación */}
+                  <Card className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="w-full">
+                        <p className="text-sm font-medium text-gray-500 mb-2">Tasa de Cancelación</p>
+                        <p className="text-lg md:text-xl font-bold text-gray-900 tracking-tight leading-tight break-words overflow-hidden">
+                          {Math.round(metricasPedidos.tasaCancelacion)}%
+                        </p>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </div>
 
-                {/* Pedidos por Estado */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5" />
-                      Pedidos por Estado
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                      {Object.entries(metricasPedidos.pedidosPorEstado).map(([estado, cantidad]: [string, any]) => {
-                        const getEstadoBgColor = (estado: string) => {
-                          switch (estado) {
-                            case 'pendiente': return 'bg-yellow-500';
-                            case 'pagado': return 'bg-blue-500';
-                            case 'enviado': return 'bg-purple-500';
-                            case 'entregado': return 'bg-green-500';
-                            case 'cancelado': return 'bg-red-500';
-                            default: return 'bg-gray-500';
-                          }
-                        };
-                        return (
-                          <div key={estado} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <p className="text-sm font-medium text-gray-600 mb-1">{getEstadoNombre(estado)}</p>
-                            <p className="text-2xl font-bold text-gray-900">{cantidad}</p>
-                            <div className="mt-2">
-                              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  {/* Pedidos por Estado */}
+                  <Card className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                    <CardHeader className="border-b border-gray-100 bg-gray-50/50 py-4 px-6">
+                      <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                        <PieChart className="h-4 w-4 text-gray-500" />
+                        Pedidos por Estado
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        {Object.entries(metricasPedidos.pedidosPorEstado).map(([estado, cantidad]: [string, any]) => {
+                          const getEstadoBgColor = (estado: string) => {
+                            switch (estado) {
+                              case 'pendiente': return 'bg-yellow-500';
+                              case 'pagado': return 'bg-blue-500';
+                              case 'enviado': return 'bg-purple-500';
+                              case 'entregado': return 'bg-green-500';
+                              case 'cancelado': return 'bg-red-500';
+                              default: return 'bg-gray-500';
+                            }
+                          };
+                          const total = metricasPedidos.totalPedidos || 1;
+                          const percentage = (cantidad / total) * 100;
+                          
+                          return (
+                            <div key={estado} className="group">
+                              <div className="flex items-center justify-between text-sm mb-1.5">
+                                <span className="font-medium text-gray-700 capitalize flex items-center gap-2">
+                                  <span className={`w-2 h-2 rounded-full ${getEstadoBgColor(estado)}`}></span>
+                                  {getEstadoNombre(estado)}
+                                </span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-gray-500 font-medium">{percentage.toFixed(0)}%</span>
+                                  <span className="font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-md text-xs">{cantidad}</span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                                 <div 
-                                  className={`h-2 rounded-full ${getEstadoBgColor(estado)}`}
-                                  style={{ width: `${(cantidad / metricasPedidos.totalPedidos) * 100}%` }}
+                                  className={`h-full rounded-full transition-all duration-500 ${getEstadoBgColor(estado)}`}
+                                  style={{ width: `${percentage}%` }}
                                 ></div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                {/* Pedidos por Mes */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Pedidos por Mes (Últimos 6 meses)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {Object.entries(metricasPedidos.pedidosPorMes).map(([mes, cantidad]: [string, any]) => {
-                        const maxCantidad = Math.max(...Object.values(metricasPedidos.pedidosPorMes) as number[]);
-                        const porcentaje = maxCantidad > 0 ? (cantidad / maxCantidad) * 100 : 0;
-                        return (
-                          <div key={mes} className="flex items-center gap-4">
-                            <div className="w-24 text-sm font-medium text-gray-700">{mes}</div>
-                            <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
-                              <div 
-                                className="bg-[#196428] h-6 rounded-full flex items-center justify-end pr-2"
-                                style={{ width: `${porcentaje}%` }}
-                              >
-                                {cantidad > 0 && (
-                                  <span className="text-xs font-semibold text-white">{cantidad}</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="w-16 text-right text-sm font-semibold text-gray-900">{cantidad}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* Pedidos por Mes */}
+                  <Card className="rounded-xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                    <CardHeader className="border-b border-gray-100 bg-gray-50/50 py-4 px-6">
+                      <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                        <BarChart3 className="h-4 w-4 text-gray-500" />
+                        Pedidos por Mes (Últimos 6 meses)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {pedidosPorMesData.length ? (
+                        <ChartContainer
+                          config={pedidosPorMesChartConfig}
+                          className="h-[260px] w-full"
+                        >
+                          <BarChart data={pedidosPorMesData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                            <XAxis
+                              dataKey="shortLabel"
+                              tickLine={false}
+                              axisLine={false}
+                              tickMargin={10}
+                              stroke="#9ca3af"
+                              fontSize={12}
+                            />
+                            <YAxis
+                              allowDecimals={false}
+                              tickLine={false}
+                              axisLine={false}
+                              stroke="#9ca3af"
+                              fontSize={12}
+                            />
+                            <ChartTooltip
+                              cursor={{ fill: 'rgba(17, 24, 39, 0.08)' }}
+                              content={<ChartTooltipContent labelFormatter={(value) => `Mes: ${value}`} />}
+                            />
+                            <Bar
+                              dataKey="value"
+                              fill="var(--color-value)"
+                              radius={[6, 6, 0, 0]}
+                              maxBarSize={48}
+                              name="Pedidos"
+                            />
+                          </BarChart>
+                        </ChartContainer>
+                      ) : (
+                        <div className="h-[260px] flex items-center justify-center text-sm text-gray-500">
+                          No hay datos suficientes para mostrar la gráfica.
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
 
                 {/* Métricas de Productos */}
                 <Card>
@@ -6542,8 +6737,8 @@ const AdminDashboard = () => {
                     <div className="space-y-3">
                       {metricasProductos.topProductosCantidad.length > 0 ? (
                         metricasProductos.topProductosCantidad.map((producto, index) => (
-                          <div key={producto.producto_id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-[#196428] transition-colors">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#196428] text-white font-bold text-sm">
+                          <div key={producto.producto_id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-900 transition-colors">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-900 text-white font-bold text-sm">
                               {index + 1}
                             </div>
                             <div className="flex-1">
@@ -6551,7 +6746,7 @@ const AdminDashboard = () => {
                               <p className="text-sm text-gray-600">ID: {producto.producto_id}</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-[#196428] text-lg">{producto.cantidad} unidades</p>
+                              <p className="font-bold text-gray-900 text-lg">{producto.cantidad} unidades</p>
                               <p className="text-sm text-gray-600">${formatNumber(producto.ingresos)}</p>
                             </div>
                           </div>
@@ -6599,6 +6794,8 @@ const AdminDashboard = () => {
             );
           })()}
         </TabsContent>
+          </div>
+        </div>
       </Tabs>
 
       {/* Modal para mostrar CV */}
@@ -6619,203 +6816,6 @@ const AdminDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Formulario integrado para crear/editar trabajo */}
-      {isJobFormOpen && (
-        <div className="mt-6 bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {editingJob ? 'Editar Oferta de Trabajo' : 'Crear Nueva Oferta de Trabajo'}
-            </h3>
-            <button
-              onClick={resetJobForm}
-              className="text-gray-400 hover:text-gray-600 p-1"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmitJob} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Título del puesto *
-                </label>
-                <input
-                  type="text"
-                  name="titulo"
-                  value={jobFormData.titulo}
-                  onChange={handleJobInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:border-transparent text-sm"
-                  placeholder="Ej: Desarrollador Frontend"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Departamento *
-                </label>
-                <select
-                  name="departamento"
-                  value={jobFormData.departamento}
-                  onChange={handleJobInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:border-transparent text-sm"
-                >
-                  <option value="">Seleccionar departamento</option>
-                  <option value="Tecnología">Tecnología</option>
-                  <option value="Ventas">Ventas</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Recursos Humanos">Recursos Humanos</option>
-                  <option value="Operaciones">Operaciones</option>
-                  <option value="Finanzas">Finanzas</option>
-                  <option value="Atención al Cliente">Atención al Cliente</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ubicación *
-                </label>
-                <input
-                  type="text"
-                  name="ubicacion"
-                  value={jobFormData.ubicacion}
-                  onChange={handleJobInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:border-transparent text-sm"
-                  placeholder="Ej: Madrid, España"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de contrato *
-                </label>
-                <select
-                  name="tipo_contrato"
-                  value={jobFormData.tipo_contrato}
-                  onChange={handleJobInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:border-transparent text-sm"
-                >
-                  <option value="">Seleccionar tipo</option>
-                  <option value="Tiempo completo">Tiempo completo</option>
-                  <option value="Medio tiempo">Medio tiempo</option>
-                  <option value="Por horas">Por horas</option>
-                  <option value="Temporal">Temporal</option>
-                  <option value="Freelance">Freelance</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Salario *
-              </label>
-              <input
-                type="text"
-                name="salario"
-                value={jobFormData.salario}
-                onChange={handleJobInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:border-transparent text-sm"
-                placeholder="Ej: 30.000 - 35.000 €/año"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Descripción del puesto *
-              </label>
-              <textarea
-                name="descripcion"
-                value={jobFormData.descripcion}
-                onChange={handleJobInputChange}
-                rows={4}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:border-transparent text-sm"
-                placeholder="Describe las responsabilidades y funciones del puesto..."
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Requisitos (uno por línea)
-                </label>
-                <textarea
-                  value={jobFormData.requisitos.join('\n')}
-                  onChange={handleRequisitosChange}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:border-transparent text-sm"
-                  placeholder="Experiencia mínima de 2 años&#10;Conocimientos de JavaScript&#10;Licenciatura en Informática"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Beneficios (uno por línea)
-                </label>
-                <textarea
-                  value={jobFormData.beneficios.join('\n')}
-                  onChange={handleBeneficiosChange}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:border-transparent text-sm"
-                  placeholder="Seguro médico&#10;Flexibilidad horaria&#10;Formación continua"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="activo"
-                name="activo"
-                checked={jobFormData.activo}
-                onChange={(e) => setJobFormData(prev => ({ ...prev, activo: e.target.checked }))}
-                className="h-4 w-4 text-[#196428] focus:ring-[#196428] border-gray-300 rounded"
-              />
-              <label htmlFor="activo" className="ml-2 block text-sm text-gray-700">
-                Publicar oferta inmediatamente
-              </label>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 bg-[#196428] hover:bg-[#2d7a3d] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-md transition-colors flex items-center justify-center text-sm"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    <span>{editingJob ? 'Actualizando...' : 'Creando...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    <span>{editingJob ? 'Actualizar Oferta' : 'Crear Oferta'}</span>
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={resetJobForm}
-                disabled={isSubmitting}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed text-gray-700 font-medium py-2.5 px-4 rounded-md transition-colors text-sm"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 };
