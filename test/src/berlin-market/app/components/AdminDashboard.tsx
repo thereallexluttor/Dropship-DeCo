@@ -100,6 +100,9 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
+  const [subcategoriasLoaded, setSubcategoriasLoaded] = useState(false);
+  const [subcategoriasError, setSubcategoriasError] = useState<string | null>(null);
+  const [isSelectingSubcategorias, setIsSelectingSubcategorias] = useState(false);
 
   // Estado para el modal del CV
   const [cvModalOpen, setCvModalOpen] = useState(false);
@@ -708,46 +711,93 @@ const AdminDashboard = () => {
     };
   };
 
+  // Función helper para agregar timeout a promesas
+  const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number = 30000): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`Operación excedió el tiempo de espera (${timeoutMs}ms)`)), timeoutMs)
+      )
+    ]);
+  };
+
+  // Función helper para reintentos con backoff exponencial
+  const retryWithBackoff = async <T,>(
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    initialDelay: number = 1000
+  ): Promise<T> => {
+    let lastError: any;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await withTimeout(fn(), 30000); // 30 segundos de timeout
+      } catch (error: any) {
+        lastError = error;
+        if (attempt < maxRetries - 1) {
+          const delay = initialDelay * Math.pow(2, attempt);
+          console.log(`Intento ${attempt + 1} falló, reintentando en ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    throw lastError;
+  };
+
   const loadData = async () => {
     setIsLoading(true);
+    setSubcategoriasError(null);
     try {
-      // Cargar categorías
-      const { data: categoriasData, error: categoriasError} = await supabase
-        .from('categories')
-        .select('*')
-        .order('id', { ascending: true });
-
-      if (categoriasError) {
+      // Cargar categorías con retry
+      try {
+        const categoriasData = await retryWithBackoff(async () => {
+          const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .order('id', { ascending: true });
+          if (error) throw error;
+          return data;
+        });
+        setCategorias(categoriasData || []);
+        setTablesConfigured(true);
+      } catch (categoriasError: any) {
         console.error('Error cargando categorías:', categoriasError);
         // Si la tabla no existe, mostrar mensaje informativo
-        if (categoriasError.message.includes('relation "categories" does not exist')) {
+        if (categoriasError?.message?.includes('relation "categories" does not exist')) {
           setTablesConfigured(false);
           setIsLoading(false);
           return;
         }
-        throw categoriasError;
+        // Continuar aunque falle categorías, pero mostrar error
+        console.warn('No se pudieron cargar categorías, continuando...');
       }
-      setCategorias(categoriasData || []);
-      setTablesConfigured(true);
 
-      // Cargar subcategorías
-      const { data: subcategoriasData, error: subcategoriasError } = await supabase
-        .from('subcategories')
-        .select('*')
-        .order('categories_id')
-        .order('id');
-
-      if (subcategoriasError) {
+      // Cargar subcategorías con retry
+      try {
+        const subcategoriasData = await retryWithBackoff(async () => {
+          const { data, error } = await supabase
+            .from('subcategories')
+            .select('*')
+            .order('categories_id')
+            .order('id');
+          if (error) throw error;
+          return data;
+        });
+        setSubcategorias(subcategoriasData || []);
+        setSubcategoriasLoaded(true);
+        setSubcategoriasError(null);
+      } catch (subcategoriasError: any) {
         console.error('Error cargando subcategorías:', subcategoriasError);
+        setSubcategoriasError(subcategoriasError?.message || 'Error al cargar subcategorías');
+        setSubcategoriasLoaded(false);
         // Si la tabla no existe, mostrar mensaje informativo
-        if (subcategoriasError.message.includes('relation "subcategories" does not exist')) {
+        if (subcategoriasError?.message?.includes('relation "subcategories" does not exist')) {
           setTablesConfigured(false);
           setIsLoading(false);
           return;
         }
-        throw subcategoriasError;
+        // No lanzar error inmediatamente, permitir retry manual
+        setSubcategorias([]);
       }
-      setSubcategorias(subcategoriasData || []);
 
       // Cargar productos
       const { data: productosData, error: productosError } = await supabase
@@ -3535,7 +3585,47 @@ const AdminDashboard = () => {
                       Subcategorías (selecciona una o más)
                     </label>
                     <div className="w-full p-3 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-gray-900 max-h-60 overflow-y-auto bg-white">
-                      {subcategorias.length === 0 ? (
+                      {isLoading && !subcategoriasLoaded ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                          <span className="ml-2 text-sm text-gray-500">Cargando subcategorías...</span>
+                        </div>
+                      ) : subcategoriasError ? (
+                        <div className="py-4">
+                          <p className="text-sm text-red-600 mb-2">Error al cargar subcategorías: {subcategoriasError}</p>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setSubcategoriasError(null);
+                              setIsLoading(true);
+                              try {
+                                const subcategoriasData = await retryWithBackoff(async () => {
+                                  const { data, error } = await supabase
+                                    .from('subcategories')
+                                    .select('*')
+                                    .order('categories_id')
+                                    .order('id');
+                                  if (error) throw error;
+                                  return data;
+                                });
+                                setSubcategorias(subcategoriasData || []);
+                                setSubcategoriasLoaded(true);
+                                setSubcategoriasError(null);
+                              } catch (error: any) {
+                                setSubcategoriasError(error?.message || 'Error desconocido');
+                                setSubcategorias([]);
+                                setSubcategoriasLoaded(false);
+                              } finally {
+                                setIsLoading(false);
+                              }
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isLoading}
+                          >
+                            {isLoading ? 'Reintentando...' : 'Reintentar'}
+                          </button>
+                        </div>
+                      ) : subcategorias.length === 0 ? (
                         <p className="text-sm text-gray-500">No hay subcategorías disponibles</p>
                       ) : (
                         <div className="space-y-2">
@@ -3544,32 +3634,71 @@ const AdminDashboard = () => {
                             .map((subcategoria) => {
                               const subcategoriaId = subcategoria.id!; // Ya filtramos los undefined
                               const categoria = categorias.find(c => c.id === subcategoria.categories_id);
-                              const isSelected = newProducto.subcategorias_id.includes(subcategoriaId);
+                              const isSelected = Array.isArray(newProducto.subcategorias_id) && newProducto.subcategorias_id.includes(subcategoriaId);
+                              const isDisabled = isSelectingSubcategorias || isLoading || !subcategoriasLoaded;
+                              
                               return (
                                 <label
                                   key={subcategoriaId}
-                                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md transition-colors"
+                                  className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${
+                                    isDisabled 
+                                      ? 'cursor-not-allowed opacity-50' 
+                                      : 'cursor-pointer hover:bg-gray-50'
+                                  }`}
                                 >
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
+                                    disabled={isDisabled}
                                     onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setNewProducto({
-                                          ...newProducto,
-                                          subcategorias_id: [...newProducto.subcategorias_id, subcategoriaId]
+                                      // Prevenir múltiples clicks rápidos
+                                      if (isSelectingSubcategorias) return;
+                                      
+                                      try {
+                                        setIsSelectingSubcategorias(true);
+                                        
+                                        // Usar actualización funcional de estado para evitar condiciones de carrera
+                                        setNewProducto((prevProducto) => {
+                                          // Validar que prevProducto existe y tiene subcategorias_id
+                                          if (!prevProducto || !Array.isArray(prevProducto.subcategorias_id)) {
+                                            console.warn('Estado de producto inválido, reinicializando...');
+                                            return {
+                                              ...prevProducto,
+                                              subcategorias_id: e.target.checked ? [subcategoriaId] : []
+                                            };
+                                          }
+                                          
+                                          if (e.target.checked) {
+                                            // Evitar duplicados
+                                            if (prevProducto.subcategorias_id.includes(subcategoriaId)) {
+                                              return prevProducto;
+                                            }
+                                            return {
+                                              ...prevProducto,
+                                              subcategorias_id: [...prevProducto.subcategorias_id, subcategoriaId]
+                                            };
+                                          } else {
+                                            return {
+                                              ...prevProducto,
+                                              subcategorias_id: prevProducto.subcategorias_id.filter(id => id !== subcategoriaId)
+                                            };
+                                          }
                                         });
-                                      } else {
-                                        setNewProducto({
-                                          ...newProducto,
-                                          subcategorias_id: newProducto.subcategorias_id.filter(id => id !== subcategoriaId)
-                                        });
+                                      } catch (error: any) {
+                                        console.error('Error al seleccionar subcategoría:', error);
+                                        // Mostrar error pero no bloquear la UI
+                                        alert(`Error al seleccionar subcategoría: ${error?.message || 'Error desconocido'}`);
+                                      } finally {
+                                        // Usar timeout para permitir que React procese el estado
+                                        setTimeout(() => {
+                                          setIsSelectingSubcategorias(false);
+                                        }, 100);
                                       }
                                     }}
-                                    className="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
+                                    className="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                   />
                                   <span className="text-sm text-gray-700">
-                                    {categoria?.nombre} - {subcategoria.nombre}
+                                    {categoria?.nombre || 'Sin categoría'} - {subcategoria.nombre || 'Sin nombre'}
                                   </span>
                                 </label>
                               );
@@ -3577,7 +3706,7 @@ const AdminDashboard = () => {
                         </div>
                       )}
                     </div>
-                    {newProducto.subcategorias_id.length > 0 && (
+                    {newProducto.subcategorias_id && newProducto.subcategorias_id.length > 0 && (
                       <p className="mt-2 text-xs text-gray-500">
                         {newProducto.subcategorias_id.length} subcategoría{newProducto.subcategorias_id.length > 1 ? 's' : ''} seleccionada{newProducto.subcategorias_id.length > 1 ? 's' : ''}
                       </p>
