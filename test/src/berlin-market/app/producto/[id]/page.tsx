@@ -105,14 +105,11 @@ export default function ProductPage() {
   const [password, setPassword] = useState("")
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [productosDestacados, setProductosDestacados] = useState<Producto[]>([])
-  const [productosEnOferta, setProductosEnOferta] = useState<Producto[]>([])
+  // Estados para popup (solo si es necesario)
   const [uiElements, setUiElements] = useState<UI[]>([])
-  const [aliados, setAliados] = useState<{id: number, nombre: string, imagen_url: string}[]>([])
   const [showPopup, setShowPopup] = useState(false)
   const popupVideoRef = useRef<HTMLVideoElement | null>(null)
   const [popupMuted, setPopupMuted] = useState(false)
-  const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
 
   // Product states
   const [product, setProduct] = useState<Producto | null>(null)
@@ -174,11 +171,6 @@ export default function ProductPage() {
     window.location.href = `/tienda?search=${encodeURIComponent(product.nombre)}`
   }
 
-  const handleAddToCartHeader = (producto: Producto) => {
-    addToCart(producto, 1)
-    console.log(`Agregado al carrito: ${producto.nombre}`)
-  }
-
   const closePopup = () => {
     setShowPopup(false);
     sessionStorage.setItem('hasVisitedHome', 'true');
@@ -214,71 +206,34 @@ export default function ProductPage() {
     }
   }, [showPopup, popupMuted])
 
-  // Header useEffects
+  // Cargar popup UI solo si es necesario (diferido)
   useEffect(() => {
-    const cargarProductosDestacados = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('productos')
-          .select('*')
-          .eq('destacado', true);
+    // Solo cargar si no se ha visitado antes
+    const hasVisited = sessionStorage.getItem('hasVisitedHome')
+    if (!hasVisited) {
+      const cargarElementosUI = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('ui')
+            .select('*')
+            .order('id', { ascending: false })
+            .limit(1);
 
-        if (error) throw error;
-        setProductosDestacados(data || []);
-      } catch (error) {
-        console.error('Error cargando productos destacados:', error);
-      }
-    };
-
-    const cargarProductosEnOferta = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('productos')
-          .select('*')
-          .eq('descuento', true);
-
-        if (error) throw error;
-        setProductosEnOferta(data || []);
-      } catch (error) {
-        console.error('Error cargando productos en oferta:', error);
-      }
-    };
-
-    const cargarElementosUI = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('ui')
-          .select('*')
-          .order('id', { ascending: false });
-
-        if (error) throw error;
-        setUiElements(data || []);
-      } catch (error) {
-        console.error('Error cargando elementos UI:', error);
-      }
-    };
-
-    const cargarAliados = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('aliados')
-          .select('*')
-          .order('id', { ascending: true });
-
-        if (error) throw error;
-        setAliados(data || []);
-      } catch (error) {
-        console.error('Error cargando aliados:', error);
-      }
-    };
-
-    cargarProductosDestacados();
-    cargarProductosEnOferta();
-    cargarElementosUI();
-    cargarAliados();
+          if (error) throw error;
+          if (data && data.length > 0 && data[0].popup) {
+            setUiElements(data);
+            setShowPopup(true);
+          }
+        } catch (error) {
+          console.error('Error cargando elementos UI:', error);
+        }
+      };
+      // Diferir carga del popup para no bloquear la navegación
+      setTimeout(() => cargarElementosUI(), 1000);
+    }
   }, []);
 
-  // Cargar producto
+  // Cargar producto principal primero (crítico)
   useEffect(() => {
     const loadProduct = async () => {
       if (!params.id) return
@@ -309,23 +264,26 @@ export default function ProductPage() {
 
         if (error) throw error
         setProduct(data)
+        setIsLoading(false) // Mostrar producto inmediatamente
 
-        // Cargar productos relacionados (misma subcategoría)
+        // Cargar productos relacionados después (diferido, no crítico)
         if (data.subcategorias_id) {
-          const { data: related, error: relatedError } = await supabase
-            .from('productos')
-            .select('*')
-            .eq('subcategorias_id', data.subcategorias_id)
-            .neq('id', params.id)
-            .limit(4)
+          // Usar setTimeout para no bloquear el renderizado inicial
+          setTimeout(async () => {
+            const { data: related, error: relatedError } = await supabase
+              .from('productos')
+              .select('*')
+              .eq('subcategorias_id', data.subcategorias_id)
+              .neq('id', params.id)
+              .limit(4)
 
-          if (!relatedError && related) {
-            setRelatedProducts(related)
-          }
+            if (!relatedError && related) {
+              setRelatedProducts(related)
+            }
+          }, 100)
         }
       } catch (error) {
         console.error('Error loading product:', error)
-      } finally {
         setIsLoading(false)
       }
     }

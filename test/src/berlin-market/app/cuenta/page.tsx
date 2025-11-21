@@ -11,7 +11,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/app/components/MainLayout';
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
-import AdminDashboard from '@/app/components/AdminDashboard';
+import dynamic from 'next/dynamic';
+
+// Lazy load AdminDashboard para no bloquear la carga inicial
+const AdminDashboard = dynamic(() => import('@/app/components/AdminDashboard'), {
+  loading: () => (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428] mx-auto mb-4"></div>
+        <p className="text-gray-600">Cargando panel de administración...</p>
+      </div>
+    </div>
+  ),
+  ssr: false
+});
 
 interface UserProfile {
   id: string;
@@ -106,25 +119,50 @@ export default function CuentaPage() {
         setEditNombre(userData.nombre);
         setEditTelefono(userData.telefono);
         setEditDireccion(userData.direccion);
+        
+        // Mostrar página inmediatamente
+        setIsLoading(false);
 
-        // Obtener historial de compras desde la base de datos
-        await loadOrders(userData.id);
+        // Cargar pedidos en segundo plano (diferido)
+        setTimeout(() => {
+          loadOrders(userData.id);
+        }, 100);
+      } else {
+        setIsLoading(false);
       }
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const loadOrders = async (userId: string) => {
     try {
-      // Obtener todos los pedidos del usuario
+      // ✅ OPTIMIZACIÓN: Limitar a 10 pedidos más recientes para conexiones lentas
+      // Los usuarios pueden cargar más si lo necesitan
       const { data: pedidosData, error: pedidosError } = await supabase
         .from('pedidos')
-        .select('id, fecha, total, estado')
+        .select(`
+          id,
+          fecha,
+          total,
+          estado,
+          detalle_pedido (
+            id,
+            producto_id,
+            cantidad,
+            subtotal,
+            productos:producto_id (
+              nombre
+            )
+          )
+        `)
         .eq('usuario_id', userId)
-        .order('fecha', { ascending: false });
+        .order('fecha', { ascending: false })
+        .limit(10); // Limitar a 10 pedidos para conexiones lentas
 
       if (pedidosError) {
         console.error('Error fetching pedidos:', pedidosError);
+        setOrders([]);
         return;
       }
 
@@ -133,53 +171,23 @@ export default function CuentaPage() {
         return;
       }
 
-      // Para cada pedido, obtener sus detalles con los productos
-      const ordersWithDetails = await Promise.all(
-        pedidosData.map(async (pedido) => {
-          // Obtener detalles del pedido
-          const { data: detallesData, error: detallesError } = await supabase
-            .from('detalle_pedido')
-            .select('id, producto_id, cantidad, subtotal')
-            .eq('pedido_id', pedido.id);
+      // Procesar los datos de forma optimizada
+      const ordersWithDetails: Order[] = pedidosData.map((pedido: any) => ({
+        id: pedido.id,
+        pedido_id: pedido.id,
+        fecha: pedido.fecha,
+        total: pedido.total,
+        estado: pedido.estado,
+        detalles: (pedido.detalle_pedido || []).map((detalle: any) => ({
+          id: detalle.id,
+          producto_id: detalle.producto_id,
+          producto_nombre: detalle.productos?.nombre || 'Producto desconocido',
+          cantidad: detalle.cantidad,
+          subtotal: detalle.subtotal
+        }))
+      }));
 
-          if (detallesError) {
-            console.error('Error fetching detalles:', detallesError);
-            return null;
-          }
-
-          // Para cada detalle, obtener el nombre del producto
-          const detallesConProductos = await Promise.all(
-            (detallesData || []).map(async (detalle: any) => {
-              const { data: productoData } = await supabase
-                .from('productos')
-                .select('nombre')
-                .eq('id', detalle.producto_id)
-                .single();
-
-              return {
-                id: detalle.id,
-                producto_id: detalle.producto_id,
-                producto_nombre: productoData?.nombre || 'Producto desconocido',
-                cantidad: detalle.cantidad,
-                subtotal: detalle.subtotal
-              };
-            })
-          );
-
-          return {
-            id: pedido.id,
-            pedido_id: pedido.id,
-            fecha: pedido.fecha,
-            total: pedido.total,
-            estado: pedido.estado,
-            detalles: detallesConProductos
-          };
-        })
-      );
-
-      // Filtrar pedidos nulos (en caso de errores)
-      const validOrders = ordersWithDetails.filter((order): order is Order => order !== null);
-      setOrders(validOrders);
+      setOrders(ordersWithDetails);
     } catch (error) {
       console.error('Error loading orders:', error);
       setOrders([]);

@@ -44,8 +44,17 @@ export default function AccountPopover() {
   };
 
   const handleGoToAccount = () => {
+    // Prefetch antes de navegar para acelerar
+    router.prefetch('/cuenta');
     router.push('/cuenta');
   };
+
+  // Prefetch la página de cuenta cuando el popover se abre
+  React.useEffect(() => {
+    if (isOpen && user) {
+      router.prefetch('/cuenta');
+    }
+  }, [isOpen, user, router]);
 
   React.useEffect(() => {
     const handleResize = () => {

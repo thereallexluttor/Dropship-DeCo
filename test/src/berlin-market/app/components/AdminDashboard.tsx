@@ -194,8 +194,141 @@ const AdminDashboard = () => {
   useEffect(() => {}, []);
 
   useEffect(() => {
-    loadData();
+    // Cargar datos críticos primero, luego diferir el resto
+    loadDataOptimized();
   }, []);
+
+  // Nueva función optimizada para conexiones lentas
+  const loadDataOptimized = async () => {
+    setIsLoading(true);
+    
+    try {
+      // FASE 1: Cargar datos críticos primero (lo que se necesita para mostrar la UI básica)
+      console.log('🔄 Fase 1: Cargando datos críticos...');
+      
+      // Cargar categorías y productos en paralelo (críticos)
+      const [categoriasResult, productosResult] = await Promise.all([
+        retryWithBackoff(async () => {
+          const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .order('id', { ascending: true });
+          if (error) throw error;
+          return data;
+        }).catch(() => []),
+        supabase
+          .from('productos')
+          .select('id, nombre, imagen_url, descuento, destacado, novedad')
+          .order('id')
+          .limit(50) // Limitar inicialmente para conexiones lentas
+      ]);
+
+      setCategorias(categoriasResult || []);
+      setProductos((productosResult.data || []).map((p: any) => ({ ...p, descripcion: '', precios: [], tamano: [], stocks: [] })));
+      
+      // Mostrar dashboard inmediatamente con datos básicos
+      setIsLoading(false);
+      setTablesConfigured(true);
+
+      // FASE 2: Cargar datos secundarios en segundo plano (diferido)
+      setTimeout(async () => {
+        console.log('🔄 Fase 2: Cargando datos secundarios...');
+        await loadSecondaryData();
+      }, 500);
+
+      // FASE 3: Cargar datos opcionales después (diferido aún más)
+      setTimeout(async () => {
+        console.log('🔄 Fase 3: Cargando datos opcionales...');
+        await loadOptionalData();
+      }, 1500);
+
+    } catch (error: any) {
+      console.error('Error cargando datos críticos:', error);
+      setIsLoading(false);
+      if (error?.message?.includes('relation') && error?.message?.includes('does not exist')) {
+        setTablesConfigured(false);
+      }
+    }
+  };
+
+  // Cargar datos secundarios (importantes pero no críticos)
+  const loadSecondaryData = async () => {
+    try {
+      const [subcategoriasResult, marcasResult] = await Promise.all([
+        retryWithBackoff(async () => {
+          const { data, error } = await supabase
+            .from('subcategories')
+            .select('*')
+            .order('categories_id')
+            .order('id');
+          if (error) throw error;
+          return data;
+        }).catch(() => []),
+        supabase
+          .from('marcas')
+          .select('*')
+          .order('nombre_marca', { ascending: true })
+      ]);
+
+      setSubcategorias(subcategoriasResult || []);
+      setSubcategoriasLoaded(true);
+      setMarcas((marcasResult.data || []));
+      
+      // Cargar productos completos en segundo plano
+      const { data: productosCompletos } = await supabase
+        .from('productos')
+        .select('*')
+        .order('id');
+      if (productosCompletos) {
+        setProductos(productosCompletos);
+      }
+
+      // Cargar pedidos después (no crítico para mostrar dashboard)
+      setTimeout(() => {
+        loadPedidos().catch(console.error);
+      }, 300);
+    } catch (error) {
+      console.error('Error cargando datos secundarios:', error);
+    }
+  };
+
+  // Cargar datos opcionales (pueden esperar)
+  const loadOptionalData = async () => {
+    try {
+      const [uiResult, sobreNosotrosResult, trabajosResult, aplicacionesResult, tiendasResult, aliadosResult] = await Promise.all([
+        supabase.from('ui').select('*').order('id', { ascending: true }),
+        supabase.from('sobre_nosotros').select('*').eq('id', 1).single(),
+        supabase.from('trabajos').select('*').order('fecha_creacion', { ascending: false }),
+        supabase.from('aplicaciones').select(`
+          id,
+          trabajo_id,
+          nombre_aplicante,
+          email_aplicante,
+          telefono_aplicante,
+          experiencia_laboral,
+          disponibilidad,
+          mensaje,
+          cv_url,
+          estado,
+          fecha_aplicacion,
+          fecha_revision,
+          notas_revision,
+          trabajos!trabajo_id(titulo, departamento, ubicacion)
+        `).order('fecha_aplicacion', { ascending: false }),
+        supabase.from('tiendas').select('*').order('ciudad', { ascending: true }).order('nombre', { ascending: true }),
+        supabase.from('aliados').select('*').order('id', { ascending: true })
+      ]);
+
+      if (!uiResult.error) setUiElements(uiResult.data || []);
+      if (!sobreNosotrosResult.error) setSobreNosotros(sobreNosotrosResult.data);
+      if (!trabajosResult.error) setTrabajos(trabajosResult.data || []);
+      if (!aplicacionesResult.error) setAplicaciones((aplicacionesResult.data as AplicacionConTrabajo[]) || []);
+      if (!tiendasResult.error) setTiendas(tiendasResult.data || []);
+      if (!aliadosResult.error) setAliados(aliadosResult.data || []);
+    } catch (error) {
+      console.error('Error cargando datos opcionales:', error);
+    }
+  };
 
   // Función para cargar pedidos con detalles
   // Función para cancelar automáticamente pedidos pendientes con más de 7 días
@@ -2643,7 +2776,7 @@ const AdminDashboard = () => {
     <div className="flex h-screen w-full bg-white overflow-hidden font-sans text-gray-900">
       <Tabs defaultValue="categorias" className="flex w-full h-full" orientation="vertical">
         <div className="w-64 flex-shrink-0 border-r border-gray-100 bg-gray-50/40 flex flex-col">
-          <TabsList className="flex flex-col h-full w-full items-stretch gap-1 p-3 bg-transparent space-y-0.5 overflow-y-auto">
+          <TabsList className="flex flex-col h-full w-full items-stretch gap-1 p-3 bg-transparent space-y-0.5 overflow-y-auto border border-gray-200 rounded-md">
             <div className="px-3 py-2">
                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Gestión</p>
             </div>
@@ -2729,9 +2862,9 @@ const AdminDashboard = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-50/30">
-          <div className="max-w-7xl mx-auto px-10 py-8 pb-20 w-full">
+          <div className="max-w-7xl mx-auto px-10 py-8 pb-20 w-full border border-gray-200 rounded-md bg-white m-4">
 
-        <TabsContent value="categorias" className="space-y-8">
+        <TabsContent value="categorias" className="space-y-8 border border-gray-200 rounded-md p-6 bg-white">
           <Card className="border border-gray-200 shadow-sm bg-white">
             <CardHeader className="pb-6 space-y-1">
               <CardTitle className="text-2xl font-semibold tracking-tight flex items-center gap-3">
@@ -3363,7 +3496,7 @@ const AdminDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="subcategorias" className="space-y-6">
+        <TabsContent value="subcategorias" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           <div className="flex flex-col gap-6">
             <section className="rounded-2xl border border-gray-200 bg-white/90 p-6 shadow-sm">
               <div className="space-y-1">
@@ -3566,7 +3699,7 @@ const AdminDashboard = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="productos" className="space-y-6">
+        <TabsContent value="productos" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -4466,7 +4599,7 @@ const AdminDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="marcas" className="space-y-6">
+        <TabsContent value="marcas" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -4577,7 +4710,7 @@ const AdminDashboard = () => {
         </TabsContent>
 
         {/* PESTAÑA UI */}
-        <TabsContent value="ui" className="space-y-6">
+        <TabsContent value="ui" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           {/* Selector de categoría UI */}
           <div className="flex gap-2 mb-6">
             <Button
@@ -5363,7 +5496,7 @@ const AdminDashboard = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="tiendas" className="space-y-6">
+        <TabsContent value="tiendas" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -5548,7 +5681,7 @@ const AdminDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="aliados" className="space-y-6">
+        <TabsContent value="aliados" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -5769,7 +5902,7 @@ const AdminDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="vacantes" className="space-y-6">
+        <TabsContent value="vacantes" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -6216,7 +6349,7 @@ const AdminDashboard = () => {
         </TabsContent>
 
         {/* Nueva pestaña de Pedidos */}
-        <TabsContent value="pedidos" className="space-y-6">
+        <TabsContent value="pedidos" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           <Card className="rounded-2xl border border-gray-200 bg-white/90 shadow-sm">
             <CardHeader className="border-b border-gray-100 pb-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -6647,7 +6780,7 @@ const AdminDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="analitica" className="space-y-6">
+        <TabsContent value="analitica" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
           {(() => {
             const metricasPedidos = calcularMetricasPedidos();
             const metricasProductos = calcularMetricasProductos();

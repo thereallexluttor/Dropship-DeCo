@@ -140,11 +140,13 @@ const Vacantes = () => {
     const cargarTrabajos = async () => {
       try {
         setIsLoading(true)
+        // Cargar trabajos de forma optimizada
         const trabajosData = await obtenerTrabajos()
         setTrabajos(trabajosData)
       } catch (error) {
         console.error('Error obteniendo trabajos:', error)
       } finally {
+        // Mostrar página inmediatamente después de cargar
         setIsLoading(false)
       }
     }

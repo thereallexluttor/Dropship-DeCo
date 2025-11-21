@@ -29,12 +29,15 @@ export default function ContactoPage() {
   // Cargar tiendas desde Supabase al montar el componente
   useEffect(() => {
     const loadStores = async () => {
+      // Mostrar página inmediatamente con datos por defecto
+      setIsLoading(false)
+      
+      // Cargar tiendas reales en segundo plano
       const supabaseStores = await loadStoresFromSupabase()
       if (supabaseStores.length > 0) {
         setStoresList(supabaseStores)
         setInitialPetsStore(findPetsStore(supabaseStores))
       }
-      setIsLoading(false)
     }
     loadStores()
   }, [])

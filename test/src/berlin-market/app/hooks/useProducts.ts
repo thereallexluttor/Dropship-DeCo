@@ -128,6 +128,7 @@ export const useProducts = () => {
 
       try {
         // ✅ OPTIMIZACIÓN: Ejecutar consultas en paralelo usando Promise.all()
+        // Marcar como no cargando tan pronto como tengamos los datos básicos
         const [productosResult, categoriasResult, marcasResult, subcategoriasResult] = await Promise.all([
           supabase
             .from('productos')

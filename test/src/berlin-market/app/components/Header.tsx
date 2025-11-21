@@ -70,8 +70,10 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
       router.prefetch("/")
       router.prefetch("/tienda")
       router.prefetch("/carrito")
+      router.prefetch("/cuenta")
       router.prefetch("/sobre-nosotros")
       router.prefetch("/vacantes")
+      router.prefetch("/contacto")
     } catch {}
   })
 
@@ -324,19 +326,19 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
               </div>
               <div className="w-[1px] h-6 bg-gray-200 flex-shrink-0"></div>
               <div className="flex items-center space-x-1 sm:space-x-2">
-                <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]">
+                <Link href="/sobre-nosotros" prefetch className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]" onMouseEnter={() => router.prefetch("/sobre-nosotros")}>
                   <div className={`h-4 w-4 ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <Info className="h-full w-full" />
                   </div>
                   <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Info</span>
                 </Link>
-                <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]">
+                <Link href="/vacantes" prefetch className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]" onMouseEnter={() => router.prefetch("/vacantes")}>
                   <div className={`h-4 w-4 ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <Briefcase className="h-full w-full" />
                   </div>
                   <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Vacantes</span>
                 </Link>
-                <Link href="/contacto" className="group flex flex-col items-center justify-center min-w-[44px]">
+                <Link href="/contacto" prefetch className="group flex flex-col items-center justify-center min-w-[44px]" onMouseEnter={() => router.prefetch("/contacto")}>
                   <div className={`h-4 w-4 ${pathname === "/contacto" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <MapPin className="h-full w-full" />
                   </div>
@@ -388,13 +390,13 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   </div>
                   <span className={`text-xs font-light ${pathname === "/" ? "text-[#196428]" : "text-gray-500"} mt-1 transition-colors`}>Inicio</span>
                 </Link>
-                <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
+                <Link href="/tienda" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/tienda")}>
                   <div className={`h-4 w-4 ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingBag className="h-full w-full" />
                   </div>
                   <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Tienda</span>
                 </Link>
-                <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
+                <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/carrito")}>
                   <div className={`h-4 w-4 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <ShoppingCart className="h-full w-full" />
                   </div>
@@ -404,19 +406,19 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
               </div>
               <div className="w-[1.5px] h-5 bg-gray-200"></div>
               <div className="flex items-center space-x-3">
-                <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
+                <Link href="/sobre-nosotros" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/sobre-nosotros")}>
                   <div className={`h-4 w-4 ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <Info className="h-full w-full" />
                   </div>
                   <span className={`text-xs font-light ${pathname === "/sobre-nosotros" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Sobre Nosotros</span>
                 </Link>
-                <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
+                <Link href="/vacantes" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/vacantes")}>
                   <div className={`h-4 w-4 ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <Briefcase className="h-full w-full" />
                   </div>
                   <span className={`text-xs font-light ${pathname === "/vacantes" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Vacantes</span>
                 </Link>
-                <Link href="/contacto" className="group flex flex-col items-center justify-center">
+                <Link href="/contacto" prefetch className="group flex flex-col items-center justify-center" onMouseEnter={() => router.prefetch("/contacto")}>
                   <div className={`h-4 w-4 ${pathname === "/contacto" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                     <MapPin className="h-full w-full" />
                   </div>

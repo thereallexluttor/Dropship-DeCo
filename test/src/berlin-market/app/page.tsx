@@ -175,67 +175,69 @@ export default function Home() {
     };
   }, []);
 
-  // Efecto para los carruseles de las cards
-  // Cargar productos destacados
+  // Cargar datos críticos primero (banners UI), luego diferir el resto
   useEffect(() => {
-    const cargarProductosDestacados = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('productos')
-          .select('*')
-          .eq('destacado', true);
-
-        if (error) throw error;
-        setProductosDestacados(data || []);
-      } catch (error) {
-        console.error('Error cargando productos destacados:', error);
-      }
-    };
-
-    cargarProductosDestacados();
-  }, []);
-
-  // Cargar productos en oferta
-  useEffect(() => {
-    const cargarProductosEnOferta = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('productos')
-          .select('*')
-          .eq('descuento', true);
-
-        if (error) throw error;
-        setProductosEnOferta(data || []);
-      } catch (error) {
-        console.error('Error cargando productos en oferta:', error);
-      }
-    };
-
-    cargarProductosEnOferta();
-  }, []);
-
-  // Cargar elementos UI (banners, popups, etc.)
-  useEffect(() => {
-    const cargarElementosUI = async () => {
+    // Cargar solo banners UI primero (crítico para mostrar la página)
+    const cargarBannersUI = async () => {
       try {
         const { data, error } = await supabase
           .from('ui')
-          .select('*')
-          .order('id', { ascending: false }); // Ordenar por ID descendente para obtener el más reciente primero
+          .select('banner, popup')
+          .order('id', { ascending: false })
+          .limit(1);
 
         if (error) throw error;
-        setUiElements(data || []);
+        if (data && data.length > 0) {
+          setUiElements(data);
+        }
       } catch (error) {
-        console.error('Error cargando elementos UI:', error);
+        console.error('Error cargando banners UI:', error);
       }
     };
 
-    cargarElementosUI();
-  }, []);
+    cargarBannersUI();
 
-  // Cargar aliados iniciales
-  useEffect(() => {
-    cargarAliados();
+    // Diferir cargas no críticas para no bloquear el renderizado inicial
+    setTimeout(() => {
+      // Cargar productos destacados (diferido)
+      const cargarProductosDestacados = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('productos')
+            .select('*')
+            .eq('destacado', true);
+
+          if (error) throw error;
+          setProductosDestacados(data || []);
+        } catch (error) {
+          console.error('Error cargando productos destacados:', error);
+        }
+      };
+
+      // Cargar productos en oferta (diferido)
+      const cargarProductosEnOferta = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('productos')
+            .select('*')
+            .eq('descuento', true);
+
+          if (error) throw error;
+          setProductosEnOferta(data || []);
+        } catch (error) {
+          console.error('Error cargando productos en oferta:', error);
+        }
+      };
+
+      // Cargar aliados (diferido)
+      cargarAliados();
+
+      // Ejecutar en paralelo
+      Promise.all([
+        cargarProductosDestacados(),
+        cargarProductosEnOferta()
+      ]).catch(console.error);
+    }, 100);
   }, []);
 
   // Resetear el slide activo cuando cambie la cantidad de aliados o el total de slides

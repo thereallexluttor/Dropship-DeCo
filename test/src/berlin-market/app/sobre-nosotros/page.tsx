@@ -24,6 +24,10 @@ export default function AboutUs() {
   useEffect(() => {
     const cargarContenido = async () => {
       try {
+        // Mostrar contenido por defecto inmediatamente
+        setIsLoading(false)
+        
+        // Cargar contenido real en segundo plano
         const { data, error } = await supabase
           .from('sobre_nosotros')
           .select('*')
@@ -37,8 +41,6 @@ export default function AboutUs() {
         }
       } catch (error) {
         console.error('Error:', error)
-      } finally {
-        setIsLoading(false)
       }
     }
 
