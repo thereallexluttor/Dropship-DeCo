@@ -58,7 +58,7 @@ export interface Marca {
 
 // Tipos para tamaños de productos
 export interface TamanoProducto {
-  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB'
+  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB' | 'UI' | 'Unidad' | 'Caja' | 'Tabletas' | 'Comprimidos' | 'Capsulas' | 'Sachet' | 'Blister'
   cantidad: number
 }
 
@@ -66,7 +66,7 @@ export interface TamanoProducto {
 export interface ProductoStock {
   id?: string  // identificador único para cada combinación
   cantidad: number  // cantidad del tamaño
-  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB'
+  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB' | 'UI' | 'Unidad' | 'Caja' | 'Tabletas' | 'Comprimidos' | 'Capsulas' | 'Sachet' | 'Blister'
   precio: number   // precio para este tamaño
   stock: number    // stock disponible para este tamaño
 }

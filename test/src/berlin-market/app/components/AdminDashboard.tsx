@@ -4033,6 +4033,7 @@ const AdminDashboard = () => {
                               <option value="Caja">Caja</option>
                               <option value="Tabletas">Tabletas</option>
                               <option value="Comprimidos">Comprimidos</option>
+                              <option value="Capsulas">Capsulas</option>
                               <option value="Sachet">Sachet</option>
                               <option value="Blister">Blister</option>
                             </select>
@@ -4420,6 +4421,7 @@ const AdminDashboard = () => {
                                               <option value="Caja">Caja</option>
                                               <option value="Tabletas">Tabletas</option>
                                               <option value="Comprimidos">Comprimidos</option>
+                                              <option value="Capsulas">Capsulas</option>
                                               <option value="Sachet">Sachet</option>
                                               <option value="Blister">Blister</option>
                                             </select>
