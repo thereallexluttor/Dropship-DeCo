@@ -44,17 +44,22 @@ export default function AccountPopover() {
   };
 
   const handleGoToAccount = () => {
-    // Prefetch antes de navegar para acelerar
-    router.prefetch('/cuenta');
     router.push('/cuenta');
   };
 
-  // Prefetch la página de cuenta cuando el popover se abre
+  // ✅ OPTIMIZACIÓN: Prefetching agresivo - prefetch cuando el popover se abre
   React.useEffect(() => {
     if (isOpen && user) {
       router.prefetch('/cuenta');
     }
   }, [isOpen, user, router]);
+
+  // ✅ OPTIMIZACIÓN: Prefetch en hover para máxima velocidad
+  const handleMouseEnter = () => {
+    if (user) {
+      router.prefetch('/cuenta');
+    }
+  };
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -121,6 +126,7 @@ export default function AccountPopover() {
             <div className="space-y-2">
               <button
                 onClick={handleGoToAccount}
+                onMouseEnter={handleMouseEnter}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
               >
                 <Settings className="h-4 w-4 text-[#196428]" />

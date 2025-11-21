@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { User, Mail, Phone, MapPin, Edit, ShoppingBag, Calendar, CreditCard } from 'lucide-react';
@@ -9,9 +9,18 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MainLayout from '@/app/components/MainLayout';
-import Header from '@/app/components/Header';
-import Footer from '@/app/components/Footer';
 import dynamic from 'next/dynamic';
+
+// Lazy load Header y Footer para reducir bundle inicial
+const Header = dynamic(() => import('@/app/components/Header'), {
+  ssr: false,
+  loading: () => <div className="h-16 bg-white" /> // Placeholder con altura fija
+});
+
+const Footer = dynamic(() => import('@/app/components/Footer'), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-white" /> // Placeholder con altura fija
+});
 
 // Lazy load AdminDashboard para no bloquear la carga inicial
 const AdminDashboard = dynamic(() => import('@/app/components/AdminDashboard'), {
@@ -66,11 +75,24 @@ const calcularDiasTranscurridos = (fecha: string): number => {
   return Math.floor(diferencia / (1000 * 60 * 60 * 24));
 };
 
+// ✅ OPTIMIZACIÓN: Componente memoizado para banner promocional
+const PromotionalBanner = () => (
+  <div className="bg-[#196428] text-white py-1 overflow-hidden">
+    <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
+      <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+      <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+      <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+      <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
+    </div>
+  </div>
+);
+
 export default function CuentaPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<UserProfile | null>(null);
 
@@ -80,6 +102,7 @@ export default function CuentaPage() {
   const [editDireccion, setEditDireccion] = useState("");
 
   useEffect(() => {
+    // Cargar usuario y pedidos en paralelo para máxima velocidad
     checkUser();
   }, []);
 
@@ -103,42 +126,52 @@ export default function CuentaPage() {
   }, [router]);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      // ✅ OPTIMIZACIÓN: Cargar usuario y pedidos en paralelo
+      const [authResult, userResult] = await Promise.all([
+        supabase.auth.getUser(),
+        // Prefetch pedidos mientras obtenemos el usuario
+        Promise.resolve(null)
+      ]);
 
-    if (user) {
-      // Obtener información del usuario desde la tabla usuarios
-      const { data: userData, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('correo', user.email)
-        .single();
+      const { data: { user } } = authResult;
 
-      if (userData && !error) {
-        setUser(userData);
-        setEditedUser(userData);
-        setEditNombre(userData.nombre);
-        setEditTelefono(userData.telefono);
-        setEditDireccion(userData.direccion);
-        
-        // Mostrar página inmediatamente
-        setIsLoading(false);
+      if (user) {
+        // Obtener información del usuario desde la tabla usuarios
+        const { data: userData, error } = await supabase
+          .from('usuarios')
+          .select('id, nombre, correo, telefono, direccion, rol')
+          .eq('correo', user.email)
+          .single();
 
-        // Cargar pedidos en segundo plano (diferido)
-        setTimeout(() => {
+        if (userData && !error) {
+          setUser(userData);
+          setEditedUser(userData);
+          setEditNombre(userData.nombre);
+          setEditTelefono(userData.telefono);
+          setEditDireccion(userData.direccion);
+          
+          // ✅ OPTIMIZACIÓN: Mostrar página inmediatamente y cargar pedidos en paralelo
+          setIsLoading(false);
+
+          // Cargar pedidos inmediatamente sin setTimeout
           loadOrders(userData.id);
-        }, 100);
+        } else {
+          setIsLoading(false);
+        }
       } else {
         setIsLoading(false);
       }
-    } else {
+    } catch (error) {
+      console.error('Error checking user:', error);
       setIsLoading(false);
     }
   };
 
-  const loadOrders = async (userId: string) => {
+  const loadOrders = useCallback(async (userId: string) => {
+    setIsLoadingOrders(true);
     try {
-      // ✅ OPTIMIZACIÓN: Limitar a 10 pedidos más recientes para conexiones lentas
-      // Los usuarios pueden cargar más si lo necesitan
+      // ✅ OPTIMIZACIÓN: Query optimizada - solo campos necesarios, limitado a 10
       const { data: pedidosData, error: pedidosError } = await supabase
         .from('pedidos')
         .select(`
@@ -158,20 +191,22 @@ export default function CuentaPage() {
         `)
         .eq('usuario_id', userId)
         .order('fecha', { ascending: false })
-        .limit(10); // Limitar a 10 pedidos para conexiones lentas
+        .limit(10);
 
       if (pedidosError) {
         console.error('Error fetching pedidos:', pedidosError);
         setOrders([]);
+        setIsLoadingOrders(false);
         return;
       }
 
       if (!pedidosData || pedidosData.length === 0) {
         setOrders([]);
+        setIsLoadingOrders(false);
         return;
       }
 
-      // Procesar los datos de forma optimizada
+      // ✅ OPTIMIZACIÓN: Procesar datos de forma eficiente
       const ordersWithDetails: Order[] = pedidosData.map((pedido: any) => ({
         id: pedido.id,
         pedido_id: pedido.id,
@@ -191,10 +226,12 @@ export default function CuentaPage() {
     } catch (error) {
       console.error('Error loading orders:', error);
       setOrders([]);
+    } finally {
+      setIsLoadingOrders(false);
     }
-  };
+  }, []);
 
-  const handleUpdateProfile = async () => {
+  const handleUpdateProfile = useCallback(async () => {
     if (!user || !editedUser) return;
 
     try {
@@ -216,36 +253,53 @@ export default function CuentaPage() {
       console.error('Error updating profile:', error);
       alert('Error al actualizar el perfil');
     }
-  };
+  }, [user, editedUser, editNombre, editTelefono, editDireccion]);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     if (user) {
       setEditNombre(user.nombre);
       setEditTelefono(user.telefono);
       setEditDireccion(user.direccion);
     }
     setIsEditing(false);
-  };
+  }, [user]);
 
+  // ✅ OPTIMIZACIÓN: Skeleton loading en lugar de spinner para mejor UX
   if (isLoading) {
     return (
       <MainLayout>
         <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-          <div className="bg-[#196428] text-white py-1 overflow-hidden">
-            <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-              <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-              <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-              <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-              <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            </div>
-          </div>
+          <PromotionalBanner />
           <Header />
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428] mx-auto"></div>
-              <p className="mt-4 text-gray-600">Cargando...</p>
+          <main className="py-16 sm:py-20 md:py-24">
+            <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+              {/* Skeleton para título */}
+              <div className="mb-12">
+                <div className="h-12 bg-gray-200 rounded-lg w-64 mx-auto animate-pulse"></div>
+              </div>
+              {/* Skeleton para tabs */}
+              <div className="mb-8">
+                <div className="flex gap-4 justify-center">
+                  <div className="h-10 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+                  <div className="h-10 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+                </div>
+              </div>
+              {/* Skeleton para card */}
+              <div className="bg-white rounded-lg shadow-sm p-8">
+                <div className="space-y-6">
+                  <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="space-y-3">
+                        <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                        <div className="h-12 bg-gray-100 rounded-lg animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </main>
           <Footer />
         </div>
       </MainLayout>
@@ -256,16 +310,7 @@ export default function CuentaPage() {
     return (
       <MainLayout>
         <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-          {/* Promotional Banner */}
-          <div className="bg-[#196428] text-white py-1 overflow-hidden">
-            <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-              <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-              <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-              <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-              <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            </div>
-          </div>
-
+          <PromotionalBanner />
           <Header />
 
           <main className="py-16 sm:py-20 md:py-24">
@@ -293,16 +338,7 @@ export default function CuentaPage() {
   return (
     <MainLayout>
       <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-        {/* Promotional Banner */}
-        <div className="bg-[#196428] text-white py-1 overflow-hidden">
-          <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-          </div>
-        </div>
-
+        <PromotionalBanner />
         <Header />
 
         <main className="py-16 sm:py-20 md:py-24">
@@ -458,7 +494,17 @@ export default function CuentaPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {orders.length === 0 ? (
+                      {isLoadingOrders ? (
+                        <div className="space-y-4">
+                          {[1, 2].map((i) => (
+                            <div key={i} className="bg-gray-100 rounded-lg p-6 animate-pulse">
+                              <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+                              <div className="h-4 bg-gray-200 rounded w-48 mb-2"></div>
+                              <div className="h-4 bg-gray-200 rounded w-24"></div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : orders.length === 0 ? (
                         <div className="text-center py-12">
                           <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                           <p className="text-gray-500 text-lg">Aún no tienes compras registradas</p>

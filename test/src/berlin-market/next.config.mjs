@@ -23,6 +23,7 @@ const nextConfig = {
     localPatterns: [
       { pathname: '/brands/**' },
       { pathname: '/icons/**' },
+      { pathname: '/navidad/**' },
       { pathname: '/cap*.png' },
       { pathname: '/unisantander.png' },
       { pathname: '/unisantander_footer.png' },

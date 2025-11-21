@@ -1817,117 +1817,61 @@ export default function Home() {
             </div>
           ))}
 
-          {/* Bastones navideños decorativos */}
-          {/* Bastón izquierdo superior */}
+          {/* Imágenes navideñas decorativas */}
+          {/* Imagen esquina superior izquierda */}
           <div
-            className="candy-cane fixed top-10 left-4 md:left-8 z-[9998] pointer-events-none"
+            className="navidad-float fixed top-10 left-4 md:left-8 z-[9998] pointer-events-none"
             style={{ animationDelay: '0s' }}
           >
-            <svg width="50" height="140" viewBox="0 0 50 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Cuerpo del bastón con rayas en espiral */}
-              <path
-                d="M25 10 Q15 20, 25 30 Q35 40, 25 50 Q15 60, 25 70 Q35 80, 25 90 Q15 100, 25 110 Q35 120, 25 130"
-                stroke="#DC2626"
-                strokeWidth="10"
-                strokeLinecap="round"
-                fill="none"
-              />
-              <path
-                d="M25 10 Q15 20, 25 30 Q35 40, 25 50 Q15 60, 25 70 Q35 80, 25 90 Q15 100, 25 110 Q35 120, 25 130"
-                stroke="white"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray="8 8"
-                fill="none"
-              />
-              {/* Gancho superior */}
-              <circle cx="25" cy="10" r="6" fill="#DC2626" />
-              <circle cx="25" cy="10" r="3" fill="white" />
-            </svg>
+            <Image
+              src="/navidad/1.png"
+              alt="Decoración navideña"
+              width={120}
+              height={120}
+              className="object-contain"
+            />
           </div>
 
-          {/* Bastón derecho superior */}
+          {/* Imagen esquina superior derecha */}
           <div
-            className="candy-cane fixed top-10 right-4 md:right-8 z-[9998] pointer-events-none"
-            style={{ animationDelay: '1.5s' }}
+            className="navidad-float fixed top-10 right-4 md:right-8 z-[9998] pointer-events-none"
+            style={{ animationDelay: '1s' }}
           >
-            <svg width="50" height="140" viewBox="0 0 50 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Cuerpo del bastón con rayas en espiral */}
-              <path
-                d="M25 10 Q35 20, 25 30 Q15 40, 25 50 Q35 60, 25 70 Q15 80, 25 90 Q35 100, 25 110 Q15 120, 25 130"
-                stroke="#DC2626"
-                strokeWidth="10"
-                strokeLinecap="round"
-                fill="none"
-              />
-              <path
-                d="M25 10 Q35 20, 25 30 Q15 40, 25 50 Q35 60, 25 70 Q15 80, 25 90 Q35 100, 25 110 Q15 120, 25 130"
-                stroke="white"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray="8 8"
-                fill="none"
-              />
-              {/* Gancho superior */}
-              <circle cx="25" cy="10" r="6" fill="#DC2626" />
-              <circle cx="25" cy="10" r="3" fill="white" />
-            </svg>
+            <Image
+              src="/navidad/2.png"
+              alt="Decoración navideña"
+              width={120}
+              height={120}
+              className="object-contain"
+            />
           </div>
 
-          {/* Bastón izquierdo inferior */}
+          {/* Imagen esquina inferior izquierda */}
           <div
-            className="candy-cane fixed bottom-10 left-4 md:left-8 z-[9998] pointer-events-none"
+            className="navidad-float fixed bottom-10 left-4 md:left-8 z-[9998] pointer-events-none"
             style={{ animationDelay: '0.5s' }}
           >
-            <svg width="50" height="140" viewBox="0 0 50 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Cuerpo del bastón con rayas en espiral */}
-              <path
-                d="M25 10 Q15 20, 25 30 Q35 40, 25 50 Q15 60, 25 70 Q35 80, 25 90 Q15 100, 25 110 Q35 120, 25 130"
-                stroke="#DC2626"
-                strokeWidth="10"
-                strokeLinecap="round"
-                fill="none"
-              />
-              <path
-                d="M25 10 Q15 20, 25 30 Q35 40, 25 50 Q15 60, 25 70 Q35 80, 25 90 Q15 100, 25 110 Q35 120, 25 130"
-                stroke="white"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray="8 8"
-                fill="none"
-              />
-              {/* Gancho superior */}
-              <circle cx="25" cy="10" r="6" fill="#DC2626" />
-              <circle cx="25" cy="10" r="3" fill="white" />
-            </svg>
+            <Image
+              src="/navidad/3.png"
+              alt="Decoración navideña"
+              width={120}
+              height={120}
+              className="object-contain"
+            />
           </div>
 
-          {/* Bastón derecho inferior */}
+          {/* Imagen esquina inferior derecha */}
           <div
-            className="candy-cane fixed bottom-10 right-4 md:right-8 z-[9998] pointer-events-none"
-            style={{ animationDelay: '2s' }}
+            className="navidad-float fixed bottom-10 right-4 md:right-8 z-[9998] pointer-events-none"
+            style={{ animationDelay: '1.5s' }}
           >
-            <svg width="50" height="140" viewBox="0 0 50 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Cuerpo del bastón con rayas en espiral */}
-              <path
-                d="M25 10 Q35 20, 25 30 Q15 40, 25 50 Q35 60, 25 70 Q15 80, 25 90 Q35 100, 25 110 Q15 120, 25 130"
-                stroke="#DC2626"
-                strokeWidth="10"
-                strokeLinecap="round"
-                fill="none"
-              />
-              <path
-                d="M25 10 Q35 20, 25 30 Q15 40, 25 50 Q35 60, 25 70 Q15 80, 25 90 Q35 100, 25 110 Q15 120, 25 130"
-                stroke="white"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray="8 8"
-                fill="none"
-              />
-              {/* Gancho superior */}
-              <circle cx="25" cy="10" r="6" fill="#DC2626" />
-              <circle cx="25" cy="10" r="3" fill="white" />
-            </svg>
+            <Image
+              src="/navidad/4.png"
+              alt="Decoración navideña"
+              width={120}
+              height={120}
+              className="object-contain"
+            />
           </div>
         </>
       )}
