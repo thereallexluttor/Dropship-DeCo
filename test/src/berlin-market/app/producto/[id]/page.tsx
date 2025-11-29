@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -89,7 +89,11 @@ const headerStyles = `
 export default function ProductPage() {
   const params = useParams()
   const router = useRouter()
+  const pathname = usePathname()
   const { addToCart } = useCart()
+  
+  // Check if we're on a product page
+  const isProductPage = pathname?.startsWith('/producto/')
 
   // Header states
   const [activeSlide, setActiveSlide] = useState(0)
@@ -514,16 +518,6 @@ export default function ProductPage() {
         }
       `}</style>
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#FCFFEF' }}>
-        {/* Promotional Banner */}
-        <div className="bg-[#196428] text-white py-1 overflow-hidden">
-          <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-          </div>
-        </div>
-
         <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
           {/* Mobile Header (< 640px) */}
           <div className="md:hidden">
@@ -595,8 +589,16 @@ export default function ProductPage() {
                           if (link.name === "Inicio") {
                             return (
                               <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                                <link.icon className="h-5 w-5 text-[#196428]" />
-                                <span className="text-sm font-medium text-[#196428]">{link.name}</span>
+                                <link.icon className={`h-5 w-5 ${isProductPage ? "text-gray-600" : "text-[#196428]"}`} />
+                                <span className={`text-sm font-medium ${isProductPage ? "text-gray-800" : "text-[#196428]"}`}>{link.name}</span>
+                              </Link>
+                            );
+                          }
+                          if (link.name === "Carrito") {
+                            return (
+                              <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                <link.icon className={`h-5 w-5 ${isProductPage ? "text-[#196428]" : "text-gray-600"}`} />
+                                <span className={`text-sm font-medium ${isProductPage ? "text-[#196428]" : "text-gray-800"}`}>{link.name}</span>
                               </Link>
                             );
                           }
@@ -690,11 +692,11 @@ export default function ProductPage() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <div className="flex items-center space-x-1">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
+                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className={`h-4 w-4 ${isProductPage ? "text-gray-500" : "text-[#196428]"} transition-colors`}>
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                      <span className={`text-xs font-light ${isProductPage ? "text-gray-500" : "text-[#196428]"} mt-1 transition-colors`}>Inicio</span>
                     </Link>
                     <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
@@ -703,10 +705,10 @@ export default function ProductPage() {
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </Link>
                     <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                      <div className={`h-4 w-4 ${isProductPage ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                         <CartCounter />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
+                          <span className={`text-xs font-light ${isProductPage ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Carrito</span>
                     </Link>
                     <AccountPopover />
                   </div>
@@ -783,11 +785,11 @@ export default function ProductPage() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-3 flex-shrink-0">
                   <div className="flex items-center space-x-2">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
+                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className={`h-4 w-4 ${isProductPage ? "text-gray-500" : "text-[#196428]"} transition-colors`}>
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                      <span className={`text-xs font-light ${isProductPage ? "text-gray-500" : "text-[#196428]"} mt-1 transition-colors`}>Inicio</span>
                     </Link>
                     <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
@@ -796,10 +798,10 @@ export default function ProductPage() {
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </Link>
                     <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                      <div className={`h-4 w-4 ${isProductPage ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                         <CartCounter />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
+                          <span className={`text-xs font-light ${isProductPage ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Carrito</span>
                     </Link>
                     <AccountPopover />
                   </div>
@@ -876,11 +878,11 @@ export default function ProductPage() {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-4 flex-shrink-0">
                   <div className="flex items-center space-x-3">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
+                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
+                      <div className={`h-4 w-4 ${isProductPage ? "text-gray-500" : "text-[#196428]"} transition-colors`}>
                         <HomeIcon className="h-full w-full" />
                       </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
+                      <span className={`text-xs font-light ${isProductPage ? "text-gray-500" : "text-[#196428]"} mt-1 transition-colors`}>Inicio</span>
                     </Link>
                     <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
                       <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
@@ -889,10 +891,10 @@ export default function ProductPage() {
                           <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
                     </Link>
                     <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
+                      <div className={`h-4 w-4 ${isProductPage ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
                         <CartCounter />
                       </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
+                          <span className={`text-xs font-light ${isProductPage ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors`}>Carrito</span>
                     </Link>
                     <AccountPopover />
                   </div>
@@ -955,7 +957,7 @@ export default function ProductPage() {
           <div className="bg-white rounded-[30px] shadow-xl overflow-hidden flex flex-col lg:flex-row min-h-[600px] border border-white">
             
             {/* Left Column - Image */}
-            <div className="w-full lg:w-[58%] bg-[#F9F9F9] relative p-8 lg:p-16 flex flex-col items-center justify-center">
+            <div className="w-full lg:w-[58%] bg-white relative p-8 lg:p-16 flex flex-col items-center justify-center">
                {/* Badges */}
                <div className="absolute top-8 left-8 flex flex-col gap-2 z-10">
                   {product.descuento && (
@@ -1131,7 +1133,7 @@ export default function ProductPage() {
                   return (
                     <Link key={relatedProduct.id} href={`/producto/${relatedProduct.id}`} className="block h-full group">
                       <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
-                        <div className="relative aspect-[4/3] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
+                        <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
                           <Image
                             src={relatedProduct.imagen_url || "/placeholder.jpg"}
                             alt={relatedProduct.nombre}

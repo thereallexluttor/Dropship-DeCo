@@ -116,6 +116,14 @@ export interface UI {
   updated_at?: string
 }
 
+// Tipos para la tabla barra
+export interface Barra {
+  id?: number
+  line1?: string | null
+  line2?: string | null
+  line3?: string | null
+}
+
 // Tipos para la tabla sobre_nosotros
 export interface SobreNosotros {
   id?: number

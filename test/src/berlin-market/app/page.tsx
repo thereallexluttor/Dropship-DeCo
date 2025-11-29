@@ -627,16 +627,6 @@ export default function Home() {
   return (
     <MainLayout>
       <div className="flex flex-col flex-1" style={{ backgroundColor: '#FCFFEF', marginBottom: 0, paddingBottom: 0, minHeight: 0 }}>
-        {/* Promotional Banner */}
-        <div className="bg-[#196428] text-white py-1 overflow-hidden">
-          <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-          </div>
-        </div>
-
         <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
           {/* Mobile Header (< 640px) */}
           <div className="md:hidden">
@@ -1150,7 +1140,7 @@ export default function Home() {
                     <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[170px] xs:w-[180px] md:w-full block group">
                       <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                         {/* Imagen del producto */}
-                        <div className="relative aspect-[4/3] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
+                        <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
                           <Image
                             src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 600, 60) : '/placeholder.jpg'}
                             alt={producto.nombre}
@@ -1312,7 +1302,7 @@ export default function Home() {
                                 return (
                                   <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full group">
                                     <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 flex flex-col h-full border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
-                                      <div className="relative aspect-[1/1] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
+                                      <div className="relative aspect-[1/1] flex-shrink-0 bg-white">
                                         <Image
                                           src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 400, 60) : '/placeholder.jpg'}
                                           alt={producto.nombre}
@@ -1471,7 +1461,7 @@ export default function Home() {
                             return (
                             <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full group">
                               <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
-                                <div className="relative aspect-[1/1] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
+                                <div className="relative aspect-[1/1] flex-shrink-0 bg-white">
                                   <Image
                                     src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 600, 60) : '/placeholder.jpg'}
                                     alt={producto.nombre}

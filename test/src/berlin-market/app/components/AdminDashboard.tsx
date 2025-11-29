@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from "next/image";
-import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto, ProductoStock, UI, SobreNosotros, Tienda } from '@/lib/supabase';
+import supabase, { Categoria, Subcategoria, Producto, Marca, TamanoProducto, ProductoStock, UI, SobreNosotros, Tienda, Barra } from '@/lib/supabase';
 import { Trabajo, Aplicacion, actualizarEstadoAplicacion, crearTrabajo, editarTrabajo, obtenerTrabajos } from '@/lib/vacantes';
 
 interface AplicacionConTrabajo {
@@ -81,6 +81,8 @@ const AdminDashboard = () => {
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [uiElements, setUiElements] = useState<UI[]>([]);
   const [sobreNosotros, setSobreNosotros] = useState<SobreNosotros | null>(null);
+  const [barras, setBarras] = useState<Barra[]>([]);
+  const [editingBarra, setEditingBarra] = useState<Barra | null>(null);
   const [trabajos, setTrabajos] = useState<Trabajo[]>([]);
   const [aplicaciones, setAplicaciones] = useState<any[]>([]);
   const [selectedTrabajo, setSelectedTrabajo] = useState<Trabajo | null>(null);
@@ -172,7 +174,7 @@ const AdminDashboard = () => {
   });
   const [editingUI, setEditingUI] = useState<UI | null>(null);
   const [editingSobreNosotros, setEditingSobreNosotros] = useState<SobreNosotros | null>(null);
-  const [uiCategory, setUiCategory] = useState<'inicio' | 'sobre-nosotros'>('inicio');
+  const [uiCategory, setUiCategory] = useState<'inicio' | 'sobre-nosotros' | 'barra'>('inicio');
   const [imageUploading, setImageUploading] = useState(false);
   const [newTienda, setNewTienda] = useState<Omit<Tienda, 'id' | 'created_at' | 'updated_at'>>({
     nombre: '',
@@ -1013,6 +1015,9 @@ const AdminDashboard = () => {
           console.table(sobreNosotrosData);
           setSobreNosotros(sobreNosotrosData);
         }
+
+        // Cargar datos de Barra usando la función loadBarras
+        await loadBarras();
 
         // Cargar trabajos
         console.log('🔄 Cargando trabajos desde Supabase...');
@@ -2453,6 +2458,110 @@ const AdminDashboard = () => {
 
   const cancelEditSobreNosotros = () => {
     setEditingSobreNosotros(null);
+  };
+
+  // ==================== FUNCIONES PARA BARRA ====================
+
+  const loadBarras = async () => {
+    try {
+      console.log('🔄 Recargando datos de Barra desde Supabase...');
+      const { data: barrasData, error: barraError } = await supabase
+        .from('barra')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (barraError) {
+        console.error('❌ Error cargando datos de Barra:', barraError);
+        if (barraError.message.includes('relation "barra" does not exist')) {
+          console.error('❌ La tabla "barra" no existe en la base de datos');
+        }
+        setBarras([]);
+        return;
+      }
+
+      console.log('✅ Datos de Barra cargados exitosamente:', barrasData?.length || 0, 'barras');
+      if (barrasData && barrasData.length > 0) {
+        console.table(barrasData);
+        setBarras(barrasData);
+      } else {
+        console.log('ℹ️ No hay barras en la base de datos');
+        setBarras([]);
+      }
+    } catch (error) {
+      console.error('Error inesperado cargando barras:', error);
+      setBarras([]);
+    }
+  };
+
+  const handleUpdateBarra = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBarra || !editingBarra.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('barra')
+        .update({
+          line1: editingBarra.line1 || null,
+          line2: editingBarra.line2 || null,
+          line3: editingBarra.line3 || null,
+        })
+        .eq('id', editingBarra.id);
+
+      if (error) throw error;
+
+      // Recargar todas las barras desde la base de datos
+      await loadBarras();
+      setEditingBarra(null);
+      alert('Barra promocional actualizada exitosamente');
+    } catch (error: any) {
+      console.error('Error actualizando Barra:', error);
+      alert(`Error al actualizar Barra: ${error?.message || 'Error desconocido'}`);
+    }
+  };
+
+  const startEditBarra = (barraToEdit?: Barra) => {
+    if (barraToEdit) {
+      setEditingBarra({ ...barraToEdit });
+    } else if (barras.length > 0) {
+      // Editar la más reciente (primera del array ya que está ordenado por id descendente)
+      setEditingBarra({ ...barras[0] });
+    } else {
+      // Si no existe, crear uno nuevo
+      setEditingBarra({ line1: null, line2: null, line3: null });
+    }
+  };
+
+  const cancelEditBarra = () => {
+    setEditingBarra(null);
+  };
+
+  const handleCreateBarra = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBarra) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('barra')
+        .insert([{
+          line1: editingBarra.line1 || null,
+          line2: editingBarra.line2 || null,
+          line3: editingBarra.line3 || null,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        // Recargar todas las barras desde la base de datos
+        await loadBarras();
+        setEditingBarra(null);
+        alert('Barra promocional creada exitosamente');
+      }
+    } catch (error: any) {
+      console.error('Error creando Barra:', error);
+      alert(`Error al crear Barra: ${error?.message || 'Error desconocido'}`);
+    }
   };
 
   // ==================== FUNCIONES PARA TIENDAS ====================
@@ -4731,6 +4840,14 @@ const AdminDashboard = () => {
             >
               Sobre Nosotros
             </Button>
+            <Button
+              type="button"
+              onClick={() => setUiCategory('barra')}
+              variant={uiCategory === 'barra' ? 'default' : 'outline'}
+              className={uiCategory === 'barra' ? 'bg-gray-900 hover:bg-black' : ''}
+            >
+              Barra
+            </Button>
           </div>
 
           {/* Categoría: Inicio (Banners y Popups) */}
@@ -5485,6 +5602,205 @@ const AdminDashboard = () => {
                       <Button 
                         type="button" 
                         onClick={cancelEditSobreNosotros}
+                        variant="outline"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancelar
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Categoría: Barra */}
+          {uiCategory === 'barra' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layout className="h-5 w-5" />
+                  Gestionar Barra Promocional
+                </CardTitle>
+                <CardDescription>
+                  Configura las 3 líneas de texto que se mostrarán en el banner promocional en todas las páginas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!editingBarra ? (
+                  <div className="space-y-4">
+                    {barras.length > 0 ? (
+                      <>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => startEditBarra()}
+                            className="bg-gray-900 hover:bg-black text-white"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Crear Nueva Barra
+                          </Button>
+                          <Button
+                            onClick={loadBarras}
+                            variant="outline"
+                            className="text-gray-700"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Recargar
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-4 pt-4 border-t">
+                          <h3 className="text-sm font-medium text-gray-700 mb-2">
+                            Barras Promocionales ({barras.length})
+                          </h3>
+                          <div className="space-y-3">
+                            {barras.map((barra, index) => {
+                              const isMostRecent = index === 0; // La primera es la más reciente (mayor id)
+                              return (
+                                <div 
+                                  key={barra.id} 
+                                  className={`p-4 rounded-lg border-2 ${
+                                    isMostRecent 
+                                      ? 'bg-green-50 border-green-300' 
+                                      : 'bg-gray-50 border-gray-200'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-semibold text-gray-600">
+                                        ID: {barra.id}
+                                      </span>
+                                      {isMostRecent && (
+                                        <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-semibold rounded">
+                                          MÁS RECIENTE
+                                        </span>
+                                      )}
+                                    </div>
+                                    <Button
+                                      onClick={() => startEditBarra(barra)}
+                                      variant="outline"
+                                      size="sm"
+                                    >
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      Editar
+                                    </Button>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {barra.line1 && (
+                                      <div className="p-2 bg-white rounded border">
+                                        <p className="text-xs text-gray-500 mb-1">Línea 1:</p>
+                                        <p className="text-sm text-gray-900">{barra.line1}</p>
+                                      </div>
+                                    )}
+                                    {barra.line2 && (
+                                      <div className="p-2 bg-white rounded border">
+                                        <p className="text-xs text-gray-500 mb-1">Línea 2:</p>
+                                        <p className="text-sm text-gray-900">{barra.line2}</p>
+                                      </div>
+                                    )}
+                                    {barra.line3 && (
+                                      <div className="p-2 bg-white rounded border">
+                                        <p className="text-xs text-gray-500 mb-1">Línea 3:</p>
+                                        <p className="text-sm text-gray-900">{barra.line3}</p>
+                                      </div>
+                                    )}
+                                    {!barra.line1 && !barra.line2 && !barra.line3 && (
+                                      <p className="text-gray-500 text-sm italic">Sin líneas configuradas</p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 mb-2">No hay barras promocionales creadas.</p>
+                        <p className="text-xs text-gray-400 mb-4">
+                          Si ya creaste barras, haz clic en "Recargar" para verlas.
+                        </p>
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            onClick={() => startEditBarra()}
+                            className="bg-gray-900 hover:bg-black text-white"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Crear Primera Barra Promocional
+                          </Button>
+                          <Button
+                            onClick={loadBarras}
+                            variant="outline"
+                            className="text-gray-700"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Recargar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <form onSubmit={editingBarra?.id ? handleUpdateBarra : handleCreateBarra} className="space-y-6">
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Líneas del Banner Promocional
+                      </label>
+                      <p className="text-xs text-gray-500 mb-4">
+                        Configura hasta 3 líneas de texto que se mostrarán en el banner promocional. Cada línea se repetirá en el banner animado.
+                      </p>
+                      
+                      {/* Línea 1 */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Línea 1
+                        </label>
+                        <Input
+                          value={editingBarra.line1 || ''}
+                          onChange={(e) => setEditingBarra({ ...editingBarra, line1: e.target.value })}
+                          placeholder="Ej: Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!"
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Línea 2 */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Línea 2
+                        </label>
+                        <Input
+                          value={editingBarra.line2 || ''}
+                          onChange={(e) => setEditingBarra({ ...editingBarra, line2: e.target.value })}
+                          placeholder="Ej: Ofertas especiales en productos para perros"
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Línea 3 */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Línea 3
+                        </label>
+                        <Input
+                          value={editingBarra.line3 || ''}
+                          onChange={(e) => setEditingBarra({ ...editingBarra, line3: e.target.value })}
+                          placeholder="Ej: ¡Aprovecha nuestros descuentos de temporada!"
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-4 border-t">
+                      <Button 
+                        type="submit" 
+                        className="bg-gray-900 hover:bg-black text-white"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {barra?.id ? 'Guardar Cambios' : 'Crear Barra'}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        onClick={cancelEditBarra}
                         variant="outline"
                       >
                         <X className="h-4 w-4 mr-2" />

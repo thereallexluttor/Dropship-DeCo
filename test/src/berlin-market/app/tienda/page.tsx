@@ -100,7 +100,7 @@ function TiendaPageContent() {
 
   // Hooks para datos de Supabase
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
-  const { products, productsByCategory, discountedProducts, featuredProducts, newProducts, brands, categories: productCategories, isLoading: productsLoading, error: productsError, getProductsBySubcategory, getAllProductsByCategory, searchResults, isSearching, searchProducts, liveSearchResults, isLiveSearching, updateLiveSearchQuery, clearLiveSearchResults } = useProducts()
+  const { products, productsByCategory, discountedProducts, featuredProducts, newProducts, brands, categories: productCategories, isLoading: productsLoading, error: productsError, getProductsBySubcategory, getAllProductsByCategory, searchResults, isSearching, searchProducts, clearSearchResults, liveSearchResults, isLiveSearching, updateLiveSearchQuery, clearLiveSearchResults } = useProducts()
 
   // Hook para el carrito de compras
   const { addToCart } = useCart()
@@ -144,6 +144,13 @@ function TiendaPageContent() {
           console.log('Configurando categoría desde URL:', categoryId)
           setSelectedCategoryFromUrl(categoryId)
           setSelectedCategory(categoryId)
+          
+          // Si no hay parámetro de búsqueda, limpiar la búsqueda
+          if (!searchQueryParam) {
+            setSearchQuery("")
+            clearSearchResults()
+            clearLiveSearchResults()
+          }
 
           // Si también hay subcategoría, verificar que pertenece a la categoría
           if (subcategoryParam) {
@@ -198,6 +205,12 @@ function TiendaPageContent() {
         setSelectedSubcategory(CATEGORIES.TODOS_LOS_PRODUCTOS)
         setCurrentTitle("Todos los productos")
         setCurrentBreadcrumbs(["Inicio", "Tienda"])
+        // Limpiar búsqueda si no hay parámetro de búsqueda
+        if (!searchQueryParam) {
+          setSearchQuery("")
+          clearSearchResults()
+          clearLiveSearchResults()
+        }
         // Limpiar filtros avanzados
         setSelectedProductCategory(null)
         setSelectedProductSubcategory(null)
@@ -237,6 +250,11 @@ function TiendaPageContent() {
     // Actualizar estados inmediatamente
     setSelectedCategory(categoryId)
     setSelectedSubcategory(subcategoryId)
+
+    // Limpiar búsqueda cuando se cambia de categoría
+    setSearchQuery("")
+    clearSearchResults()
+    clearLiveSearchResults()
 
     // Limpiar filtros cuando cambia la categoría desde el sidebar
     setSelectedBrand(null)
@@ -507,8 +525,8 @@ function TiendaPageContent() {
     ? currentProducts
     : featuredProducts
 
-  // Si hay resultados de búsqueda, mostrar esos en lugar de los productos normales
-  if (searchResults.length > 0 || (searchQueryParam && isSearching)) {
+  // Si hay resultados de búsqueda y hay una búsqueda activa, mostrar esos en lugar de los productos normales
+  if ((searchQueryParam || searchQuery.trim()) && (searchResults.length > 0 || isSearching)) {
     baseProducts = searchResults.length > 0 ? searchResults : []
   }
 
@@ -907,16 +925,6 @@ function TiendaPageContent() {
   return (
     <MainLayout>
       <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-        {/* Promotional Banner */}
-        <div className="bg-[#196428] text-white py-1 overflow-hidden">
-          <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-          </div>
-        </div>
-
         <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
           {/* Mobile Header (< 640px) */}
           <div className="md:hidden">
@@ -1997,7 +2005,7 @@ function TiendaPageContent() {
                         return (
                         <Link key={product.id} href={`/producto/${product.id}`} className="block h-full group">
                           <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
-                            <div className="relative aspect-[4/3] flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
+                            <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
                               <Image
                                 src={product.imagen_url || "/placeholder.jpg"}
                                 alt={product.nombre}

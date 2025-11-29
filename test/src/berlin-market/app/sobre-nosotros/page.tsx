@@ -81,16 +81,6 @@ export default function AboutUs() {
   return (
     <MainLayout>
       <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-        {/* Promotional Banner */}
-        <div className="bg-[#196428] text-white py-1 overflow-hidden">
-          <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-            <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-          </div>
-        </div>
-
         <Header 
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

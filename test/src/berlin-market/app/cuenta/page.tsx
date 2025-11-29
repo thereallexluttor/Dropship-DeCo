@@ -75,18 +75,6 @@ const calcularDiasTranscurridos = (fecha: string): number => {
   return Math.floor(diferencia / (1000 * 60 * 60 * 24));
 };
 
-// ✅ OPTIMIZACIÓN: Componente memoizado para banner promocional
-const PromotionalBanner = () => (
-  <div className="bg-[#196428] text-white py-1 overflow-hidden">
-    <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
-      <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-      <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-      <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-      <span className="inline-block mr-8">Descuentos en la linea para gatos, - Disfruta las ofertas que tenemos hoy para ti!</span>
-    </div>
-  </div>
-);
-
 export default function CuentaPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -269,7 +257,6 @@ export default function CuentaPage() {
     return (
       <MainLayout>
         <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-          <PromotionalBanner />
           <Header />
           <main className="py-16 sm:py-20 md:py-24">
             <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
@@ -310,7 +297,6 @@ export default function CuentaPage() {
     return (
       <MainLayout>
         <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-          <PromotionalBanner />
           <Header />
 
           <main className="py-16 sm:py-20 md:py-24">
@@ -338,7 +324,6 @@ export default function CuentaPage() {
   return (
     <MainLayout>
       <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-        <PromotionalBanner />
         <Header />
 
         <main className="py-16 sm:py-20 md:py-24">

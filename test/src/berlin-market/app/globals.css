@@ -246,6 +246,22 @@ body {
   animation: scroll 20s linear infinite;
 }
 
+/* Animación para loop infinito continuo - el final se conecta con el inicio */
+/* La animación mueve exactamente la mitad del ancho (50%) porque tenemos 2 copias del contenido */
+@keyframes scroll-infinite {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-infinite {
+  animation: scroll-infinite 60s linear infinite;
+  will-change: transform;
+}
+
 /* Leaflet map styles */
 .leaflet-container {
   width: 100%;
