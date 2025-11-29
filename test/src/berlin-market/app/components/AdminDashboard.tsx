@@ -5718,7 +5718,7 @@ const AdminDashboard = () => {
                       <div className="text-center py-8">
                         <p className="text-gray-500 mb-2">No hay barras promocionales creadas.</p>
                         <p className="text-xs text-gray-400 mb-4">
-                          Si ya creaste barras, haz clic en "Recargar" para verlas.
+                          Si ya creaste barras, haz clic en &quot;Recargar&quot; para verlas.
                         </p>
                         <div className="flex gap-2 justify-center">
                           <Button
@@ -5796,7 +5796,7 @@ const AdminDashboard = () => {
                         className="bg-gray-900 hover:bg-black text-white"
                       >
                         <Save className="h-4 w-4 mr-2" />
-                        {barra?.id ? 'Guardar Cambios' : 'Crear Barra'}
+                        {editingBarra?.id ? 'Guardar Cambios' : 'Crear Barra'}
                       </Button>
                       <Button 
                         type="button" 
