@@ -143,6 +143,7 @@ export const useProducts = () => {
               destacado,
               novedad,
               id_marca,
+              Tienda,
               stocks,
               precios,
               tamano,

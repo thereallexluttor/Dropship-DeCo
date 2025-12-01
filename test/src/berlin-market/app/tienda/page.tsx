@@ -67,6 +67,7 @@ import { useProducts, ProductWithDetails } from "../hooks/useProducts"
 import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
 import { useCart } from "../contexts/CartContext"
+import { loadStoresFromSupabase, type Store } from "../lib/stores"
 
 function TiendaPageContent() {
   const [activeSlide, setActiveSlide] = useState(0)
@@ -97,6 +98,10 @@ function TiendaPageContent() {
   const [selectedProductCategory, setSelectedProductCategory] = useState<number | null>(null)
   const [selectedProductSubcategory, setSelectedProductSubcategory] = useState<number | null>(null)
   const [sortBy, setSortBy] = useState<string>("Más popular") // Estado para ordenamiento
+  
+  // Estado para tiendas y tienda seleccionada
+  const [tiendas, setTiendas] = useState<Store[]>([])
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(1) // Default: tienda con id 1
 
   // Hooks para datos de Supabase
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
@@ -435,6 +440,17 @@ function TiendaPageContent() {
 
     let filteredProducts = [...products]
 
+    // Filtro por tienda seleccionada
+    // Mostrar productos que pertenecen a la tienda seleccionada o que no tienen tienda asignada (null)
+    filteredProducts = filteredProducts.filter(product => {
+      // Si el producto no tiene tienda asignada (null o undefined), mostrarlo (productos generales)
+      if (product.Tienda === null || product.Tienda === undefined) {
+        return true
+      }
+      // Si tiene tienda asignada, mostrar solo si coincide con la seleccionada
+      return product.Tienda === selectedStoreId
+    })
+
     // Filtro por rango de precio
     if (priceRange[0] !== priceBounds.min || priceRange[1] !== priceBounds.max) {
       filteredProducts = filteredProducts.filter(product => {
@@ -571,7 +587,8 @@ function TiendaPageContent() {
     showOnlyDiscounts,
     selectedProductCategory,
     selectedProductSubcategory,
-    sortBy
+    sortBy,
+    selectedStoreId
   ])
 
   // Efecto para actualizar marcas disponibles cuando cambia la categoría
@@ -601,6 +618,19 @@ function TiendaPageContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory])
+
+  // Cargar tiendas al montar el componente
+  useEffect(() => {
+    const cargarTiendas = async () => {
+      try {
+        const stores = await loadStoresFromSupabase()
+        setTiendas(stores)
+      } catch (error) {
+        console.error('Error cargando tiendas:', error)
+      }
+    }
+    cargarTiendas()
+  }, [])
 
   // Función para limpiar filtros básicos
   const clearFilters = () => {
@@ -1344,9 +1374,29 @@ function TiendaPageContent() {
                     <h2 className="text-sm font-semibold text-gray-900 mb-5 tracking-tight">Categorías</h2>
 
                     <div className="space-y-5">
-                      {/* Todos los productos section */}
+                      {/* Selector de tienda */}
                       <div>
                         <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Tienda</h3>
+                        <select
+                          value={selectedStoreId}
+                          onChange={(e) => setSelectedStoreId(Number(e.target.value))}
+                          className="w-full text-xs py-1.5 px-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] transition-all cursor-pointer"
+                        >
+                          {tiendas.length === 0 ? (
+                            <option value={1}>Cargando tiendas...</option>
+                          ) : (
+                            tiendas.map((tienda) => (
+                              <option key={tienda.id} value={tienda.id}>
+                                {tienda.name} - {tienda.city}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Todos los productos section */}
+                      <div>
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Categorías</h3>
                         <button
                           onClick={() => handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS)}
                           className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
@@ -2177,9 +2227,29 @@ function TiendaPageContent() {
           </DrawerHeader>
           <div className="overflow-y-auto px-4 pb-6">
             <div className="space-y-4">
-              {/* Todos los productos section */}
+              {/* Selector de tienda */}
               <div>
                 <h3 className="text-base font-semibold text-gray-700 mb-2">Tienda</h3>
+                <select
+                  value={selectedStoreId}
+                  onChange={(e) => setSelectedStoreId(Number(e.target.value))}
+                  className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] transition-all cursor-pointer"
+                >
+                  {tiendas.length === 0 ? (
+                    <option value={1}>Cargando tiendas...</option>
+                  ) : (
+                    tiendas.map((tienda) => (
+                      <option key={tienda.id} value={tienda.id}>
+                        {tienda.name} - {tienda.city}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* Todos los productos section */}
+              <div>
+                <h3 className="text-base font-semibold text-gray-700 mb-2">Categorías</h3>
                 <button
                   onClick={() => {
                     handleCategoryChange(CATEGORIES.TODOS_LOS_PRODUCTOS, CATEGORIES.TODOS_LOS_PRODUCTOS);

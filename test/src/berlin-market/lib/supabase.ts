@@ -69,12 +69,15 @@ export interface ProductoStock {
   unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB' | 'UI' | 'Unidad' | 'Caja' | 'Tabletas' | 'Comprimidos' | 'Capsulas' | 'Sachet' | 'Blister'
   precio: number   // precio para este tamaño
   stock: number    // stock disponible para este tamaño
+  tienda?: number  // tienda asociada a este tamaño (opcional)
 }
 
 // Tipos para la tabla productos
 export interface Producto {
   id?: number
   subcategorias_id: number
+  subcategorias_id2?: number | null
+  subcategorias_id3?: number | null
   nombre: string
   descripcion: string
   imagen_url?: string | null
@@ -83,6 +86,7 @@ export interface Producto {
   destacado?: boolean
   novedad?: boolean
   id_marca?: number | null
+  Tienda?: number | null
   stocks?: ProductoStock[] | null  // Campo jsonb que contiene todas las combinaciones de tamaño, precio y stock
   // Campos antiguos mantenidos para compatibilidad durante la transición
   tamano?: TamanoProducto[] | null

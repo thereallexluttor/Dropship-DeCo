@@ -37,6 +37,7 @@ interface ProductoForm {
   destacado: boolean
   novedad: boolean
   id_marca: number
+  Tienda: number  // Campo para seleccionar la tienda
   stocks: ProductoStock[]  // Nuevo campo que combina tamaño, precio y stock
   // Campos antiguos mantenidos para compatibilidad durante la transición
   tamano: TamanoProducto[]
@@ -160,6 +161,7 @@ const AdminDashboard = () => {
     destacado: false,
     novedad: false,
     id_marca: 0,
+    Tienda: 1,  // Valor por defecto: tienda con id 1
     stocks: [],  // Nuevo campo stocks inicializado vacío
     tamano: [],
     precios: []
@@ -1636,46 +1638,90 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Convertir y validar tamaños
-    if (newProducto.tamano && newProducto.tamano.length > 0) {
-      // Convertir strings a números
+    // Validar y preparar stocks
+    let stocksValidos: ProductoStock[] = [];
+    let tamanosValidos: TamanoProducto[] = [];
+    let preciosValidos: number[] = [];
+
+    if (newProducto.stocks && newProducto.stocks.length > 0) {
+      // Convertir strings a números y validar
+      stocksValidos = newProducto.stocks.map(stock => ({
+        ...stock,
+        cantidad: typeof stock.cantidad === 'string' ? parseFloat(stock.cantidad) || 0 : stock.cantidad,
+        precio: typeof stock.precio === 'string' ? parseFloat(stock.precio) || 0 : stock.precio,
+        stock: typeof stock.stock === 'string' ? parseInt(stock.stock) || 0 : stock.stock,
+        tienda: stock.tienda || newProducto.Tienda || 1
+      })).filter(stock => stock.cantidad > 0 && stock.precio > 0);
+
+      if (stocksValidos.length === 0) {
+        alert('Debe haber al menos un tamaño con cantidad y precio mayores a 0');
+        return;
+      }
+
+      // Sincronizar arrays antiguos para compatibilidad
+      tamanosValidos = stocksValidos.map(s => ({ cantidad: s.cantidad, unidad: s.unidad }));
+      preciosValidos = stocksValidos.map(s => s.precio);
+    } else if (newProducto.tamano && newProducto.tamano.length > 0) {
+      // Fallback a campos antiguos si no hay stocks
       newProducto.tamano = newProducto.tamano.map(t => ({
         ...t,
         cantidad: typeof t.cantidad === 'string' ? parseFloat(t.cantidad) || 0 : t.cantidad
       }));
 
-      const tamañosValidos = newProducto.tamano.filter(t => t.cantidad > 0);
-      if (tamañosValidos.length === 0) {
+      tamanosValidos = newProducto.tamano.filter(t => t.cantidad > 0);
+      if (tamanosValidos.length === 0) {
         alert('Si defines tamaños, al menos uno debe tener una cantidad mayor a 0');
         return;
       }
-      // Actualizar solo los tamaños válidos
-      newProducto.tamano = tamañosValidos;
-    }
 
-    // Convertir y validar precios
-    if (newProducto.tamano && newProducto.tamano.length > 0) {
-      if (!newProducto.precios || newProducto.precios.length !== newProducto.tamano.length) {
+      if (!newProducto.precios || newProducto.precios.length !== tamanosValidos.length) {
         alert('Debe haber un precio para cada tamaño definido');
         return;
       }
       
-      // Convertir strings a números
-      newProducto.precios = newProducto.precios.map(p => 
+      preciosValidos = newProducto.precios.map(p => 
         typeof p === 'string' ? parseFloat(p) || 0 : p
       );
 
-      // Validar que todos los precios sean mayores a 0
-      if (newProducto.precios.some(p => p <= 0)) {
+      if (preciosValidos.some(p => p <= 0)) {
         alert('Todos los precios deben ser mayores a 0');
         return;
       }
+
+      // Crear stocks a partir de tamaños y precios antiguos
+      stocksValidos = tamanosValidos.map((tamano, index) => ({
+        id: `${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
+        cantidad: tamano.cantidad,
+        unidad: tamano.unidad,
+        precio: preciosValidos[index],
+        stock: newProducto.stocks?.[index]?.stock || 0,
+        tienda: newProducto.Tienda || 1
+      }));
     }
 
-    // Crear un producto por cada subcategoría seleccionada
-    const productosParaEnviar: Omit<Producto, 'id' | 'created_at' | 'updated_at'>[] = 
-      newProducto.subcategorias_id.map(subcategoriaId => ({
-        subcategorias_id: subcategoriaId,
+    // Agrupar stocks por tienda
+    const stocksPorTienda = new Map<number, ProductoStock[]>();
+    stocksValidos.forEach(stock => {
+      const tiendaId = stock.tienda || newProducto.Tienda || 1;
+      if (!stocksPorTienda.has(tiendaId)) {
+        stocksPorTienda.set(tiendaId, []);
+      }
+      stocksPorTienda.get(tiendaId)!.push(stock);
+    });
+
+    // Crear un producto por cada tienda
+    const [subcategoria1, subcategoria2, subcategoria3] = newProducto.subcategorias_id;
+    const productosParaCrear: Omit<Producto, 'id' | 'created_at' | 'updated_at'>[] = [];
+
+    stocksPorTienda.forEach((stocks, tiendaId) => {
+      // Preparar tamaños y precios para este grupo de tienda
+      const tamanosGrupo = stocks.map(s => ({ cantidad: s.cantidad, unidad: s.unidad }));
+      const preciosGrupo = stocks.map(s => s.precio);
+
+      productosParaCrear.push({
+        subcategorias_id: subcategoria1,
+        subcategorias_id2: subcategoria2 || null,
+        subcategorias_id3: subcategoria3 || null,
         nombre: newProducto.nombre,
         descripcion: newProducto.descripcion,
         imagen_url: newProducto.imagen_url || null,
@@ -1684,23 +1730,24 @@ const AdminDashboard = () => {
         destacado: newProducto.destacado || false,
         novedad: newProducto.novedad || false,
         id_marca: newProducto.id_marca || null,
-        stocks: newProducto.stocks && newProducto.stocks.length > 0 ? newProducto.stocks : null,
-        // Campos antiguos mantenidos para compatibilidad durante la transición
-        tamano: newProducto.tamano && newProducto.tamano.length > 0 ? newProducto.tamano : null,
-        precios: newProducto.precios && newProducto.precios.length > 0 ? newProducto.precios : null
-      }));
+        Tienda: tiendaId,
+        stocks: stocks,
+        tamano: tamanosGrupo,
+        precios: preciosGrupo
+      });
+    });
 
     try {
-      // Crear todos los productos (uno por cada subcategoría)
+      // Crear todos los productos agrupados por tienda
       const { data: productosData, error: productosError } = await supabase
         .from('productos')
-        .insert(productosParaEnviar)
+        .insert(productosParaCrear)
         .select();
 
       if (productosError) throw productosError;
 
-      // Guardar el número de subcategorías antes de resetear el estado
       const numSubcategorias = newProducto.subcategorias_id.length;
+      const numProductosCreados = productosData?.length || 0;
       
       setProductos([...productos, ...(productosData || [])]);
       setNewProducto({
@@ -1713,11 +1760,17 @@ const AdminDashboard = () => {
         destacado: false,
         novedad: false,
         id_marca: 0,
+        Tienda: 1,
         stocks: [],
         tamano: [],
         precios: []
       } as ProductoForm);
-      alert(`Producto creado exitosamente${numSubcategorias > 1 ? ` en ${numSubcategorias} subcategorías` : ''}`);
+      
+      const mensajeTiendas = numProductosCreados > 1 
+        ? `Se crearon ${numProductosCreados} productos agrupados por tienda`
+        : 'Producto creado exitosamente';
+      const mensajeSubcategorias = numSubcategorias > 1 ? ` con ${numSubcategorias} subcategorías` : '';
+      alert(`${mensajeTiendas}${mensajeSubcategorias}`);
     } catch (error: any) {
       console.error('Error creando producto:', error);
       if (error?.message?.includes('relation "productos" does not exist')) {
@@ -1790,6 +1843,8 @@ const AdminDashboard = () => {
         .from('productos')
         .update({
           subcategorias_id: producto.subcategorias_id,
+          subcategorias_id2: producto.subcategorias_id2 || null,
+          subcategorias_id3: producto.subcategorias_id3 || null,
           nombre: producto.nombre,
           descripcion: producto.descripcion,
           imagen_url: producto.imagen_url || null,
@@ -1798,6 +1853,7 @@ const AdminDashboard = () => {
           destacado: producto.destacado || false,
           novedad: producto.novedad || false,
           id_marca: producto.id_marca || null,
+          Tienda: producto.Tienda || null,
           stocks: producto.stocks && producto.stocks.length > 0 ? producto.stocks : null,
           // Campos antiguos mantenidos para compatibilidad durante la transición
           tamano: producto.tamano && producto.tamano.length > 0 ? producto.tamano : null,
@@ -1986,7 +2042,8 @@ const AdminDashboard = () => {
       cantidad: 0,
       unidad: 'ML',
       precio: 0,
-      stock: 0
+      stock: 0,
+      tienda: (producto as ProductoForm).Tienda || (producto as Producto).Tienda || 1  // Usar la tienda del producto o por defecto 1
     };
 
     const nuevosStocks = [...(producto.stocks || []), nuevoStock];
@@ -2056,6 +2113,16 @@ const AdminDashboard = () => {
   const actualizarStock = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, valor: number) => {
     const nuevosStocks = [...(producto.stocks || [])];
     nuevosStocks[index] = { ...nuevosStocks[index], stock: valor };
+
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks
+    });
+  };
+
+  const actualizarTiendaStock = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, tiendaId: number) => {
+    const nuevosStocks = [...(producto.stocks || [])];
+    nuevosStocks[index] = { ...nuevosStocks[index], tienda: tiendaId };
 
     setProducto({
       ...producto,
@@ -3951,8 +4018,14 @@ const AdminDashboard = () => {
                     {newProducto.subcategorias_id && newProducto.subcategorias_id.length > 0 && (
                       <p className="mt-2 text-xs text-gray-500">
                         {newProducto.subcategorias_id.length} subcategoría{newProducto.subcategorias_id.length > 1 ? 's' : ''} seleccionada{newProducto.subcategorias_id.length > 1 ? 's' : ''}
+                        {newProducto.subcategorias_id.length > 3 && (
+                          <span className="text-orange-600 font-medium"> (Se usarán las primeras 3)</span>
+                        )}
                       </p>
                     )}
+                    <p className="mt-1 text-xs text-gray-400">
+                      Puedes seleccionar hasta 3 subcategorías. Se creará un solo producto con todas las subcategorías seleccionadas.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -4149,6 +4222,26 @@ const AdminDashboard = () => {
                           </div>
                           <div className="flex-1">
                             <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Tienda
+                            </label>
+                            <select
+                              value={newProducto.stocks?.[index]?.tienda || newProducto.Tienda || 1}
+                              onChange={(e) => actualizarTiendaStock(newProducto, setNewProducto as any, index, parseInt(e.target.value))}
+                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
+                            >
+                              {tiendas.length === 0 ? (
+                                <option value={1}>Cargando tiendas...</option>
+                              ) : (
+                                tiendas.map((tienda) => (
+                                  <option key={tienda.id} value={tienda.id}>
+                                    {tienda.nombre} - {tienda.ciudad}
+                                  </option>
+                                ))
+                              )}
+                            </select>
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                               Precio ($)
                             </label>
                             <Input
@@ -4182,6 +4275,16 @@ const AdminDashboard = () => {
                           </Button>
                         </div>
                       ))}
+                      <Button
+                        type="button"
+                        onClick={() => agregarTamano(newProducto, setNewProducto as any)}
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-gray-900 border-gray-900 hover:bg-gray-900 hover:text-white"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Agregar Más Tamaños
+                      </Button>
                     </div>
                   ) : (
                     <div className="text-center py-4 text-gray-500 text-sm bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
@@ -4341,6 +4444,42 @@ const AdminDashboard = () => {
                                     );
                                   })}
                                 </select>
+                                <select
+                                  value={editingProducto?.subcategorias_id2?.toString() || ''}
+                                  onChange={(e) => editingProducto && setEditingProducto({
+                                    ...editingProducto,
+                                    subcategorias_id2: e.target.value ? parseInt(e.target.value) : null
+                                  })}
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                >
+                                  <option value="">Subcategoría 2 (opcional)</option>
+                                  {subcategorias.map((subcategoria) => {
+                                    const categoria = categorias.find(c => c.id === subcategoria.categories_id);
+                                    return (
+                                      <option key={subcategoria.id} value={subcategoria.id}>
+                                        {categoria?.nombre} - {subcategoria.nombre}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <select
+                                  value={editingProducto?.subcategorias_id3?.toString() || ''}
+                                  onChange={(e) => editingProducto && setEditingProducto({
+                                    ...editingProducto,
+                                    subcategorias_id3: e.target.value ? parseInt(e.target.value) : null
+                                  })}
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                >
+                                  <option value="">Subcategoría 3 (opcional)</option>
+                                  {subcategorias.map((subcategoria) => {
+                                    const categoria = categorias.find(c => c.id === subcategoria.categories_id);
+                                    return (
+                                      <option key={subcategoria.id} value={subcategoria.id}>
+                                        {categoria?.nombre} - {subcategoria.nombre}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
                                 <Input
                                   value={editingProducto?.nombre || ''}
                                   onChange={(e) => editingProducto && setEditingProducto({ 
@@ -4372,6 +4511,27 @@ const AdminDashboard = () => {
                                       {marca.nombre_marca}
                                     </option>
                                   ))}
+                                </select>
+                                <select
+                                  value={editingProducto?.Tienda?.toString() || ''}
+                                  onChange={(e) => editingProducto && setEditingProducto({
+                                    ...editingProducto,
+                                    Tienda: e.target.value ? parseInt(e.target.value) : null
+                                  })}
+                                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                >
+                                  {tiendas.length === 0 ? (
+                                    <option value="">Cargando tiendas...</option>
+                                  ) : (
+                                    <>
+                                      <option value="">Seleccionar tienda</option>
+                                      {tiendas.map((tienda) => (
+                                        <option key={tienda.id} value={tienda.id}>
+                                          {tienda.nombre} - {tienda.ciudad}
+                                        </option>
+                                      ))}
+                                    </>
+                                  )}
                                 </select>
                                 <div className="flex items-center space-x-2">
                                   <input
@@ -4533,6 +4693,26 @@ const AdminDashboard = () => {
                                               <option value="Capsulas">Capsulas</option>
                                               <option value="Sachet">Sachet</option>
                                               <option value="Blister">Blister</option>
+                                            </select>
+                                          </div>
+                                          <div className="flex-1">
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                              Tienda
+                                            </label>
+                                            <select
+                                              value={editingProducto.stocks?.[index]?.tienda || editingProducto.Tienda || 1}
+                                              onChange={(e) => editingProducto && actualizarTiendaStock(editingProducto, (producto) => setEditingProducto(producto as Producto), index, parseInt(e.target.value))}
+                                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
+                                            >
+                                              {tiendas.length === 0 ? (
+                                                <option value={1}>Cargando tiendas...</option>
+                                              ) : (
+                                                tiendas.map((tienda) => (
+                                                  <option key={tienda.id} value={tienda.id}>
+                                                    {tienda.nombre} - {tienda.ciudad}
+                                                  </option>
+                                                ))
+                                              )}
                                             </select>
                                           </div>
                                           <div className="flex-1">

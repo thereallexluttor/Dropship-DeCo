@@ -31,6 +31,7 @@ import { supabase, Producto, UI } from '@/lib/supabase'
 import { useCategories } from './hooks/useCategories'
 import { useProducts } from './hooks/useProducts'
 import { useCart } from './contexts/CartContext'
+import { loadStoresFromSupabase, type Store } from './lib/stores'
 import CartCounter from './components/CartCounter'
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
@@ -109,6 +110,9 @@ export default function Home() {
   const [showChristmasTheme, setShowChristmasTheme] = useState(false)
   // Estado para manejar el tamaño seleccionado de cada producto
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
+  // Estado para tiendas y tienda seleccionada
+  const [tiendas, setTiendas] = useState<Store[]>([])
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(1) // Default: tienda con id 1
 
   // Usar el contexto del carrito
   const { addToCart } = useCart()
@@ -199,12 +203,22 @@ export default function Home() {
 
     // Diferir cargas no críticas para no bloquear el renderizado inicial
     setTimeout(() => {
+      // Cargar tiendas (diferido)
+      const cargarTiendas = async () => {
+        try {
+          const stores = await loadStoresFromSupabase();
+          setTiendas(stores);
+        } catch (error) {
+          console.error('Error cargando tiendas:', error);
+        }
+      };
+
       // Cargar productos destacados (diferido)
       const cargarProductosDestacados = async () => {
         try {
           const { data, error } = await supabase
             .from('productos')
-            .select('*')
+            .select('*, Tienda')
             .eq('destacado', true);
 
           if (error) throw error;
@@ -234,6 +248,7 @@ export default function Home() {
 
       // Ejecutar en paralelo
       Promise.all([
+        cargarTiendas(),
         cargarProductosDestacados(),
         cargarProductosEnOferta()
       ]).catch(console.error);
@@ -396,10 +411,21 @@ export default function Home() {
     console.log(`Agregado al carrito: ${producto.nombre}`)
   }
 
+  // Filtrar productos destacados por tienda seleccionada
+  // Mostrar productos que pertenecen a la tienda seleccionada o que no tienen tienda asignada (null)
+  const productosDestacadosFiltrados = productosDestacados.filter((producto) => {
+    // Si el producto no tiene tienda asignada (null o undefined), mostrarlo (productos generales)
+    if (producto.Tienda === null || producto.Tienda === undefined) {
+      return true
+    }
+    // Si tiene tienda asignada, mostrar solo si coincide con la seleccionada
+    return producto.Tienda === selectedStoreId
+  })
+
   const PRODUCTS_PER_SLIDE = 8
   const MOBILE_PRODUCTS_PER_SLIDE = 4 // 2x2 grid
-  const totalProductSlides = Math.max(1, Math.ceil(productosDestacados.length / PRODUCTS_PER_SLIDE))
-  const totalMobileProductSlides = Math.max(1, Math.ceil(productosDestacados.length / MOBILE_PRODUCTS_PER_SLIDE))
+  const totalProductSlides = Math.max(1, Math.ceil(productosDestacadosFiltrados.length / PRODUCTS_PER_SLIDE))
+  const totalMobileProductSlides = Math.max(1, Math.ceil(productosDestacadosFiltrados.length / MOBILE_PRODUCTS_PER_SLIDE))
 
   const nextProductSlide = () => {
     setActiveProductSlide((current) => (current + 1) % totalProductSlides)
@@ -428,6 +454,12 @@ export default function Home() {
       setActiveMobileProductSlide(Math.max(0, totalMobileProductSlides - 1))
     }
   }, [activeMobileProductSlide, totalMobileProductSlides])
+
+  // Resetear slides cuando cambie la tienda seleccionada o los productos filtrados
+  useEffect(() => {
+    setActiveProductSlide(0)
+    setActiveMobileProductSlide(0)
+  }, [selectedStoreId, productosDestacadosFiltrados.length])
 
   const closePopup = () => {
     setShowPopup(false);
@@ -1256,8 +1288,41 @@ export default function Home() {
           {/* Productos destacados */}
           <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-              <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Productos destacados</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 md:mb-7 gap-3 sm:gap-4">
+                <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black">Productos destacados</h2>
+                {/* Selector de tienda */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <label htmlFor="tienda-select" className="text-sm sm:text-base font-semibold text-gray-700 whitespace-nowrap">
+                    Tienda:
+                  </label>
+                  <select
+                    id="tienda-select"
+                    value={selectedStoreId}
+                    onChange={(e) => setSelectedStoreId(Number(e.target.value))}
+                    className="px-3 sm:px-4 py-2 rounded-lg border-2 border-gray-300 bg-white text-sm sm:text-base font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] transition-all cursor-pointer min-w-[180px] sm:min-w-[220px]"
+                  >
+                    {tiendas.length === 0 ? (
+                      <option value={1}>Cargando tiendas...</option>
+                    ) : (
+                      tiendas.map((tienda) => (
+                        <option key={tienda.id} value={tienda.id}>
+                          {tienda.name} - {tienda.city}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              </div>
               
+              {/* Mensaje cuando no hay productos para la tienda seleccionada */}
+              {productosDestacadosFiltrados.length === 0 ? (
+                <div className="text-center py-8 sm:py-12 md:py-16">
+                  <p className="text-base sm:text-lg md:text-xl text-gray-600 font-medium">
+                    No hay productos destacados disponibles para esta tienda.
+                  </p>
+                </div>
+              ) : (
+                <>
               {/* Vista móvil: carrusel 2x2 */}
               <div className="md:hidden">
                 <div className="flex items-center gap-1.5 mb-4">
@@ -1278,7 +1343,7 @@ export default function Home() {
                       style={{ transform: `translateX(-${activeMobileProductSlide * 100}%)` }}
                     >
                       {Array.from({ length: totalMobileProductSlides }).map((_, slideIndex) => {
-                        const slideProducts = productosDestacados.slice(
+                        const slideProducts = productosDestacadosFiltrados.slice(
                           slideIndex * MOBILE_PRODUCTS_PER_SLIDE,
                           slideIndex * MOBILE_PRODUCTS_PER_SLIDE + MOBILE_PRODUCTS_PER_SLIDE
                         )
@@ -1444,7 +1509,7 @@ export default function Home() {
                     {Array.from({ length: totalProductSlides }).map((_, slideIndex) => (
                       <div key={slideIndex} className="w-full flex-shrink-0">
                         <div className="grid grid-cols-4 gap-3 md:gap-4 lg:gap-5 xl:gap-6 pb-2">
-                          {productosDestacados.slice(slideIndex * PRODUCTS_PER_SLIDE, slideIndex * PRODUCTS_PER_SLIDE + PRODUCTS_PER_SLIDE).map((producto) => {
+                          {productosDestacadosFiltrados.slice(slideIndex * PRODUCTS_PER_SLIDE, slideIndex * PRODUCTS_PER_SLIDE + PRODUCTS_PER_SLIDE).map((producto) => {
                             const selectedSizeIndex = selectedSizes[producto.id!] || 0;
                             const hasSizes = producto.tamano && producto.tamano.length > 0;
                             const hasPrices = producto.precios && producto.precios.length > 0;
@@ -1569,6 +1634,8 @@ export default function Home() {
                   </svg>
                 </button>
               </div>
+                </>
+              )}
             </div>
           </section>
 
