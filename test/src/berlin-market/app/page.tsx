@@ -1290,10 +1290,10 @@ export default function Home() {
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 md:mb-7 gap-3 sm:gap-4">
                 <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black">Productos destacados</h2>
-                {/* Selector de tienda */}
+                {/* Selector de ciudad */}
                 <div className="flex items-center gap-2 sm:gap-3">
                   <label htmlFor="tienda-select" className="text-sm sm:text-base font-semibold text-gray-700 whitespace-nowrap">
-                    Tienda:
+                    Selecciona tu ciudad
                   </label>
                   <select
                     id="tienda-select"

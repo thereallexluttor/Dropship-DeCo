@@ -1644,14 +1644,38 @@ const AdminDashboard = () => {
     let preciosValidos: number[] = [];
 
     if (newProducto.stocks && newProducto.stocks.length > 0) {
-      // Convertir strings a números y validar
-      stocksValidos = newProducto.stocks.map(stock => ({
-        ...stock,
-        cantidad: typeof stock.cantidad === 'string' ? parseFloat(stock.cantidad) || 0 : stock.cantidad,
-        precio: typeof stock.precio === 'string' ? parseFloat(stock.precio) || 0 : stock.precio,
-        stock: typeof stock.stock === 'string' ? parseInt(stock.stock) || 0 : stock.stock,
-        tienda: stock.tienda || newProducto.Tienda || 1
-      })).filter(stock => stock.cantidad > 0 && stock.precio > 0);
+      // Validar que cada stock tenga al menos una tienda seleccionada
+      const stocksSinTiendas = newProducto.stocks.filter((stock, index) => {
+        const tieneTiendas = stock.tiendas && stock.tiendas.length > 0;
+        const tieneTienda = stock.tienda !== undefined && stock.tienda !== null;
+        return !tieneTiendas && !tieneTienda;
+      });
+
+      if (stocksSinTiendas.length > 0) {
+        alert('Cada tamaño debe tener al menos una tienda seleccionada. Por favor, selecciona al menos una tienda para cada tamaño.');
+        return;
+      }
+
+      // Expandir stocks con múltiples tiendas en stocks individuales
+      const stocksExpandidos: ProductoStock[] = [];
+      newProducto.stocks.forEach(stock => {
+        const tiendasDelStock = stock.tiendas && stock.tiendas.length > 0 
+          ? stock.tiendas 
+          : (stock.tienda ? [stock.tienda] : [newProducto.Tienda || 1]);
+        
+        tiendasDelStock.forEach(tiendaId => {
+          stocksExpandidos.push({
+            ...stock,
+            cantidad: typeof stock.cantidad === 'string' ? parseFloat(stock.cantidad as any) || 0 : stock.cantidad,
+            precio: typeof stock.precio === 'string' ? parseFloat(stock.precio as any) || 0 : stock.precio,
+            stock: typeof stock.stock === 'string' ? parseInt(stock.stock as any) || 0 : stock.stock,
+            tienda: tiendaId,
+            tiendas: undefined // Limpiar el array de tiendas para el guardado
+          });
+        });
+      });
+      
+      stocksValidos = stocksExpandidos.filter(stock => stock.cantidad > 0 && stock.precio > 0);
 
       if (stocksValidos.length === 0) {
         alert('Debe haber al menos un tamaño con cantidad y precio mayores a 0');
@@ -1839,6 +1863,12 @@ const AdminDashboard = () => {
     }
 
     try {
+      // Limpiar el campo tiendas de los stocks (solo es para UI, no para almacenamiento)
+      const stocksLimpios = producto.stocks?.map(stock => ({
+        ...stock,
+        tiendas: undefined
+      })) || null;
+
       const { error } = await supabase
         .from('productos')
         .update({
@@ -1854,7 +1884,7 @@ const AdminDashboard = () => {
           novedad: producto.novedad || false,
           id_marca: producto.id_marca || null,
           Tienda: producto.Tienda || null,
-          stocks: producto.stocks && producto.stocks.length > 0 ? producto.stocks : null,
+          stocks: stocksLimpios && stocksLimpios.length > 0 ? stocksLimpios : null,
           // Campos antiguos mantenidos para compatibilidad durante la transición
           tamano: producto.tamano && producto.tamano.length > 0 ? producto.tamano : null,
           precios: producto.precios && producto.precios.length > 0 ? producto.precios : null
@@ -2043,7 +2073,7 @@ const AdminDashboard = () => {
       unidad: 'ML',
       precio: 0,
       stock: 0,
-      tienda: (producto as ProductoForm).Tienda || (producto as Producto).Tienda || 1  // Usar la tienda del producto o por defecto 1
+      tiendas: []  // Sin tiendas preseleccionadas
     };
 
     const nuevosStocks = [...(producto.stocks || []), nuevoStock];
@@ -2123,6 +2153,66 @@ const AdminDashboard = () => {
   const actualizarTiendaStock = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, tiendaId: number) => {
     const nuevosStocks = [...(producto.stocks || [])];
     nuevosStocks[index] = { ...nuevosStocks[index], tienda: tiendaId };
+
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks
+    });
+  };
+
+  // Nueva función para manejar selección múltiple de tiendas
+  const toggleTiendaStock = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, tiendaId: number) => {
+    const nuevosStocks = [...(producto.stocks || [])];
+    const stockActual = nuevosStocks[index];
+    const tiendasActuales = stockActual?.tiendas || (stockActual?.tienda ? [stockActual.tienda] : []);
+    
+    let nuevasTiendas: number[];
+    if (tiendasActuales.includes(tiendaId)) {
+      // Si ya está seleccionada, la removemos (permite dejar vacío)
+      nuevasTiendas = tiendasActuales.filter(id => id !== tiendaId);
+    } else {
+      // Si no está seleccionada, la agregamos
+      nuevasTiendas = [...tiendasActuales, tiendaId];
+    }
+    
+    nuevosStocks[index] = { 
+      ...nuevosStocks[index], 
+      tiendas: nuevasTiendas,
+      tienda: nuevasTiendas.length > 0 ? nuevasTiendas[0] : undefined // Mantener compatibilidad con tienda única
+    };
+
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks
+    });
+  };
+
+  // Función para seleccionar todas las tiendas de un stock
+  const seleccionarTodasTiendas = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number) => {
+    const nuevosStocks = [...(producto.stocks || [])];
+    const todasLasTiendas = tiendas.map(t => t.id!);
+    
+    nuevosStocks[index] = { 
+      ...nuevosStocks[index], 
+      tiendas: todasLasTiendas,
+      tienda: todasLasTiendas[0]
+    };
+
+    setProducto({
+      ...producto,
+      stocks: nuevosStocks
+    });
+  };
+
+  // Función para deseleccionar todas las tiendas
+  const deseleccionarTodasTiendas = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number) => {
+    const nuevosStocks = [...(producto.stocks || [])];
+    
+    nuevosStocks[index] = { 
+      ...nuevosStocks[index], 
+      tiendas: [],
+      tienda: undefined
+    };
 
     setProducto({
       ...producto,
@@ -3038,7 +3128,7 @@ const AdminDashboard = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-50/30">
-          <div className="max-w-7xl mx-auto px-10 py-8 pb-20 w-full border border-gray-200 rounded-md bg-white m-4">
+          <div className="w-full px-4 py-8 pb-20 border border-gray-200 rounded-md bg-white">
 
         <TabsContent value="categorias" className="space-y-8 border border-gray-200 rounded-md p-6 bg-white">
           <Card className="border border-gray-200 shadow-sm bg-white">
@@ -4220,25 +4310,78 @@ const AdminDashboard = () => {
                               <option value="Blister">Blister</option>
                             </select>
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-[2]">
                             <label className="block text-xs font-medium text-gray-600 mb-1">
-                              Tienda
+                              Tiendas
                             </label>
-                            <select
-                              value={newProducto.stocks?.[index]?.tienda || newProducto.Tienda || 1}
-                              onChange={(e) => actualizarTiendaStock(newProducto, setNewProducto as any, index, parseInt(e.target.value))}
-                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
-                            >
-                              {tiendas.length === 0 ? (
-                                <option value={1}>Cargando tiendas...</option>
-                              ) : (
-                                tiendas.map((tienda) => (
-                                  <option key={tienda.id} value={tienda.id}>
-                                    {tienda.nombre} - {tienda.ciudad}
-                                  </option>
-                                ))
-                              )}
-                            </select>
+                            {tiendas.length === 0 ? (
+                              <div className="text-sm text-gray-500 p-2">Cargando tiendas...</div>
+                            ) : (
+                              <div className="relative">
+                                <details className="group">
+                                  <summary className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm cursor-pointer bg-white list-none flex items-center justify-between">
+                                    <span className="truncate">
+                                      {(() => {
+                                        const tiendasSeleccionadas = newProducto.stocks?.[index]?.tiendas || 
+                                          (newProducto.stocks?.[index]?.tienda ? [newProducto.stocks[index].tienda] : []);
+                                        if (tiendasSeleccionadas.length === 0) {
+                                          return 'Seleccionar tiendas...';
+                                        }
+                                        if (tiendasSeleccionadas.length === tiendas.length) {
+                                          return 'Todas las tiendas';
+                                        }
+                                        if (tiendasSeleccionadas.length === 1) {
+                                          const tienda = tiendas.find(t => t.id === tiendasSeleccionadas[0]);
+                                          return tienda ? `${tienda.nombre} - ${tienda.ciudad}` : '1 tienda';
+                                        }
+                                        return `${tiendasSeleccionadas.length} tiendas seleccionadas`;
+                                      })()}
+                                    </span>
+                                    <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </summary>
+                                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                    <div className="p-2 border-b border-gray-200 flex gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => seleccionarTodasTiendas(newProducto, setNewProducto as any, index)}
+                                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                      >
+                                        Todas
+                                      </button>
+                                      <span className="text-gray-300">|</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => deseleccionarTodasTiendas(newProducto, setNewProducto as any, index)}
+                                        className="text-xs text-gray-600 hover:text-gray-800 font-medium"
+                                      >
+                                        Ninguna
+                                      </button>
+                                    </div>
+                                    {tiendas.map((tienda) => {
+                                      const tiendasSeleccionadas = newProducto.stocks?.[index]?.tiendas || 
+                                        (newProducto.stocks?.[index]?.tienda ? [newProducto.stocks[index].tienda] : []);
+                                      const isChecked = tiendasSeleccionadas.includes(tienda.id!);
+                                      return (
+                                        <label
+                                          key={tienda.id}
+                                          className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => toggleTiendaStock(newProducto, setNewProducto as any, index, tienda.id!)}
+                                            className="rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-2"
+                                          />
+                                          <span className="text-sm">{tienda.nombre} - {tienda.ciudad}</span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                </details>
+                              </div>
+                            )}
                           </div>
                           <div className="flex-1">
                             <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -4695,25 +4838,78 @@ const AdminDashboard = () => {
                                               <option value="Blister">Blister</option>
                                             </select>
                                           </div>
-                                          <div className="flex-1">
+                                          <div className="flex-[2]">
                                             <label className="block text-xs font-medium text-gray-600 mb-1">
-                                              Tienda
+                                              Tiendas
                                             </label>
-                                            <select
-                                              value={editingProducto.stocks?.[index]?.tienda || editingProducto.Tienda || 1}
-                                              onChange={(e) => editingProducto && actualizarTiendaStock(editingProducto, (producto) => setEditingProducto(producto as Producto), index, parseInt(e.target.value))}
-                                              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
-                                            >
-                                              {tiendas.length === 0 ? (
-                                                <option value={1}>Cargando tiendas...</option>
-                                              ) : (
-                                                tiendas.map((tienda) => (
-                                                  <option key={tienda.id} value={tienda.id}>
-                                                    {tienda.nombre} - {tienda.ciudad}
-                                                  </option>
-                                                ))
-                                              )}
-                                            </select>
+                                            {tiendas.length === 0 ? (
+                                              <div className="text-sm text-gray-500 p-2">Cargando tiendas...</div>
+                                            ) : (
+                                              <div className="relative">
+                                                <details className="group">
+                                                  <summary className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm cursor-pointer bg-white list-none flex items-center justify-between">
+                                                    <span className="truncate">
+                                                      {(() => {
+                                                        const tiendasSeleccionadas = editingProducto?.stocks?.[index]?.tiendas || 
+                                                          (editingProducto?.stocks?.[index]?.tienda ? [editingProducto.stocks[index].tienda] : []);
+                                                        if (tiendasSeleccionadas.length === 0) {
+                                                          return 'Seleccionar tiendas...';
+                                                        }
+                                                        if (tiendasSeleccionadas.length === tiendas.length) {
+                                                          return 'Todas las tiendas';
+                                                        }
+                                                        if (tiendasSeleccionadas.length === 1) {
+                                                          const tienda = tiendas.find(t => t.id === tiendasSeleccionadas[0]);
+                                                          return tienda ? `${tienda.nombre} - ${tienda.ciudad}` : '1 tienda';
+                                                        }
+                                                        return `${tiendasSeleccionadas.length} tiendas seleccionadas`;
+                                                      })()}
+                                                    </span>
+                                                    <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                  </summary>
+                                                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                                    <div className="p-2 border-b border-gray-200 flex gap-2">
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => editingProducto && seleccionarTodasTiendas(editingProducto, (producto) => setEditingProducto(producto as Producto), index)}
+                                                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                      >
+                                                        Todas
+                                                      </button>
+                                                      <span className="text-gray-300">|</span>
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => editingProducto && deseleccionarTodasTiendas(editingProducto, (producto) => setEditingProducto(producto as Producto), index)}
+                                                        className="text-xs text-gray-600 hover:text-gray-800 font-medium"
+                                                      >
+                                                        Ninguna
+                                                      </button>
+                                                    </div>
+                                                    {tiendas.map((tienda) => {
+                                                      const tiendasSeleccionadas = editingProducto?.stocks?.[index]?.tiendas || 
+                                                        (editingProducto?.stocks?.[index]?.tienda ? [editingProducto.stocks[index].tienda] : []);
+                                                      const isChecked = tiendasSeleccionadas.includes(tienda.id!);
+                                                      return (
+                                                        <label
+                                                          key={tienda.id}
+                                                          className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                        >
+                                                          <input
+                                                            type="checkbox"
+                                                            checked={isChecked}
+                                                            onChange={() => editingProducto && toggleTiendaStock(editingProducto, (producto) => setEditingProducto(producto as Producto), index, tienda.id!)}
+                                                            className="rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-2"
+                                                          />
+                                                          <span className="text-sm">{tienda.nombre} - {tienda.ciudad}</span>
+                                                        </label>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                </details>
+                                              </div>
+                                            )}
                                           </div>
                                           <div className="flex-1">
                                             <label className="block text-xs font-medium text-gray-600 mb-1">

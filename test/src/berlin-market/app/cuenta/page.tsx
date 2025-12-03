@@ -259,7 +259,7 @@ export default function CuentaPage() {
         <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
           <Header />
           <main className="py-16 sm:py-20 md:py-24">
-            <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+            <div className="container mx-auto px-4 sm:px-6 w-full">
               {/* Skeleton para título */}
               <div className="mb-12">
                 <div className="h-12 bg-gray-200 rounded-lg w-64 mx-auto animate-pulse"></div>
@@ -300,7 +300,7 @@ export default function CuentaPage() {
           <Header />
 
           <main className="py-16 sm:py-20 md:py-24">
-            <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+            <div className="container mx-auto px-4 sm:px-6 w-full">
               <div className="text-center">
                 <div className="mb-8">
                   <User className="h-24 w-24 text-gray-300 mx-auto mb-6" />
@@ -327,7 +327,7 @@ export default function CuentaPage() {
         <Header />
 
         <main className="py-16 sm:py-20 md:py-24">
-          <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+          <div className="container mx-auto px-4 sm:px-6 w-full">
             {/* Breadcrumb */}
             <div className="mb-12">
               <nav className="flex items-center text-sm text-gray-500">

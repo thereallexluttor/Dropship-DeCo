@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
-import { useParams, useRouter, usePathname } from 'next/navigation'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useParams, useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -86,14 +86,18 @@ const headerStyles = `
   }
 `;
 
-export default function ProductPage() {
+function ProductPageContent() {
   const params = useParams()
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { addToCart } = useCart()
   
   // Check if we're on a product page
   const isProductPage = pathname?.startsWith('/producto/')
+  
+  // Obtener la subcategoría desde la URL (si viene de la página de tienda)
+  const subcategoriaFromUrl = searchParams.get('subcategoria')
 
   // Header states
   const [activeSlide, setActiveSlide] = useState(0)
@@ -122,6 +126,7 @@ export default function ProductPage() {
   const [selectedSizeIndex, setSelectedSizeIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [relatedProducts, setRelatedProducts] = useState<Producto[]>([])
+  const [selectedSubcategoryForBreadcrumbs, setSelectedSubcategoryForBreadcrumbs] = useState<any>(null)
   
   // Estado para manejar el tamaño seleccionado de cada producto relacionado
   const [selectedRelatedSizes, setSelectedRelatedSizes] = useState<{[key: number]: number}>({})
@@ -240,10 +245,27 @@ export default function ProductPage() {
   // Cargar producto principal primero (crítico)
   useEffect(() => {
     const loadProduct = async () => {
-      if (!params.id) return
+      if (!params.id) {
+        setIsLoading(false)
+        return
+      }
 
       setIsLoading(true)
       try {
+        // Obtener el parámetro de subcategoría de la URL
+        const subcategoriaParam = searchParams.get('subcategoria')
+        const subcategoriaIdFromUrl = subcategoriaParam ? parseInt(subcategoriaParam) : null
+
+        // Convertir el ID a número si es string
+        const productId = typeof params.id === 'string' ? parseInt(params.id) : params.id
+        
+        if (isNaN(productId)) {
+          console.error('ID de producto inválido:', params.id)
+          setIsLoading(false)
+          return
+        }
+
+        // Primero intentar cargar el producto básico
         const { data, error } = await supabase
           .from('productos')
           .select(`
@@ -263,26 +285,147 @@ export default function ProductPage() {
               nombre_marca
             )
           `)
-          .eq('id', params.id)
+          .eq('id', productId)
           .single()
 
-        if (error) throw error
-        setProduct(data)
+        if (error) {
+          console.error('Error cargando producto:', error)
+          throw error
+        }
+        
+        if (!data) {
+          console.error('Producto no encontrado con ID:', productId)
+          setIsLoading(false)
+          return
+        }
+        
+        // Cargar subcategorías adicionales si existen
+        let subcategorias2 = null
+        let subcategorias3 = null
+        
+        if (data.subcategorias_id2) {
+          try {
+            const { data: sub2 } = await supabase
+              .from('subcategories')
+              .select(`
+                id,
+                nombre,
+                descripcion,
+                categories_id,
+                categories:categories_id (
+                  id,
+                  nombre
+                )
+              `)
+              .eq('id', data.subcategorias_id2)
+              .single()
+            if (sub2) subcategorias2 = sub2
+          } catch (e) {
+            console.log('No se pudo cargar subcategorias_id2:', e)
+          }
+        }
+        
+        if (data.subcategorias_id3) {
+          try {
+            const { data: sub3 } = await supabase
+              .from('subcategories')
+              .select(`
+                id,
+                nombre,
+                descripcion,
+                categories_id,
+                categories:categories_id (
+                  id,
+                  nombre
+                )
+              `)
+              .eq('id', data.subcategorias_id3)
+              .single()
+            if (sub3) subcategorias3 = sub3
+          } catch (e) {
+            console.log('No se pudo cargar subcategorias_id3:', e)
+          }
+        }
+        
+        // Agregar las subcategorías adicionales al objeto producto
+        const productWithAllSubcategories = {
+          ...data,
+          subcategorias2,
+          subcategorias3
+        }
+        
+        setProduct(productWithAllSubcategories)
+        
+        // Determinar qué subcategoría usar para los breadcrumbs
+        let subcategoryToUse = null
+        
+        if (subcategoriaIdFromUrl) {
+          // Si viene un parámetro de subcategoría en la URL, usar esa
+          if (data.subcategorias_id === subcategoriaIdFromUrl && data.subcategorias) {
+            subcategoryToUse = data.subcategorias
+          } else if (data.subcategorias_id2 === subcategoriaIdFromUrl && subcategorias2) {
+            subcategoryToUse = subcategorias2
+          } else if (data.subcategorias_id3 === subcategoriaIdFromUrl && subcategorias3) {
+            subcategoryToUse = subcategorias3
+          }
+        }
+        
+        // Si no se encontró por parámetro, usar la primera disponible
+        if (!subcategoryToUse) {
+          if (data.subcategorias) {
+            subcategoryToUse = data.subcategorias
+          } else if (subcategorias2) {
+            subcategoryToUse = subcategorias2
+          } else if (subcategorias3) {
+            subcategoryToUse = subcategorias3
+          }
+        }
+        
+        setSelectedSubcategoryForBreadcrumbs(subcategoryToUse)
         setIsLoading(false) // Mostrar producto inmediatamente
 
         // Cargar productos relacionados después (diferido, no crítico)
-        if (data.subcategorias_id) {
+        // Usar la subcategoría seleccionada para los breadcrumbs
+        const subcategoryIdForRelated = subcategoriaIdFromUrl || data.subcategorias_id || data.subcategorias_id2 || data.subcategorias_id3
+        if (subcategoryIdForRelated) {
           // Usar setTimeout para no bloquear el renderizado inicial
           setTimeout(async () => {
-            const { data: related, error: relatedError } = await supabase
-              .from('productos')
-              .select('*')
-              .eq('subcategorias_id', data.subcategorias_id)
-              .neq('id', params.id)
-              .limit(4)
-
-            if (!relatedError && related) {
-              setRelatedProducts(related)
+            try {
+              // Intentar con filtros individuales y combinar resultados
+              const [result1, result2, result3] = await Promise.all([
+                supabase
+                  .from('productos')
+                  .select('*')
+                  .eq('subcategorias_id', subcategoryIdForRelated)
+                  .neq('id', productId)
+                  .limit(4),
+                supabase
+                  .from('productos')
+                  .select('*')
+                  .eq('subcategorias_id2', subcategoryIdForRelated)
+                  .neq('id', productId)
+                  .limit(4),
+                supabase
+                  .from('productos')
+                  .select('*')
+                  .eq('subcategorias_id3', subcategoryIdForRelated)
+                  .neq('id', productId)
+                  .limit(4)
+              ])
+              
+              // Combinar y eliminar duplicados
+              const allRelated = [
+                ...(result1.data || []), 
+                ...(result2.data || []), 
+                ...(result3.data || [])
+              ]
+              const uniqueRelated = Array.from(
+                new Map(allRelated.map(product => [product.id, product])).values()
+              ).slice(0, 4)
+              
+              setRelatedProducts(uniqueRelated)
+            } catch (relatedError) {
+              console.error('Error cargando productos relacionados:', relatedError)
             }
           }, 100)
         }
@@ -293,7 +436,7 @@ export default function ProductPage() {
     }
 
     loadProduct()
-  }, [params.id])
+  }, [params.id, searchParams])
 
   // Obtener precio actual según tamaño seleccionado
   const getCurrentPrice = () => {
@@ -933,21 +1076,21 @@ export default function ProductPage() {
               <Link href="/" className="hover:text-gray-900 transition-colors">Inicio</Link>
               <ChevronRight className="h-3 w-3" />
               <Link href="/tienda" className="hover:text-gray-900 transition-colors">Tienda</Link>
-              {product.subcategorias && (
+              {selectedSubcategoryForBreadcrumbs && (
                 <>
                   <ChevronRight className="h-3 w-3" />
                   <Link 
-                    href={`/tienda?categoria=${product.subcategorias.categories_id}&subcategoria=${product.subcategorias_id}`}
+                    href={`/tienda?categoria=${selectedSubcategoryForBreadcrumbs.categories_id}&subcategoria=${selectedSubcategoryForBreadcrumbs.id}`}
                     className="hover:text-gray-900 transition-colors"
                   >
-                    {product.subcategorias?.categories?.nombre || 'Categoría'}
+                    {selectedSubcategoryForBreadcrumbs?.categories?.nombre || 'Categoría'}
                   </Link>
                   <ChevronRight className="h-3 w-3" />
                   <Link 
-                    href={`/tienda?categoria=${product.subcategorias.categories_id}&subcategoria=${product.subcategorias_id}`}
+                    href={`/tienda?categoria=${selectedSubcategoryForBreadcrumbs.categories_id}&subcategoria=${selectedSubcategoryForBreadcrumbs.id}`}
                     className="text-gray-900 font-bold hover:text-[#196428]"
                   >
-                    {product.subcategorias.nombre}
+                    {selectedSubcategoryForBreadcrumbs.nombre}
                   </Link>
                 </>
               )}
@@ -1296,3 +1439,19 @@ export default function ProductPage() {
   )
 }
 
+export default function ProductPage() {
+  return (
+    <Suspense fallback={
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center bg-[#FCFFEF]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428] mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando producto...</p>
+          </div>
+        </div>
+      </MainLayout>
+    }>
+      <ProductPageContent />
+    </Suspense>
+  )
+}

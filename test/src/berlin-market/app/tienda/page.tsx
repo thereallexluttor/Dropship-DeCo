@@ -476,10 +476,12 @@ function TiendaPageContent() {
       })
     }
 
-    // Filtro por subcategoría específica
+    // Filtro por subcategoría específica (incluye subcategorias_id, subcategorias_id2 y subcategorias_id3)
     if (selectedProductSubcategory) {
       filteredProducts = filteredProducts.filter(product => {
-        return product.subcategorias_id === selectedProductSubcategory
+        return product.subcategorias_id === selectedProductSubcategory ||
+               product.subcategorias_id2 === selectedProductSubcategory ||
+               product.subcategorias_id3 === selectedProductSubcategory
       })
     }
 
@@ -1376,7 +1378,7 @@ function TiendaPageContent() {
                     <div className="space-y-5">
                       {/* Selector de tienda */}
                       <div>
-                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Tienda</h3>
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Selecciona tu ciudad</h3>
                         <select
                           value={selectedStoreId}
                           onChange={(e) => setSelectedStoreId(Number(e.target.value))}
@@ -2052,8 +2054,37 @@ function TiendaPageContent() {
 
                         const currentPrice = getCurrentPrice();
 
+                        // Determinar la subcategoría actual para pasarla en la URL
+                        const getCurrentSubcategoryForProduct = () => {
+                          // Si estamos en una subcategoría específica, usar esa
+                          if (selectedSubcategory !== CATEGORIES.TODOS_LOS_PRODUCTOS && 
+                              selectedSubcategory !== CATEGORIES.OFERTAS && 
+                              selectedSubcategory !== CATEGORIES.NOVEDADES &&
+                              selectedSubcategory !== 0) {
+                            return selectedSubcategory
+                          }
+                          // Si el producto tiene subcategorias_id, usar esa por defecto
+                          if (product.subcategorias_id) {
+                            return product.subcategorias_id
+                          }
+                          // Si tiene subcategorias_id2, usar esa
+                          if (product.subcategorias_id2) {
+                            return product.subcategorias_id2
+                          }
+                          // Si tiene subcategorias_id3, usar esa
+                          if (product.subcategorias_id3) {
+                            return product.subcategorias_id3
+                          }
+                          return null
+                        }
+
+                        const currentSubcategoryId = getCurrentSubcategoryForProduct()
+                        const productUrl = currentSubcategoryId 
+                          ? `/producto/${product.id}?subcategoria=${currentSubcategoryId}`
+                          : `/producto/${product.id}`
+
                         return (
-                        <Link key={product.id} href={`/producto/${product.id}`} className="block h-full group">
+                        <Link key={product.id} href={productUrl} className="block h-full group">
                           <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                             <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
                               <Image
@@ -2229,7 +2260,7 @@ function TiendaPageContent() {
             <div className="space-y-4">
               {/* Selector de tienda */}
               <div>
-                <h3 className="text-base font-semibold text-gray-700 mb-2">Tienda</h3>
+                <h3 className="text-base font-semibold text-gray-700 mb-2">Selecciona tu ciudad</h3>
                 <select
                   value={selectedStoreId}
                   onChange={(e) => setSelectedStoreId(Number(e.target.value))}

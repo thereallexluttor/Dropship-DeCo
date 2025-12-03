@@ -68,6 +68,8 @@ export const useProducts = () => {
         .select(`
           id,
           subcategorias_id,
+          subcategorias_id2,
+          subcategorias_id3,
           nombre,
           descripcion,
           imagen_url,
@@ -135,6 +137,8 @@ export const useProducts = () => {
             .select(`
               id,
               subcategorias_id,
+              subcategorias_id2,
+              subcategorias_id3,
               nombre,
               descripcion,
               imagen_url,
@@ -228,12 +232,16 @@ export const useProducts = () => {
         setNewProducts(productosNuevos)
 
         // ✅ OPTIMIZACIÓN: Organización eficiente sin loops adicionales de consultas
+        // Incluye productos con subcategorias_id, subcategorias_id2 y subcategorias_id3
         const productosPorCategoria: ProductsByCategory[] = categoriasData.map(categoria => {
           const subcategoriasCategoria = subcategoriasData.filter(sub => sub.categories_id === categoria.id)
 
           const subcategoriesWithProducts = subcategoriasCategoria.map(subcategoria => {
             const productosSubcategoria = productosConDetalles.filter(
-              producto => producto.subcategorias_id === subcategoria.id
+              producto => 
+                producto.subcategorias_id === subcategoria.id ||
+                producto.subcategorias_id2 === subcategoria.id ||
+                producto.subcategorias_id3 === subcategoria.id
             )
 
             return {
@@ -272,7 +280,11 @@ export const useProducts = () => {
     if (!category) return []
 
     const subcategory = category.subcategories.find(sub => sub.subcategoryId === subcategoryId)
-    return subcategory ? subcategory.products : []
+    if (!subcategory) return []
+
+    // Ya incluye productos con subcategorias_id, subcategorias_id2 y subcategorias_id3
+    // porque se filtraron así en la organización inicial
+    return subcategory.products
   }
 
   // Función para obtener todos los productos de una categoría (sin filtrar por subcategoría)
@@ -280,8 +292,13 @@ export const useProducts = () => {
     const category = productsByCategory.find(cat => cat.categoryId === categoryId)
     if (!category) return []
 
-    // Combinar todos los productos de todas las subcategorías
-    return category.subcategories.flatMap(sub => sub.products)
+    // Combinar todos los productos de todas las subcategorías y eliminar duplicados
+    // (un producto puede aparecer en múltiples subcategorías si tiene subcategorias_id2 o subcategorias_id3)
+    const allProducts = category.subcategories.flatMap(sub => sub.products)
+    const uniqueProducts = Array.from(
+      new Map(allProducts.map(product => [product.id, product])).values()
+    )
+    return uniqueProducts
   }
 
   const refreshProducts = () => {
@@ -307,6 +324,8 @@ export const useProducts = () => {
         .select(`
           id,
           subcategorias_id,
+          subcategorias_id2,
+          subcategorias_id3,
           nombre,
           descripcion,
           imagen_url,

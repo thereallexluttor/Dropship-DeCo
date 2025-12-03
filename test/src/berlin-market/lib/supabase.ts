@@ -70,6 +70,7 @@ export interface ProductoStock {
   precio: number   // precio para este tamaño
   stock: number    // stock disponible para este tamaño
   tienda?: number  // tienda asociada a este tamaño (opcional)
+  tiendas?: number[]  // múltiples tiendas para selección en formulario
 }
 
 // Tipos para la tabla productos
