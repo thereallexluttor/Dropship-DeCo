@@ -256,8 +256,9 @@ function ProductPageContent() {
         const subcategoriaParam = searchParams.get('subcategoria')
         const subcategoriaIdFromUrl = subcategoriaParam ? parseInt(subcategoriaParam) : null
 
-        // Convertir el ID a número si es string
-        const productId = typeof params.id === 'string' ? parseInt(params.id) : params.id
+        // Convertir el ID a número, manejando string o string[]
+        const idString = Array.isArray(params.id) ? params.id[0] : params.id
+        const productId = typeof idString === 'string' ? parseInt(idString) : Number(idString)
         
         if (isNaN(productId)) {
           console.error('ID de producto inválido:', params.id)
