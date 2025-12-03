@@ -98,6 +98,7 @@ function ProductPageContent() {
   
   // Obtener la subcategoría desde la URL (si viene de la página de tienda)
   const subcategoriaFromUrl = searchParams.get('subcategoria')
+  const subcategoriaIdFromUrl = subcategoriaFromUrl ? parseInt(subcategoriaFromUrl) : null
 
   // Header states
   const [activeSlide, setActiveSlide] = useState(0)
@@ -252,10 +253,6 @@ function ProductPageContent() {
 
       setIsLoading(true)
       try {
-        // Obtener el parámetro de subcategoría de la URL
-        const subcategoriaParam = searchParams.get('subcategoria')
-        const subcategoriaIdFromUrl = subcategoriaParam ? parseInt(subcategoriaParam) : null
-
         // Convertir el ID a número, manejando string o string[]
         const idString = Array.isArray(params.id) ? params.id[0] : params.id
         const productId = typeof idString === 'string' ? parseInt(idString) : Number(idString)
@@ -437,7 +434,7 @@ function ProductPageContent() {
     }
 
     loadProduct()
-  }, [params.id, searchParams])
+  }, [params.id, subcategoriaIdFromUrl])
 
   // Obtener precio actual según tamaño seleccionado
   const getCurrentPrice = () => {
