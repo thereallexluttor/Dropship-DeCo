@@ -725,6 +725,18 @@ export default function Home() {
                         </nav>
                       </div>
                       <div className="border-t border-gray-200 -mx-6"></div>
+                      <div className="px-2">
+                        <Link 
+                          href="https://micrositios.avalpaycenter.com/unisantander-sas-ma"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center w-full px-4 py-3 rounded-lg bg-[#196428] text-white text-sm font-medium hover:bg-[#15521f] transition-colors"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          paga cartera aqui!
+                        </Link>
+                      </div>
+                      <div className="border-t border-gray-200 -mx-6"></div>
                       <nav className="flex flex-col gap-1">
                         {navLinks.map((link) => {
                           if (link.name === "Inicio") {
@@ -1063,12 +1075,20 @@ export default function Home() {
           {/* Category Grid */}
           <div className="hidden md:block container mx-auto px-4 py-3 relative">
             <div className="flex flex-col">
-              <div className="flex justify-center">
+              <div className="flex justify-center relative items-center">
                 <div className="flex flex-nowrap justify-center gap-0.5 sm:gap-1 md:gap-0 lg:gap-2" ref={categoriesContainerRef}>
                   {categories.map((category) => (
                     <CategoryMenu key={category.name} category={category} containerRef={categoriesContainerRef} />
                   ))}
                 </div>
+                <Link 
+                  href="https://micrositios.avalpaycenter.com/unisantander-sas-ma"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center px-3 py-1.5 rounded-lg bg-[#196428] text-white text-xs sm:text-sm font-medium hover:bg-[#15521f] transition-colors whitespace-nowrap"
+                >
+                  paga cartera aqui!
+                </Link>
               </div>
               <div className="w-full h-[1px] bg-gray-200 mt-3"></div>
             </div>

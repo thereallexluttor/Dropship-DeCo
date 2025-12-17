@@ -104,9 +104,13 @@ export default function CarritoPage() {
   const [deliveryZone, setDeliveryZone] = useState<'bucaramanga_am' | 'piedecuesta' | ''>('')
   const [shippingFee, setShippingFee] = useState<number>(0)
   const [pickupInStore, setPickupInStore] = useState(false)
+  
+  // Ref para prevenir múltiples ejecuciones simultáneas del procesamiento de pago
+  const isProcessingPaymentRef = useRef(false)
+  const processedRequestIdsRef = useRef<Set<string>>(new Set())
 
   // Usar el contexto del carrito
-  const { items, updateQuantity, removeFromCart, updateProductSize, getTotalItems, getTotalPrice, clearCart } = useCart()
+  const { items, updateQuantity, removeFromCart, updateProductSize, getTotalItems, getTotalPrice, clearCart, restoreCart } = useCart()
 
   // Usar el hook personalizado para cargar categorías dinámicamente
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
@@ -143,10 +147,497 @@ export default function CarritoPage() {
     setShippingFee(fee)
   }, [deliveryZone, items, getTotalPrice, pickupInStore])
 
+  // Verificar estado del pago cuando regresa desde la pasarela
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      // Prevenir ejecuciones múltiples simultáneas
+      if (isProcessingPaymentRef.current) {
+        console.log('⏸️ Procesamiento de pago ya en curso, saltando ejecución')
+        return
+      }
+
+      debugCartState('INICIO_VERIFICACION_PAGO')
+
+      // Verificar si hay parámetro de retorno de pago en la URL
+      const urlParams = new URLSearchParams(window.location.search)
+      const paymentReturn = urlParams.get('payment_return')
+
+      console.log('🔍 Parámetro payment_return:', paymentReturn)
+
+      if (paymentReturn === 'true') {
+        console.log('💳 Detectado retorno desde pasarela de pago')
+
+        // Buscar el requestId guardado en localStorage
+        const pendingPaymentData = localStorage.getItem('pendingPayment')
+        console.log('💾 Datos de pago pendientes en localStorage:', !!pendingPaymentData)
+
+        if (!pendingPaymentData) {
+          console.log('❌ No hay datos de pago pendiente - usuario canceló o navega manualmente')
+          // Limpiar URL y mantener el carrito intacto
+          window.history.replaceState({}, '', '/carrito')
+          // No mostrar alert aquí para evitar spam si el usuario navega manualmente
+          return
+        }
+
+        try {
+          console.log('🔍 Verificando datos de pago pendientes...')
+          const { requestId, orderData, cartState, timestamp } = JSON.parse(pendingPaymentData)
+          console.log('📦 Datos parseados:', { requestId, hasOrderData: !!orderData, hasCartState: !!cartState, timestamp })
+
+          // Verificar si este requestId ya fue procesado ANTES de continuar
+          const processedOrderKey = `processed_order_${requestId}`
+          const orderAlreadyProcessed = localStorage.getItem(processedOrderKey)
+          
+          if (orderAlreadyProcessed || processedRequestIdsRef.current.has(requestId)) {
+            console.log('⚠️ Este requestId ya fue procesado anteriormente:', {
+              requestId,
+              localStorage: !!orderAlreadyProcessed,
+              ref: processedRequestIdsRef.current.has(requestId)
+            })
+            // Limpiar datos y URL
+            localStorage.removeItem('pendingPayment')
+            window.history.replaceState({}, '', '/carrito')
+            clearCart()
+            return
+          }
+
+          // Si hay datos pendientes, intentar restaurar el estado del carrito inmediatamente
+          if (cartState) {
+            console.log('🔄 Restaurando estado del carrito...')
+            restoreCartState(cartState)
+            debugCartState('DESPUES_RESTAURACION_INICIAL')
+          }
+          
+          // Verificar si los datos son muy antiguos (más de 1 hora)
+          if (timestamp && Date.now() - timestamp > 3600000) {
+            console.log('Datos de pago pendiente muy antiguos, limpiando...')
+            localStorage.removeItem('pendingPayment')
+            window.history.replaceState({}, '', '/carrito')
+            return
+          }
+          
+          if (!requestId) {
+            console.error('No se encontró requestId en los datos guardados')
+            localStorage.removeItem('pendingPayment')
+            window.history.replaceState({}, '', '/carrito')
+            // El carrito se mantiene intacto - usuario canceló antes de iniciar
+            return
+          }
+
+          console.log('🔍 Consultando estado del pago con requestId:', requestId)
+          debugCartState('ANTES_CONSULTA_PAGO')
+
+          // Consultar el estado de la sesión de pago
+          const statusResponse = await fetch('/api/check-payment-session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ requestId }),
+          })
+
+          console.log('📡 Respuesta de consulta de pago:', { ok: statusResponse.ok, status: statusResponse.status })
+
+          // Si la consulta falla, asumir que el usuario canceló o la sesión no existe
+          if (!statusResponse.ok) {
+            const errorData = await statusResponse.json().catch(() => ({}))
+            console.log('❌ No se pudo consultar el estado del pago (posible cancelación):', errorData)
+
+            // Limpiar datos y mantener el carrito intacto
+            localStorage.removeItem('pendingPayment')
+            window.history.replaceState({}, '', '/carrito')
+            // No mostrar alert para evitar spam - el usuario simplemente canceló
+            return
+          }
+
+          const sessionStatus = await statusResponse.json()
+          const paymentStatus = sessionStatus.status?.status || sessionStatus.payment?.[0]?.status?.status
+
+          console.log('💳 Estado del pago recibido:', {
+            sessionStatus,
+            paymentStatus,
+            statusPath: sessionStatus.status?.status,
+            paymentPath: sessionStatus.payment?.[0]?.status?.status
+          })
+
+          // Limpiar URL ANTES de procesar el resultado
+          console.log('🧹 Limpiando URL')
+          window.history.replaceState({}, '', '/carrito')
+
+          // Verificar el estado del pago
+          if (paymentStatus === 'APPROVED') {
+            console.log('✅ Pago aprobado - verificando si ya fue procesado')
+
+            // CRÍTICO: Verificar si este requestId ya fue procesado ANTES de hacer cualquier cosa
+            const processedOrderKey = `processed_order_${requestId}`
+            const orderAlreadyProcessed = localStorage.getItem(processedOrderKey)
+            
+            // También verificar en el ref para prevenir ejecuciones simultáneas
+            if (orderAlreadyProcessed || processedRequestIdsRef.current.has(requestId)) {
+              console.log('⚠️ Pedido ya fue procesado anteriormente, evitando duplicado')
+              console.log('🔍 Verificación:', {
+                localStorage: !!orderAlreadyProcessed,
+                ref: processedRequestIdsRef.current.has(requestId),
+                requestId
+              })
+              
+              // Limpiar datos pendientes y carrito
+              localStorage.removeItem('pendingPayment')
+              clearCart()
+              debugCartState('PEDIDO_YA_PROCESADO')
+              
+              alert('Tu pedido ya fue procesado exitosamente. No se crearán pedidos duplicados.')
+              return
+            }
+
+            // CRÍTICO: Marcar como procesando ANTES de crear el pedido para prevenir ejecuciones simultáneas
+            if (isProcessingPaymentRef.current) {
+              console.log('⚠️ Ya hay un proceso de pago en curso, esperando...')
+              return
+            }
+
+            // Marcar que estamos procesando este requestId
+            isProcessingPaymentRef.current = true
+            processedRequestIdsRef.current.add(requestId)
+            localStorage.setItem(processedOrderKey, Date.now().toString())
+
+            try {
+              debugCartState('PAGO_APROBADO_ANTES_CREAR_PEDIDO')
+
+              // Pago aprobado: crear el pedido y limpiar el carrito
+              const orderResult = await createOrderFromPendingPayment(orderData, requestId)
+
+              const orderId = orderResult?.alreadyExists ? 'existente' : orderResult?.id || 'desconocido'
+              const message = orderResult?.alreadyExists
+                ? `¡Pago aprobado exitosamente!\n\n📦 Tu pedido ya estaba confirmado.\n💰 Total pagado: $${orderData.totalAmount.toLocaleString('es-CO')}`
+                : `¡Pago aprobado exitosamente!\n\n📦 Tu pedido ha sido confirmado.\n💰 Total pagado: $${orderData.totalAmount.toLocaleString('es-CO')}\n\nTe enviaremos un correo de confirmación.`
+
+              alert(message)
+
+              // Limpiar datos pendientes después de crear el pedido exitosamente
+              localStorage.removeItem('pendingPayment')
+
+              // SOLO limpiar el carrito cuando el pago está explícitamente aprobado
+              clearCart()
+              debugCartState('DESPUES_LIMPIAR_CARRITO_APROBADO')
+            } catch (error) {
+              console.error('❌ Error procesando pedido aprobado:', error)
+              // Si hay error, remover las marcas para permitir reintento
+              isProcessingPaymentRef.current = false
+              processedRequestIdsRef.current.delete(requestId)
+              localStorage.removeItem(processedOrderKey)
+              throw error
+            } finally {
+              // Resetear el flag de procesamiento después de un delay para evitar condiciones de carrera
+              setTimeout(() => {
+                isProcessingPaymentRef.current = false
+              }, 2000)
+            }
+          } else {
+            console.log('❌ Pago NO aprobado - estado:', paymentStatus)
+            debugCartState('PAGO_NO_APROBADO_INICIO')
+            
+            // Limpiar datos pendientes cuando el pago no es aprobado
+            localStorage.removeItem('pendingPayment')
+            
+            // Cualquier otro estado (REJECTED, FAILED, PENDING, null, undefined, o desconocido): mantener el carrito
+            console.log('🔄 Restaurando estado del carrito después de pago no aprobado')
+
+            // Restaurar el estado del carrito desde los datos guardados
+            if (cartState) {
+              restoreCartState(cartState)
+            } else {
+              console.log('⚠️ No hay estado del carrito para restaurar')
+            }
+
+            // Verificar que el carrito no se haya vaciado
+            console.log('🛒 Estado actual del carrito después de restauración:', {
+              itemsCount: items.length,
+              totalPrice: getTotalPrice(),
+              pickupInStore,
+              deliveryAddress,
+              deliveryZone
+            })
+            debugCartState('DESPUES_RESTAURACION_PAGO_NO_APROBADO')
+
+            let message = 'Tu carrito se mantiene intacto.'
+
+            if (paymentStatus === 'REJECTED') {
+              message = 'El pago fue rechazado.\n\nPor favor, intenta nuevamente o elige otro método de pago.\n\n' + message
+            } else if (paymentStatus === 'FAILED') {
+              message = 'El pago falló.\n\nPor favor, intenta nuevamente o elige otro método de pago.\n\n' + message
+            } else if (paymentStatus === 'PENDING') {
+              message = 'El pago está pendiente. Si ya realizaste el pago, espera unos momentos y vuelve a verificar.\n\n' + message
+            } else {
+              // Estado desconocido o null/undefined - probablemente el usuario canceló
+              // No mostrar alert para evitar spam cuando el usuario simplemente cancela
+              console.log('🚫 Estado de pago desconocido o cancelado:', paymentStatus, '- Carrito mantenido intacto')
+              return // Salir sin mostrar mensaje
+            }
+
+            console.log('💬 Mostrando mensaje al usuario:', message)
+            alert(message)
+            // NO se llama a clearCart() - el carrito se mantiene intacto
+          }
+        } catch (error) {
+          console.error('Error verificando estado del pago:', error)
+          
+          // Resetear flags en caso de error
+          isProcessingPaymentRef.current = false
+          
+          // Limpiar datos pendientes
+          localStorage.removeItem('pendingPayment')
+          window.history.replaceState({}, '', '/carrito')
+          
+          // No mostrar alert en caso de error - asumir que el usuario canceló
+          // El carrito se mantiene intacto
+        }
+      } else {
+        // Si no hay parámetro payment_return pero hay datos pendientes antiguos, limpiarlos
+        const pendingPaymentData = localStorage.getItem('pendingPayment')
+        if (pendingPaymentData) {
+          try {
+            const { timestamp } = JSON.parse(pendingPaymentData)
+            // Si los datos tienen más de 1 hora, limpiarlos
+            if (timestamp && Date.now() - timestamp > 3600000) {
+              localStorage.removeItem('pendingPayment')
+            }
+          } catch (e) {
+            // Si hay error parseando, limpiar de todas formas
+            localStorage.removeItem('pendingPayment')
+          }
+        }
+
+        // Limpiar pedidos procesados antiguos (más de 24 horas)
+        const processedOrderKeys = Object.keys(localStorage).filter(key => key.startsWith('processed_order_'))
+        processedOrderKeys.forEach(key => {
+          try {
+            // Extraer timestamp del key (formato: processed_order_requestId_timestamp)
+            const parts = key.split('_')
+            if (parts.length >= 4) {
+              const timestamp = parseInt(parts[parts.length - 1])
+              // Si tiene más de 24 horas, limpiar
+              if (!isNaN(timestamp) && Date.now() - timestamp > 86400000) {
+                localStorage.removeItem(key)
+              }
+            }
+          } catch (e) {
+            // Si hay error, limpiar el key problemático
+            localStorage.removeItem(key)
+          }
+        })
+      }
+    }
+
+    checkPaymentStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Función para restaurar el estado completo del carrito desde los datos guardados
+  const restoreCartState = (cartState: any) => {
+    try {
+      console.log('🔄 Iniciando restauración del carrito:', {
+        hasItems: !!cartState.items,
+        itemsCount: cartState.items?.length || 0,
+        pickupInStore: cartState.pickupInStore,
+        deliveryAddress: cartState.deliveryAddress,
+        deliveryZone: cartState.deliveryZone,
+        shippingFee: cartState.shippingFee
+      })
+
+      // Restaurar items del carrito usando la función del contexto
+      if (cartState.items && Array.isArray(cartState.items) && cartState.items.length > 0) {
+        console.log('🛒 Restaurando items del carrito:', cartState.items.length, 'productos')
+        restoreCart(cartState.items)
+      } else {
+        console.log('⚠️ No hay items para restaurar en el carrito')
+      }
+
+      // Restaurar opciones de entrega
+      if (cartState.pickupInStore !== undefined) {
+        console.log('📦 Restaurando opción de recogida:', cartState.pickupInStore)
+        setPickupInStore(cartState.pickupInStore)
+      }
+      if (cartState.deliveryAddress) {
+        console.log('🏠 Restaurando dirección de entrega:', cartState.deliveryAddress)
+        setDeliveryAddress(cartState.deliveryAddress)
+      }
+      if (cartState.deliveryZone) {
+        console.log('📍 Restaurando zona de entrega:', cartState.deliveryZone)
+        setDeliveryZone(cartState.deliveryZone)
+      }
+      if (cartState.shippingFee !== undefined) {
+        console.log('💰 Restaurando costo de envío:', cartState.shippingFee)
+        setShippingFee(cartState.shippingFee)
+      }
+
+      console.log('✅ Estado del carrito restaurado exitosamente')
+    } catch (error) {
+      console.error('❌ Error restaurando estado del carrito:', error)
+    }
+  }
+
+  // Función para hacer debugging detallado del estado del carrito
+  const debugCartState = (context: string) => {
+    console.log(`🐛 DEBUG [${context}]:`, {
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+      cartItems: items.length,
+      cartDetails: items.map(item => ({
+        id: item.id,
+        nombre: item.nombre,
+        quantity: item.quantity,
+        selectedSizeIndex: item.selectedSizeIndex,
+        unitPrice: item.unitPrice
+      })),
+      totalPrice: getTotalPrice(),
+      pickupInStore,
+      deliveryAddress,
+      deliveryZone,
+      shippingFee,
+      localStorageKeys: Object.keys(localStorage).filter(key =>
+        key.includes('cart') || key.includes('pending') || key.includes('payment')
+      ),
+      pendingPaymentData: localStorage.getItem('pendingPayment') ? 'EXISTS' : 'NOT_FOUND',
+      userAuthenticated: !!user
+    })
+  }
+
+  // Función para crear el pedido desde los datos pendientes guardados
+  const createOrderFromPendingPayment = async (orderData: any, requestId: string) => {
+    try {
+      console.log('🔄 Creando pedido desde datos pendientes...', { requestId })
+
+      // Verificar si ya existe un pedido con los mismos datos (usuario, total, dirección)
+      // para evitar duplicados en caso de que el proceso se ejecute múltiples veces
+      // Usar una ventana de tiempo más amplia (10 minutos) para capturar posibles duplicados
+      const { data: existingOrders, error: checkError } = await supabase
+        .from('pedidos')
+        .select('id, fecha')
+        .eq('usuario_id', orderData.userId)
+        .eq('total', orderData.totalAmount)
+        .eq('Direccion', orderData.address)
+        .gte('fecha', new Date(Date.now() - 600000).toISOString()) // Últimos 10 minutos
+        .order('fecha', { ascending: false })
+        .limit(1)
+
+      if (checkError) {
+        console.error('Error verificando pedidos existentes:', checkError)
+        // Continuar con la creación del pedido si falla la verificación
+      } else if (existingOrders && existingOrders.length > 0) {
+        const existingOrder = existingOrders[0]
+        const orderAge = Date.now() - new Date(existingOrder.fecha).getTime()
+        console.log('⚠️ Pedido ya existe, evitando duplicado:', {
+          orderId: existingOrder.id,
+          orderAge: `${Math.round(orderAge / 1000)} segundos`,
+          requestId
+        })
+        return { id: existingOrder.id, alreadyExists: true }
+      }
+
+      // Crear el pedido en la tabla pedidos
+      const { data: orderResult, error: orderError } = await supabase
+        .from('pedidos')
+        .insert([
+          {
+            usuario_id: orderData.userId,
+            fecha: new Date().toISOString(),
+            total: orderData.totalAmount,
+            estado: 'pendiente',
+            Direccion: orderData.address,
+          }
+        ])
+        .select()
+        .single()
+
+      if (orderError) {
+        console.error('Error creando pedido:', orderError)
+        throw orderError
+      }
+
+      console.log('✅ Pedido creado exitosamente:', orderResult.id)
+
+      // Verificar si el detalle del pedido ya existe antes de crearlo
+      const { data: existingDetails, error: detailCheckError } = await supabase
+        .from('detalle_pedido')
+        .select('id')
+        .eq('pedido_id', orderResult.id)
+        .limit(1)
+
+      if (detailCheckError) {
+        console.error('Error verificando detalle existente:', detailCheckError)
+      }
+
+      // Crear los items del detalle del pedido solo si es un pedido nuevo Y no tiene detalles
+      if (!orderResult.alreadyExists && (!existingDetails || existingDetails.length === 0)) {
+        const { error: detailError } = await supabase
+          .from('detalle_pedido')
+          .insert(
+            orderData.orderItems.map((item: any) => ({
+              pedido_id: orderResult.id,
+              producto_id: item.producto_id,
+              cantidad: item.cantidad,
+              subtotal: item.subtotal,
+              tamano_index: item.tamano_index
+            }))
+          )
+
+        if (detailError) {
+          console.error('Error creando detalle del pedido:', detailError)
+          throw detailError
+        }
+        console.log('✅ Detalle del pedido creado exitosamente')
+      } else {
+        if (orderResult.alreadyExists) {
+          console.log('📋 Saltando creación de detalle porque el pedido ya existía')
+        } else if (existingDetails && existingDetails.length > 0) {
+          console.log('📋 Saltando creación de detalle porque ya existe detalle para este pedido')
+        }
+      }
+
+      // Enviar correo de confirmación solo si es un pedido nuevo
+      if (!orderResult.alreadyExists) {
+        try {
+          const emailResponse = await fetch('/api/send-order-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userEmail: orderData.userEmail,
+              userName: orderData.userName,
+              orderId: orderResult.id,
+              orderDate: orderResult.fecha,
+              totalAmount: orderData.totalAmount,
+              address: orderData.address,
+              items: orderData.items,
+              orderStatus: orderResult.estado
+            })
+          })
+
+          if (!emailResponse.ok) {
+            console.error('Error al enviar el correo de confirmación')
+          }
+        } catch (emailError) {
+          console.error('Error al enviar el correo:', emailError)
+          // No detener el proceso si falla el envío del correo
+        }
+      } else {
+        console.log('📧 Saltando envío de email porque el pedido ya existía')
+      }
+    } catch (error) {
+      console.error('Error creando pedido desde datos pendientes:', error)
+      throw error
+    }
+  }
+
   // Función para manejar el pago
   const handlePayment = async () => {
+    debugCartState('INICIO_HANDLE_PAYMENT')
+
     if (!user) {
       // Si no está autenticado, mostrar modal de autenticación
+      console.log('🔐 Usuario no autenticado - mostrando modal de login')
       setIsAuthModalOpen(true)
     } else {
       // Validar que el carrito no esté vacío
@@ -216,93 +707,95 @@ export default function CarritoPage() {
           : (deliveryZone === 'piedecuesta' ? (cartSubtotal < 150000 ? 8000 : 0) : 0))
         const totalAmount = cartSubtotal + currentShipping
 
-        // Crear el pedido en la tabla pedidos
-        const { data: orderResult, error: orderError } = await supabase
-          .from('pedidos')
-          .insert([
-            {
-              usuario_id: userData.id,
-              fecha: new Date().toISOString(),
-              total: totalAmount,
-              estado: 'pendiente',
-              Direccion: pickupInStore ? 'Recoger en tienda' : `${deliveryAddress} | Zona: ${deliveryZone === 'bucaramanga_am' ? 'Bucaramanga / Área Metropolitana' : 'Piedecuesta'}`
-            }
-          ])
-          .select()
-          .single()
-
-        if (orderError) {
-          console.error('Error creando pedido:', orderError)
-          alert('Error al procesar el pedido. Por favor, inténtalo de nuevo.')
-          setIsProcessingPayment(false)
-          return
+        // Preparar datos del pedido y estado completo del carrito para guardar en localStorage
+        const orderData = {
+          userId: userData.id,
+          userEmail: user.email,
+          userName: (userData as any).nombre || '',
+          totalAmount,
+          address: pickupInStore ? 'Recoger en tienda' : `${deliveryAddress} | Zona: ${deliveryZone === 'bucaramanga_am' ? 'Bucaramanga / Área Metropolitana' : 'Piedecuesta'}`,
+          orderItems,
+          items: items.map(item => ({
+            id: item.id,
+            nombre: item.nombre,
+            descripcion: item.descripcion,
+            imagen_url: item.imagen_url,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            selectedSizeIndex: item.selectedSizeIndex,
+            tamano: item.tamano
+          }))
         }
 
-        // Crear los items del detalle del pedido
-        const { error: detailError } = await supabase
-          .from('detalle_pedido')
-          .insert(
-            orderItems.map(item => ({
-              pedido_id: orderResult.id,
-              producto_id: item.producto_id,
-              cantidad: item.cantidad,
-              subtotal: item.subtotal,
-              tamano_index: item.tamano_index
-            }))
-          )
-
-        if (detailError) {
-          console.error('Error creando detalle del pedido:', detailError)
-          alert('Error al procesar los productos del pedido. Por favor, inténtalo de nuevo.')
-          setIsProcessingPayment(false)
-          return
+        // Guardar también el estado completo del carrito para restauración
+        const cartState = {
+          items,
+          pickupInStore,
+          deliveryAddress,
+          deliveryZone,
+          shippingFee,
+          userId: userData.id,
+          timestamp: Date.now()
         }
 
-        // Si el pedido se creó exitosamente, enviar correo de confirmación
+        // Crear sesión de pago con AvalPayCenter / PlacetoPay
         try {
-          const userName = (userData as any).nombre || ''
-          const emailResponse = await fetch('/api/send-order-email', {
+          // Generar un ID temporal para la referencia del pago
+          const tempOrderId = `TEMP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          
+          const sessionResponse = await fetch('/api/payment-session', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              userEmail: user.email,
-              userName: userName,
-              orderId: orderResult.id,
-              orderDate: orderResult.fecha,
-              totalAmount: totalAmount,
-              address: pickupInStore ? 'Recoger en tienda' : `${deliveryAddress} | Zona: ${deliveryZone === 'bucaramanga_am' ? 'Bucaramanga / Área Metropolitana' : 'Piedecuesta'}`,
-              items: items,
-              orderStatus: orderResult.estado
-            })
+              orderId: tempOrderId,
+              totalAmount,
+              buyerEmail: user.email,
+              buyerName: (userData as any).nombre || '',
+              // En un entorno real deberías obtener la IP real desde el backend/proxy
+              ipAddress: '127.0.0.1',
+              userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unisantander WC',
+            }),
           })
 
-          if (!emailResponse.ok) {
-            console.error('Error al enviar el correo de confirmación')
+          if (!sessionResponse.ok) {
+            console.error('Error al crear sesión de pago:', await sessionResponse.json())
+            alert('Error al iniciar la sesión de pago. Por favor, inténtalo nuevamente.')
+            setIsProcessingPayment(false)
+            return
           }
-        } catch (emailError) {
-          console.error('Error al enviar el correo:', emailError)
-          // No detener el proceso si falla el envío del correo
+
+          const sessionData = await sessionResponse.json()
+
+          if (!sessionData.processUrl || !sessionData.requestId) {
+            console.error('Respuesta de sesión de pago sin processUrl o requestId:', sessionData)
+            alert('No se recibió la URL de procesamiento de pago. Intenta de nuevo más tarde.')
+            setIsProcessingPayment(false)
+            return
+          }
+
+          // Guardar los datos del pedido, estado del carrito y requestId en localStorage para verificar después
+          // Incluir timestamp para poder limpiar datos antiguos
+          localStorage.setItem('pendingPayment', JSON.stringify({
+            requestId: sessionData.requestId,
+            orderData,
+            cartState,
+            timestamp: Date.now()
+          }))
+
+          // Redirigir al usuario a la pasarela de pago
+          console.log('🔗 Redirigiendo a pasarela de pago:', sessionData.processUrl)
+          debugCartState('ANTES_REDIRECCION_PASARELA')
+
+          window.location.href = sessionData.processUrl
+          return
+        } catch (paymentSessionError) {
+          console.error('Error inesperado al crear la sesión de pago:', paymentSessionError)
+          alert('Ocurrió un error al conectar con la pasarela de pago. Inténtalo nuevamente.')
+          setIsProcessingPayment(false)
+          return
         }
-
-        // Limpiar el carrito
-        clearCart()
-
-        // Mostrar mensaje de éxito
-        alert(`¡Pedido creado exitosamente!
-
-📦 Número de pedido: ${orderResult.id}
-📊 Estado: ${orderResult.estado}
-💰 Total: $${totalAmount.toLocaleString('es-CO')}
-🚚 Envío: $${currentShipping.toLocaleString('es-CO')}
-⏰ Fecha: ${new Date(orderResult.fecha).toLocaleDateString('es-CO')}
-📧 Te hemos enviado un correo de confirmación a ${user.email}
-
-Te notificaremos cuando tu pedido sea procesado.`)
-
-        // Finalizar el indicador de carga
-        setIsProcessingPayment(false)
 
       } catch (error) {
         console.error('Error en el proceso de pago:', error)
@@ -542,7 +1035,6 @@ Te notificaremos cuando tu pedido sea procesado.`)
               </div>
 
               {items.length === 0 ? (
-                /* Carrito vacío */
                 <div className="text-center py-8 sm:py-12 md:py-16">
                   <ShoppingCart className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 text-gray-300 mx-auto mb-4 sm:mb-6" />
                   <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2 sm:mb-4">Tu carrito está vacío</h2>
@@ -557,32 +1049,41 @@ Te notificaremos cuando tu pedido sea procesado.`)
                   </Link>
                 </div>
               ) : (
-                /* Carrito con productos */
                 <div className="space-y-4 sm:space-y-6">
                   {/* Lista de productos */}
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 md:p-6">
-                    <div className="space-y-3 sm:space-y-4">
-                      {items.map((item) => (
-                        <div key={item.id!} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-200 rounded-lg">
+                  <div className="relative bg-gradient-to-br from-white via-[#fafbf5] to-white rounded-2xl shadow-[0_4px_20px_rgba(25,100,40,0.08)] border border-[#196428]/10 p-4 sm:p-5 md:p-7 overflow-hidden">
+                    {/* Decorative background pattern */}
+                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+                      backgroundImage: `radial-gradient(circle at 2px 2px, #196428 1px, transparent 0)`,
+                      backgroundSize: '24px 24px'
+                    }}></div>
+                    
+                    <div className="relative space-y-4 sm:space-y-5">
+                      {items.map((item, index) => (
+                        <div 
+                          key={item.id!} 
+                          className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 p-4 sm:p-5 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/60 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(25,100,40,0.12)] hover:border-[#196428]/20 transition-all duration-300 ease-out"
+                        >
                           {/* Imagen del producto */}
-                          <div className="w-full sm:w-20 h-20 sm:h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 mx-auto sm:mx-0">
+                          <div className="relative w-full sm:w-24 h-24 sm:h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex-shrink-0 mx-auto sm:mx-0 ring-2 ring-gray-100 group-hover:ring-[#196428]/20 transition-all duration-300">
                             <Image
                               src={item.imagen_url || '/placeholder.jpg'}
                               alt={item.nombre}
-                              width={80}
-                              height={80}
-                              className="w-full h-full object-contain"
+                              width={96}
+                              height={96}
+                              className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                             />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           </div>
 
                           {/* Información del producto */}
-                          <div className="flex-1 w-full sm:w-auto">
-                            <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-1">{item.nombre}</h3>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{item.descripcion || 'Descripción del producto'}</p>
+                          <div className="flex-1 w-full sm:w-auto min-w-0">
+                            <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-1.5 leading-tight tracking-tight">{item.nombre}</h3>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">{item.descripcion || 'Descripción del producto'}</p>
 
                             {/* Mostrar tamaños del producto con selección */}
-                            <div className="mb-2">
-                              <p className="text-xs text-gray-500 mb-1">Tamaño seleccionado:</p>
+                            <div className="mb-3">
+                              <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Tamaño seleccionado:</p>
                               <ProductSizeBadges
                                 tamaños={item.tamano}
                                 size="sm"
@@ -594,37 +1095,40 @@ Te notificaremos cuando tu pedido sea procesado.`)
                             </div>
 
                             {/* Indicadores */}
-                            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2">
+                            <div className="flex flex-wrap gap-2 mb-3">
                               {item.descuento && (
-                                <span className="bg-red-100 text-red-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+                                <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-sm">
+                                  <Tag className="h-3 w-3" />
                                   Oferta
                                 </span>
                               )}
                               {item.destacado && (
-                                <span className="bg-blue-100 text-blue-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+                                <span className="inline-flex items-center gap-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-sm">
+                                  <Sparkles className="h-3 w-3" />
                                   Destacado
                                 </span>
                               )}
                               {item.novedad && (
-                                <span className="bg-green-100 text-green-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
+                                <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-sm">
+                                  <Sparkles className="h-3 w-3" />
                                   Nuevo
                                 </span>
                               )}
                             </div>
 
                             {/* Precio */}
-                            <div className="flex items-center gap-2 mb-3 sm:mb-0">
+                            <div className="flex items-baseline gap-2.5 mb-3 sm:mb-0">
                               {item.discountApplied > 0 ? (
                                 <>
-                                  <span className="text-red-500 font-medium line-through text-sm sm:text-base">
+                                  <span className="text-gray-400 font-medium line-through text-sm sm:text-base">
                                     $ {formatPrice(item.unitPrice / (1 - item.discountApplied / 100))}
                                   </span>
-                                  <span className="text-[#196428] font-bold text-base sm:text-lg">
+                                  <span className="text-[#196428] font-black text-lg sm:text-xl tracking-tight">
                                     $ {formatPrice(item.unitPrice)}
                                   </span>
                                 </>
                               ) : (
-                                <span className="text-[#196428] font-bold text-base sm:text-lg">
+                                <span className="text-[#196428] font-black text-lg sm:text-xl tracking-tight">
                                   $ {formatPrice(item.unitPrice)}
                                 </span>
                               )}
@@ -632,23 +1136,23 @@ Te notificaremos cuando tu pedido sea procesado.`)
                           </div>
 
                           {/* Controles de cantidad */}
-                          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start border-t sm:border-t-0 pt-3 sm:pt-0">
-                            <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start border-t sm:border-t-0 border-gray-200/60 pt-4 sm:pt-0">
+                            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-1.5">
                               <button
                                 onClick={() => updateQuantity(item.id!, (item.quantity || 1) - 1)}
-                                className="w-9 h-9 sm:w-8 sm:h-8 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full flex items-center justify-center transition-colors touch-manipulation"
+                                className="w-9 h-9 sm:w-10 sm:h-10 bg-white hover:bg-[#196428] hover:text-white active:bg-[#145020] text-gray-700 rounded-lg flex items-center justify-center transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
                                 aria-label="Disminuir cantidad"
                               >
                                 <Minus className="h-4 w-4" />
                               </button>
 
-                              <span className="w-12 text-center font-semibold text-base sm:text-lg">
+                              <span className="w-14 text-center font-bold text-base sm:text-lg text-gray-900">
                                 {item.quantity}
                               </span>
 
                               <button
                                 onClick={() => updateQuantity(item.id!, (item.quantity || 1) + 1)}
-                                className="w-9 h-9 sm:w-8 sm:h-8 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full flex items-center justify-center transition-colors touch-manipulation"
+                                className="w-9 h-9 sm:w-10 sm:h-10 bg-white hover:bg-[#196428] hover:text-white active:bg-[#145020] text-gray-700 rounded-lg flex items-center justify-center transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
                                 aria-label="Aumentar cantidad"
                               >
                                 <Plus className="h-4 w-4" />
@@ -657,7 +1161,7 @@ Te notificaremos cuando tu pedido sea procesado.`)
 
                             <button
                               onClick={() => removeFromCart(item.id!)}
-                              className="w-9 h-9 sm:w-8 sm:h-8 bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-600 rounded-full flex items-center justify-center transition-colors touch-manipulation sm:ml-2"
+                              className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-500 hover:to-red-600 active:from-red-600 active:to-red-700 text-red-600 hover:text-white rounded-lg flex items-center justify-center transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
                               aria-label="Eliminar producto"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -669,12 +1173,26 @@ Te notificaremos cuando tu pedido sea procesado.`)
                   </div>
 
                   {/* Resumen del pedido */}
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-5 md:p-6">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Resumen del Pedido</h2>
+                  <div className="relative bg-gradient-to-br from-white via-[#fafbf5] to-white rounded-2xl shadow-[0_4px_20px_rgba(25,100,40,0.08)] border border-[#196428]/10 p-5 sm:p-6 md:p-8 overflow-hidden">
+                    {/* Decorative accent */}
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#196428] via-[#2d7a3d] to-[#196428]"></div>
+                    
+                    {/* Subtle background pattern */}
+                    <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{
+                      backgroundImage: `linear-gradient(45deg, #196428 1px, transparent 1px), linear-gradient(-45deg, #196428 1px, transparent 1px)`,
+                      backgroundSize: '20px 20px',
+                      backgroundPosition: '0 0, 10px 10px'
+                    }}></div>
+                    
+                    <div className="relative">
+                      <div className="flex items-center gap-3 mb-5 sm:mb-6">
+                        <div className="w-1 h-8 bg-gradient-to-b from-[#196428] to-[#2d7a3d] rounded-full"></div>
+                        <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">Resumen del Pedido</h2>
+                      </div>
 
-                    {/* Opción de recoger en tienda, zona y dirección */}
-                    <div className="space-y-3 mb-4 sm:mb-6">
-                      <div className="flex items-center gap-2">
+                      {/* Opción de recoger en tienda, zona y dirección */}
+                    <div className="space-y-4 mb-6 sm:mb-8">
+                      <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-[#196428]/5 to-transparent rounded-xl border border-[#196428]/10 hover:border-[#196428]/20 transition-all duration-200">
                         <input
                           id="pickupInStore"
                           type="checkbox"
@@ -687,19 +1205,22 @@ Te notificaremos cuando tu pedido sea procesado.`)
                               setDeliveryAddress('')
                             }
                           }}
-                          className="h-4 w-4 sm:h-5 sm:w-5 text-[#196428] border-gray-300 rounded touch-manipulation"
+                          className="h-5 w-5 sm:h-5 sm:w-5 text-[#196428] border-2 border-gray-300 rounded-md focus:ring-2 focus:ring-[#196428] focus:ring-offset-2 cursor-pointer touch-manipulation transition-all"
                         />
-                        <label htmlFor="pickupInStore" className="text-sm sm:text-base font-medium text-gray-800 cursor-pointer">Recoger en tienda</label>
+                        <label htmlFor="pickupInStore" className="text-sm sm:text-base font-bold text-gray-800 cursor-pointer flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-[#196428]" />
+                          Recoger en tienda
+                        </label>
                       </div>
 
                       {!pickupInStore && (
-                        <>
+                        <div className="space-y-4 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/60">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Ciudad/Zona de entrega</label>
+                            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Ciudad/Zona de entrega</label>
                             <select
                               value={deliveryZone}
                               onChange={(e) => setDeliveryZone(e.target.value as any)}
-                              className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm touch-manipulation"
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] bg-white text-sm font-medium touch-manipulation transition-all duration-200 shadow-sm hover:shadow-md"
                             >
                               <option value="">Selecciona una opción</option>
                               <option value="bucaramanga_am">Bucaramanga / Área Metropolitana</option>
@@ -708,70 +1229,103 @@ Te notificaremos cuando tu pedido sea procesado.`)
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Dirección de entrega y detalles</label>
+                            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Dirección de entrega y detalles</label>
                             <textarea
                               value={deliveryAddress}
                               onChange={(e) => setDeliveryAddress(e.target.value)}
                               rows={3}
                               placeholder="Ej: Calle 10 # 20-30, Apto 401, Barrio XXX, Referencia: Portería azul"
-                              className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm resize-none"
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] bg-white text-sm resize-none transition-all duration-200 shadow-sm hover:shadow-md font-medium"
                             />
                           </div>
-                        </>
+                        </div>
                       )}
                     </div>
 
-                    <div className="space-y-2.5 sm:space-y-3 mb-4 sm:mb-6">
-                      <div className="flex justify-between text-sm sm:text-base text-gray-600">
-                        <span>Subtotal ({getTotalItems()} productos)</span>
-                        <span className="font-medium">$ {formatPrice(getTotalPrice())}</span>
+                    <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8 p-5 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200/60">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200/60">
+                        <span className="text-sm sm:text-base text-gray-700 font-medium">Subtotal ({getTotalItems()} productos)</span>
+                        <span className="text-sm sm:text-base font-bold text-gray-900">$ {formatPrice(getTotalPrice())}</span>
                       </div>
 
-                      <div className="flex justify-between text-sm sm:text-base text-gray-600">
-                        <span>Envío</span>
-                        <span className={shippingFee > 0 ? 'text-gray-800 font-medium' : 'text-green-600 font-medium'}>
-                          {shippingFee > 0 ? `$ ${formatPrice(shippingFee)}` : 'Gratis'}
+                      {(!pickupInStore && deliveryZone) && (
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200/60">
+                          <span className="text-sm sm:text-base text-gray-700 font-medium flex items-center gap-2">
+                            <Briefcase className="h-4 w-4 text-gray-500" />
+                            Envío
+                          </span>
+                          <span className={`text-sm sm:text-base font-bold ${shippingFee > 0 ? 'text-gray-900' : 'text-emerald-600'}`}>
+                            {shippingFee > 0 ? `$ ${formatPrice(shippingFee)}` : (
+                              <span className="inline-flex items-center gap-1">
+                                <Check className="h-4 w-4" />
+                                Gratis
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-sm sm:text-base text-gray-700 font-medium flex items-center gap-2">
+                          <Info className="h-4 w-4 text-gray-500" />
+                          Impuestos
+                        </span>
+                        <span className="text-sm sm:text-base font-bold text-emerald-600 inline-flex items-center gap-1">
+                          <Check className="h-4 w-4" />
+                          Incluidos
                         </span>
                       </div>
 
-                      <div className="flex justify-between text-sm sm:text-base text-gray-600">
-                        <span>Impuestos</span>
-                        <span className="text-green-600 font-medium">Incluidos</span>
-                      </div>
-
-                      <div className="border-t border-gray-200 pt-2.5 sm:pt-3">
-                        <div className="flex justify-between text-base sm:text-lg font-bold text-gray-900">
-                          <span>Total</span>
-                          <span className="text-[#196428]">$ {formatPrice(getTotalPrice() + shippingFee)}</span>
+                      <div className="border-t-2 border-[#196428]/20 pt-4 mt-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">Total</span>
+                          <span className="text-2xl sm:text-3xl font-black text-[#196428] tracking-tight">$ {formatPrice(getTotalPrice() + shippingFee)}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2.5 sm:space-y-3">
+                    <div className="space-y-3 sm:space-y-4">
                       <button
                         onClick={handlePayment}
                         disabled={isProcessingPayment}
-                        className="w-full bg-[#196428] hover:bg-[#145020] active:bg-[#0f3a15] disabled:bg-gray-400 text-white py-3 sm:py-3.5 px-6 rounded-full font-semibold transition-colors disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation"
+                        className="group relative w-full bg-gradient-to-r from-[#196428] to-[#2d7a3d] hover:from-[#145020] hover:to-[#196428] active:from-[#0f3a15] active:to-[#145020] disabled:from-gray-400 disabled:to-gray-500 text-white py-4 sm:py-4 px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 disabled:cursor-not-allowed touch-manipulation shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 overflow-hidden"
                       >
-                        {isProcessingPayment
-                          ? 'Procesando...'
-                          : (user ? 'Confirmar Pedido' : 'Proceder al Pago')
-                        }
+                        <span className="relative z-10 flex items-center justify-center gap-2">
+                          {isProcessingPayment ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              Procesando...
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingBag className="h-5 w-5" />
+                              {user ? 'Confirmar Pedido' : 'Proceder al Pago'}
+                            </>
+                          )}
+                        </span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                       </button>
 
                       <button
                         onClick={clearCart}
-                        className="w-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 py-3 sm:py-3.5 px-6 rounded-full font-semibold transition-colors text-sm sm:text-base touch-manipulation"
+                        className="w-full bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 active:from-gray-200 active:to-gray-300 text-gray-700 py-3.5 sm:py-4 px-6 rounded-xl font-bold transition-all duration-200 text-sm sm:text-base touch-manipulation shadow-sm hover:shadow-md border border-gray-200/60 hover:border-gray-300"
                       >
-                        Vaciar Carrito
+                        <span className="flex items-center justify-center gap-2">
+                          <Trash2 className="h-4 w-4" />
+                          Vaciar Carrito
+                        </span>
                       </button>
 
                       <Link
                         href="/tienda"
-                        className="block text-center text-[#196428] hover:text-[#145020] font-medium transition-colors text-sm sm:text-base py-2"
+                        className="block text-center text-[#196428] hover:text-[#145020] font-bold transition-all duration-200 text-sm sm:text-base py-3 hover:underline decoration-2 underline-offset-4"
                       >
-                        Continuar Comprando
+                        <span className="flex items-center justify-center gap-2">
+                          Continuar Comprando
+                          <Plus className="h-4 w-4 rotate-45" />
+                        </span>
                       </Link>
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -899,7 +1453,6 @@ Te notificaremos cuando tu pedido sea procesado.`)
                       </button>
                     </>
                   ) : (
-                    /* Formulario de registro */
                     <div className="space-y-3">
                       <div className="text-center mb-3">
                         <h3 className="text-base font-bold text-gray-800">

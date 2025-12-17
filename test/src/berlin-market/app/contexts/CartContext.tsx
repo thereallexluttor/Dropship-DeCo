@@ -18,6 +18,7 @@ interface CartContextType {
   updateQuantity: (productId: number, quantity: number) => void
   updateProductSize: (productId: number, newSizeIndex: number) => void
   clearCart: () => void
+  restoreCart: (cartItems: CartItemWithSize[]) => void
   getTotalItems: () => number
   getTotalPrice: () => number
 }
@@ -35,6 +36,7 @@ export const useCart = () => {
       updateQuantity: () => {},
       updateProductSize: () => {},
       clearCart: () => {},
+      restoreCart: () => {},
       getTotalItems: () => 0,
       getTotalPrice: () => 0,
     }
@@ -252,6 +254,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems([])
   }
 
+  const restoreCart = (cartItems: CartItemWithSize[]) => {
+    console.log('🔄 Restaurando carrito completo desde CartContext:', cartItems.length, 'items')
+    setItems(cartItems)
+  }
+
   const getTotalItems = () => {
     return items.reduce((total, item) => total + item.quantity, 0)
   }
@@ -269,6 +276,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateQuantity,
     updateProductSize,
     clearCart,
+    restoreCart,
     getTotalItems,
     getTotalPrice,
   }
