@@ -730,10 +730,11 @@ export default function Home() {
                           href="https://micrositios.avalpaycenter.com/unisantander-sas-ma"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center w-full px-4 py-3 rounded-lg bg-[#196428] text-white text-sm font-medium hover:bg-[#15521f] transition-colors"
+                          className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg bg-white border-2 border-[#196428] text-[#196428] text-sm font-medium hover:bg-gray-50 transition-colors shadow-[0_4px_6px_rgba(25,100,40,0.3)]"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
-                          paga cartera aqui!
+                          Pagos en linea
+                          <Image src="/pse2.png" alt="PSE" width={48} height={48} quality={90} className="w-6 h-6" />
                         </Link>
                       </div>
                       <div className="border-t border-gray-200 -mx-6"></div>
@@ -1085,9 +1086,10 @@ export default function Home() {
                   href="https://micrositios.avalpaycenter.com/unisantander-sas-ma"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center px-3 py-1.5 rounded-lg bg-[#196428] text-white text-xs sm:text-sm font-medium hover:bg-[#15521f] transition-colors whitespace-nowrap"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-white border-2 border-[#196428] text-[#196428] text-xs sm:text-sm font-medium hover:bg-gray-50 transition-colors whitespace-nowrap shadow-[0_4px_6px_rgba(25,100,40,0.3)]"
                 >
-                  paga cartera aqui!
+                  Pagos en linea
+                  <Image src="/pse2.png" alt="PSE" width={48} height={48} quality={90} className="w-6 h-6 sm:w-7 sm:h-7" />
                 </Link>
               </div>
               <div className="w-full h-[1px] bg-gray-200 mt-3"></div>

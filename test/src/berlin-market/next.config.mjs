@@ -35,11 +35,11 @@ const nextConfig = {
     ],
 
     // Limit quality options (lower quality => smaller files and fewer cache events)
-    qualities: [60],
+    qualities: [60, 75, 90],
 
     // Tailor sizes to your audience to reduce transform permutations
     deviceSizes: [360, 640, 768, 1024, 1280],
-    imageSizes: [16, 32, 48],
+    imageSizes: [16, 32, 40, 48],
   },
   webpack: (config) => {
     config.resolve.fallback = {
