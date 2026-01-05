@@ -38,7 +38,7 @@ const statusUpper = typeof status === 'string'
 
 **Implementación:**
 - Endpoint: `/api/verify-pending-payments`
-- Frecuencia: Cada 10 minutos
+- Frecuencia: Cada 20 minutos
 - Configuración: Vercel Cron Jobs
 
 **Archivos creados:**
@@ -88,7 +88,7 @@ Antes de desplegar, actualiza `vercel.json` si necesitas cambiar la frecuencia:
   "crons": [
     {
       "path": "/api/verify-pending-payments",
-      "schedule": "*/10 * * * *"  // Cada 10 minutos
+      "schedule": "*/20 * * * *"  // Cada 20 minutos
     }
   ]
 }
@@ -123,7 +123,7 @@ Usa el documento `RESPUESTA_EVERTEC_CRONJOB.md` para responder sobre la frecuenc
 
 **Respuesta sugerida:**
 
-"La sonda se ejecuta cada 10 minutos (`*/10 * * * *`). El sistema verifica automáticamente el estado de los pagos pendientes que no han recibido notificación del webhook, asegurando que todos los pedidos se actualicen correctamente incluso en caso de problemas de conectividad o fallos en el webhook.
+"La sonda se ejecuta cada 20 minutos (`*/20 * * * *`). El sistema verifica automáticamente el estado de los pagos pendientes que no han recibido notificación del webhook, asegurando que todos los pedidos se actualicen correctamente incluso en caso de problemas de conectividad o fallos en el webhook.
 
 El endpoint de verificación está disponible en: `https://tu-dominio.com/api/verify-pending-payments`
 
@@ -167,7 +167,7 @@ Además del sistema de sonda periódica, el sistema también procesa notificacio
 - [ ] Tabla `transacciones_pago` existe (opcional)
 - [ ] Variables de entorno configuradas
 - [ ] Cronjob configurado en Vercel
-- [ ] Cronjob se ejecuta cada 10 minutos
+- [ ] Cronjob se ejecuta cada 20 minutos
 - [ ] Tests pasan correctamente
 
 ### Comandos de Verificación:
@@ -194,7 +194,7 @@ CRON_SECRET=tu-secreto npm run test:cronjob
 
 ### Frecuencia de Sonda:
 
-**Cada 10 minutos** (`*/10 * * * *`)
+**Cada 20 minutos** (`*/20 * * * *`)
 
 ---
 

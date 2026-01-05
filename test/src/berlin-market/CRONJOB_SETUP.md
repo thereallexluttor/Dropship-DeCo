@@ -4,7 +4,7 @@ Este documento explica cómo configurar el cronjob que verifica periódicamente 
 
 ## 📋 Descripción
 
-El cronjob se ejecuta periódicamente para verificar el estado de pagos pendientes que no han recibido notificación del webhook de Evertec. Esto asegura que los pedidos se actualicen incluso si el webhook falla o hay problemas de conectividad.
+El cronjob se ejecuta periódicamente (cada 20 minutos) para verificar el estado de pagos pendientes que no han recibido notificación del webhook de Evertec. Esto asegura que los pedidos se actualicen incluso si el webhook falla o hay problemas de conectividad.
 
 ## 🔧 Configuración
 
@@ -35,13 +35,13 @@ CRON_SECRET=tu-secreto-super-seguro-aqui
 
 El archivo `vercel.json` ya está configurado. Solo necesitas:
 
-1. Actualizar el secreto en `vercel.json`:
+1. El archivo `vercel.json` ya está configurado con la frecuencia de 20 minutos:
 ```json
 {
   "crons": [
     {
-      "path": "/api/verify-pending-payments?secret=TU_SECRETO_AQUI",
-      "schedule": "*/10 * * * *"
+      "path": "/api/verify-pending-payments",
+      "schedule": "*/20 * * * *"
     }
   ]
 }
@@ -55,25 +55,26 @@ El archivo `vercel.json` ya está configurado. Solo necesitas:
 2. Ve a Settings → Cron Jobs
 3. Agrega un nuevo cron job:
    - **Path:** `/api/verify-pending-payments?secret=TU_SECRETO_AQUI`
-   - **Schedule:** `*/10 * * * *` (cada 10 minutos)
+   - **Schedule:** `*/20 * * * *` (cada 20 minutos)
 
 ### 4. Frecuencias Recomendadas
 
 | Frecuencia | Cron Expression | Descripción |
 |------------|----------------|-------------|
 | Cada 5 minutos | `*/5 * * * *` | Alta frecuencia, útil para pruebas |
-| Cada 10 minutos | `*/10 * * * *` | **Recomendado** para producción |
-| Cada 15 minutos | `*/15 * * * *` | Menor carga en servidores |
+| Cada 10 minutos | `*/10 * * * *` | Alta frecuencia |
+| Cada 15 minutos | `*/15 * * * *` | Frecuencia media |
+| Cada 20 minutos | `*/20 * * * *` | **Configurado actualmente** |
 | Cada 30 minutos | `*/30 * * * *` | Baja frecuencia |
 
-**Recomendación:** Usa `*/10 * * * *` (cada 10 minutos) para producción.
+**Configuración actual:** `*/20 * * * *` (cada 20 minutos).
 
 ## 🔄 Flujo de Funcionamiento
 
 1. **Usuario inicia pago**: Se crea una sesión de pago con Evertec
 2. **Registro en BD**: El `requestId` se guarda en `pagos_pendientes` con estado `PENDING`
 3. **Webhook (Tiempo Real)**: Si Evertec envía notificación, el webhook actualiza el estado inmediatamente
-4. **Cronjob (Backup)**: Cada 10 minutos, el cronjob verifica pagos pendientes que no han recibido notificación
+4. **Cronjob (Backup)**: Cada 20 minutos, el cronjob verifica pagos pendientes que no han recibido notificación
 5. **Actualización**: Si encuentra cambios de estado, actualiza el pedido automáticamente
 
 ## 📊 Endpoint del Cronjob

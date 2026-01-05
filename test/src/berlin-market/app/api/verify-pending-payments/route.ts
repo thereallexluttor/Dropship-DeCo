@@ -40,7 +40,7 @@ function buildAuth() {
  * que no han recibido notificación del webhook.
  * 
  * Configuración en Vercel:
- * - Frecuencia recomendada: Cada 5-10 minutos
+ * - Frecuencia configurada: Cada 20 minutos
  * - URL: https://tu-dominio.com/api/verify-pending-payments?secret=CRON_SECRET
  */
 export async function GET(request: NextRequest) {
