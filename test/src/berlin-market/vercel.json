@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/verify-pending-payments",
-      "schedule": "*/20 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }

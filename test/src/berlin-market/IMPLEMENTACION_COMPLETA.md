@@ -38,8 +38,9 @@ const statusUpper = typeof status === 'string'
 
 **Implementación:**
 - Endpoint: `/api/verify-pending-payments`
-- Frecuencia: Cada 20 minutos
-- Configuración: Vercel Cron Jobs
+- Frecuencia: Cada 20 minutos (mediante servicio externo)
+- Configuración: Servicio externo de cron jobs (cron-job.org recomendado)
+- Backup: Vercel Cron Job una vez al día (plan Hobby)
 
 **Archivos creados:**
 - `app/api/verify-pending-payments/route.ts` - Endpoint del cronjob

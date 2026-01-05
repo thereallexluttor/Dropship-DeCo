@@ -2,6 +2,12 @@
 
 Este documento explica cómo configurar el cronjob que verifica periódicamente el estado de los pagos pendientes.
 
+## ⚠️ IMPORTANTE: Plan Hobby de Vercel
+
+**Si tienes el plan Hobby de Vercel**, solo puedes ejecutar cron jobs **una vez al día**. 
+
+Para ejecutar la sonda cada 20 minutos, necesitas usar un **servicio externo de cron jobs**. Consulta `CRONJOB_EXTERNO_SETUP.md` para instrucciones detalladas.
+
 ## 📋 Descripción
 
 El cronjob se ejecuta periódicamente (cada 20 minutos) para verificar el estado de pagos pendientes que no han recibido notificación del webhook de Evertec. Esto asegura que los pedidos se actualicen incluso si el webhook falla o hay problemas de conectividad.
@@ -29,33 +35,32 @@ CRON_SECRET=tu-secreto-super-seguro-aqui
 
 **⚠️ IMPORTANTE:** Usa un secreto fuerte y único. Este secreto protege el endpoint del cronjob.
 
-### 3. Configurar Vercel Cron Jobs
+### 3. Configurar Cron Jobs
 
-#### Opción A: Usando vercel.json (Recomendado)
+#### ⚠️ Plan Hobby: Usar Servicio Externo
 
-El archivo `vercel.json` ya está configurado. Solo necesitas:
+**Si tienes plan Hobby de Vercel**, consulta `CRONJOB_EXTERNO_SETUP.md` para usar un servicio externo gratuito (cron-job.org, EasyCron, etc.) que ejecute cada 20 minutos.
 
-1. El archivo `vercel.json` ya está configurado con la frecuencia de 20 minutos:
+#### Opción A: Vercel Cron Job (Solo para Plan Pro/Enterprise)
+
+Si tienes plan Pro o Enterprise, puedes usar Vercel Cron Jobs directamente:
+
+El archivo `vercel.json` está configurado para ejecutarse una vez al día (backup):
+
 ```json
 {
   "crons": [
     {
       "path": "/api/verify-pending-payments",
-      "schedule": "*/20 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }
 ```
 
-2. Desplegar a Vercel. El cronjob se activará automáticamente.
-
-#### Opción B: Configuración Manual en Vercel
-
-1. Ve a tu proyecto en Vercel Dashboard
-2. Ve a Settings → Cron Jobs
-3. Agrega un nuevo cron job:
-   - **Path:** `/api/verify-pending-payments?secret=TU_SECRETO_AQUI`
-   - **Schedule:** `*/20 * * * *` (cada 20 minutos)
+**Para ejecutar cada 20 minutos en Vercel Pro:**
+- Cambia el schedule a: `*/20 * * * *`
+- O configura manualmente en Vercel Dashboard → Settings → Cron Jobs
 
 ### 4. Frecuencias Recomendadas
 
@@ -67,14 +72,16 @@ El archivo `vercel.json` ya está configurado. Solo necesitas:
 | Cada 20 minutos | `*/20 * * * *` | **Configurado actualmente** |
 | Cada 30 minutos | `*/30 * * * *` | Baja frecuencia |
 
-**Configuración actual:** `*/20 * * * *` (cada 20 minutos).
+**Configuración recomendada:** `*/20 * * * *` (cada 20 minutos) usando servicio externo.
+
+**Vercel Hobby:** `0 2 * * *` (una vez al día a las 2 AM como backup).
 
 ## 🔄 Flujo de Funcionamiento
 
 1. **Usuario inicia pago**: Se crea una sesión de pago con Evertec
 2. **Registro en BD**: El `requestId` se guarda en `pagos_pendientes` con estado `PENDING`
 3. **Webhook (Tiempo Real)**: Si Evertec envía notificación, el webhook actualiza el estado inmediatamente
-4. **Cronjob (Backup)**: Cada 20 minutos, el cronjob verifica pagos pendientes que no han recibido notificación
+4. **Cronjob (Backup)**: Cada 20 minutos (mediante servicio externo), el cronjob verifica pagos pendientes que no han recibido notificación
 5. **Actualización**: Si encuentra cambios de estado, actualiza el pedido automáticamente
 
 ## 📊 Endpoint del Cronjob
