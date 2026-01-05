@@ -8,7 +8,7 @@
  */
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000'
-const CRON_SECRET = process.env.CRON_SECRET || 'change-this-secret-key'
+const CRON_SECRET = process.env.CRON_SECRET || '7[LT[n8PmXJqy$03DgM^pYtLXB<m7r%G'
 
 // Colores para la consola
 const colors = {
