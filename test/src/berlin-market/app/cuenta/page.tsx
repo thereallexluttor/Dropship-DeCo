@@ -222,6 +222,12 @@ export default function CuentaPage() {
   const handleUpdateProfile = useCallback(async () => {
     if (!user || !editedUser) return;
 
+    // Validar que el nombre solo contenga caracteres alfabéticos y espacios
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(editNombre.trim())) {
+      alert('El nombre solo puede contener letras y espacios');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('usuarios')
@@ -419,7 +425,12 @@ export default function CuentaPage() {
                               <label className="text-sm font-medium text-gray-700">Nombre completo</label>
                               <Input
                                 value={editNombre}
-                                onChange={(e) => setEditNombre(e.target.value)}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  // Solo permitir letras, espacios y caracteres especiales comunes en nombres (ñ, acentos)
+                                  const filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                                  setEditNombre(filteredValue);
+                                }}
                                 className="h-11"
                                 placeholder="Ingresa tu nombre completo"
                               />

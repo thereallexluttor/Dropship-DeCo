@@ -78,6 +78,12 @@ const AccountForm = () => {
       return;
     }
 
+    // Validar que el nombre solo contenga caracteres alfabéticos y espacios
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nombre.trim())) {
+      alert("El nombre solo puede contener letras y espacios");
+      return;
+    }
+
     if (!registerEmail || !registerEmail.trim()) {
       alert("Por favor ingresa tu email");
       return;
@@ -350,7 +356,12 @@ const AccountForm = () => {
                   type="text"
                   placeholder="Nombre completo"
                   value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Solo permitir letras, espacios y caracteres especiales comunes en nombres (ñ, acentos)
+                    const filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                    setNombre(filteredValue);
+                  }}
                   className="w-full px-3 xs:px-3 sm:px-4 py-3 xs:py-3 sm:py-3 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm xs:text-sm sm:text-base md:text-sm pl-10 xs:pl-10 sm:pl-12 transition-all duration-200"
                 />
               </div>

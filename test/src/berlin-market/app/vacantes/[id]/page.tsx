@@ -133,6 +133,10 @@ const OfertaDetalle = () => {
 
     if (name === 'cv' && files && files.length > 0) {
       setFormData(prev => ({ ...prev, cv: files[0] }))
+    } else if (name === 'nombre') {
+      // Solo permitir letras, espacios y caracteres especiales comunes en nombres (ñ, acentos)
+      const filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+      setFormData(prev => ({ ...prev, [name]: filteredValue }))
     } else {
       setFormData(prev => ({ ...prev, [name]: value }))
     }
@@ -178,6 +182,12 @@ const OfertaDetalle = () => {
 
     if (!modalRegisterEmail || !modalRegisterPassword || !modalNombre || !modalTelefono || !modalDireccion) {
       alert("Por favor completa todos los campos")
+      return
+    }
+
+    // Validar que el nombre solo contenga caracteres alfabéticos y espacios
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(modalNombre.trim())) {
+      alert("El nombre solo puede contener letras y espacios")
       return
     }
 
@@ -241,6 +251,12 @@ const OfertaDetalle = () => {
 
     if (!trabajo || !formData.cv) {
       alert('Por favor completa todos los campos requeridos incluyendo el CV.')
+      return
+    }
+
+    // Validar que el nombre solo contenga caracteres alfabéticos y espacios
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.nombre.trim())) {
+      alert('El nombre solo puede contener letras y espacios')
       return
     }
 
@@ -785,7 +801,12 @@ const OfertaDetalle = () => {
                             type="text"
                             placeholder="Nombre completo"
                             value={modalNombre}
-                            onChange={(e) => setModalNombre(e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // Solo permitir letras, espacios y caracteres especiales comunes en nombres (ñ, acentos)
+                              const filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                              setModalNombre(filteredValue);
+                            }}
                             className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
                           />
                         </div>

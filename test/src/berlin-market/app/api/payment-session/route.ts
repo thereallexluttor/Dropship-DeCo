@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { supabase } from '@/lib/supabase'
 
 // Configuración desde variables de entorno
 // Para producción, configurar en .env.local o variables de entorno del servidor

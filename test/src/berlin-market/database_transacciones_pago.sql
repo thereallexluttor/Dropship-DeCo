@@ -72,3 +72,4 @@ FROM information_schema.columns
 WHERE table_name = 'transacciones_pago'
 ORDER BY ordinal_position;
 
+

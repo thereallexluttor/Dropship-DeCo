@@ -75,7 +75,10 @@ export async function POST(request: NextRequest) {
     if (status) {
       // Estados típicos de AvalPayCenter/Evertec:
       // APPROVED, REJECTED, PENDING, FAILED, etc.
-      const statusUpper = status.toUpperCase()
+      // Validar que status sea un string antes de llamar toUpperCase()
+      const statusUpper = typeof status === 'string' 
+        ? status.toUpperCase() 
+        : String(status).toUpperCase()
       
       if (statusUpper === 'APPROVED' || statusUpper === 'APPROVED_PARTIAL') {
         orderStatus = 'pagado'

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:payment": "node scripts/test-payment-endpoints.js"
+    "test:payment": "node scripts/test-payment-endpoints.js",
+    "test:cronjob": "node scripts/test-cronjob.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

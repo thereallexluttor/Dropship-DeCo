@@ -194,6 +194,10 @@ const Vacantes = () => {
 
     if (name === 'cv' && files && files.length > 0) {
       setFormData(prev => ({ ...prev, cv: files[0] }))
+    } else if (name === 'nombre') {
+      // Solo permitir letras, espacios y caracteres especiales comunes en nombres (ñ, acentos)
+      const filteredValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+      setFormData(prev => ({ ...prev, [name]: filteredValue }))
     } else {
       setFormData(prev => ({ ...prev, [name]: value }))
     }
@@ -204,6 +208,12 @@ const Vacantes = () => {
 
     if (!selectedJob || !formData.cv) {
       alert('Por favor completa todos los campos requeridos incluyendo el CV.')
+      return
+    }
+
+    // Validar que el nombre solo contenga caracteres alfabéticos y espacios
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.nombre.trim())) {
+      alert('El nombre solo puede contener letras y espacios')
       return
     }
 
