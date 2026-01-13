@@ -595,6 +595,29 @@ export default function CarritoPage() {
         }
       }
 
+      // Guardar el registro en pagos_pendientes para que el webhook y la sonda puedan encontrarlo
+      try {
+        const { error: pagoPendienteError } = await supabase
+          .from('pagos_pendientes')
+          .insert({
+            request_id: requestId,
+            pedido_id: orderResult.id,
+            referencia: String(orderResult.id),
+            monto: orderData.totalAmount,
+            estado: 'PENDING',
+          })
+
+        if (pagoPendienteError) {
+          console.error('⚠️ Error guardando en pagos_pendientes:', pagoPendienteError)
+          // No lanzar error aquí, solo registrar - el pedido ya fue creado
+        } else {
+          console.log('✅ Registro guardado en pagos_pendientes:', { requestId, pedido_id: orderResult.id })
+        }
+      } catch (pagoError) {
+        console.error('⚠️ Error al guardar en pagos_pendientes:', pagoError)
+        // No lanzar error aquí, solo registrar - el pedido ya fue creado
+      }
+
       // Enviar correo de confirmación solo si es un pedido nuevo
       if (!orderResult.alreadyExists) {
         try {
@@ -625,9 +648,50 @@ export default function CarritoPage() {
       } else {
         console.log('📧 Saltando envío de email porque el pedido ya existía')
       }
+
+      return { id: orderResult.id, alreadyExists: orderResult.alreadyExists || false }
     } catch (error) {
       console.error('Error creando pedido desde datos pendientes:', error)
       throw error
+    }
+  }
+
+  // Función para verificar si hay un pago pendiente
+  const checkPendingPayment = async () => {
+    if (!user) return null
+
+    try {
+      // Obtener información del usuario desde la tabla usuarios
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('correo', user.email)
+        .single()
+
+      if (userError || !userData) {
+        return null
+      }
+
+      // Buscar pedidos pendientes del usuario en los últimos 30 minutos
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+      
+      const { data: pendingOrders, error: ordersError } = await supabase
+        .from('pedidos')
+        .select('id, fecha, total, estado')
+        .eq('usuario_id', userData.id)
+        .eq('estado', 'pendiente')
+        .gte('fecha', thirtyMinutesAgo)
+        .order('fecha', { ascending: false })
+        .limit(1)
+
+      if (ordersError || !pendingOrders || pendingOrders.length === 0) {
+        return null
+      }
+
+      return pendingOrders[0]
+    } catch (error) {
+      console.error('Error verificando pago pendiente:', error)
+      return null
     }
   }
 
@@ -640,6 +704,22 @@ export default function CarritoPage() {
       console.log('🔐 Usuario no autenticado - mostrando modal de login')
       setIsAuthModalOpen(true)
     } else {
+      // Verificar si hay un pago pendiente antes de permitir crear uno nuevo
+      const pendingOrder = await checkPendingPayment()
+      
+      if (pendingOrder) {
+        const orderAge = Math.round((Date.now() - new Date(pendingOrder.fecha).getTime()) / 1000 / 60)
+        const message = `⚠️ Tienes un pedido pendiente de pago.\n\n` +
+          `📦 Pedido #${pendingOrder.id}\n` +
+          `💰 Total: $${pendingOrder.total.toLocaleString('es-CO')}\n` +
+          `⏰ Creado hace ${orderAge} minuto(s)\n\n` +
+          `Por favor, completa el pago de este pedido antes de crear uno nuevo para evitar pagos duplicados.\n\n` +
+          `Si ya realizaste el pago, espera unos momentos y verifica tu historial de compras.`
+        
+        alert(message)
+        return
+      }
+
       // Validar que el carrito no esté vacío
       if (items.length === 0) {
         alert('Tu carrito está vacío. Agrega algunos productos antes de proceder al pago.')

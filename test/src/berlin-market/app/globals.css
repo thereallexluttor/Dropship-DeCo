@@ -429,23 +429,3 @@ body {
   align-items: center;
   justify-content: center;
 }
-
-/* Animación de balanceo suave para imágenes navideñas */
-@keyframes gentleSway {
-  0%, 100% {
-    transform: rotate(0deg) translateY(0);
-  }
-  25% {
-    transform: rotate(-3deg) translateY(-5px);
-  }
-  50% {
-    transform: rotate(0deg) translateY(-8px);
-  }
-  75% {
-    transform: rotate(3deg) translateY(-5px);
-  }
-}
-
-.navidad-float {
-  animation: gentleSway 4s ease-in-out infinite;
-}

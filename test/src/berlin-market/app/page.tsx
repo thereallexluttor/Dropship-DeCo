@@ -107,7 +107,6 @@ export default function Home() {
   const [showPopup, setShowPopup] = useState(false)
   const popupVideoRef = useRef<HTMLVideoElement | null>(null)
   const [popupMuted, setPopupMuted] = useState(false)
-  const [showChristmasTheme, setShowChristmasTheme] = useState(false)
   // Estado para manejar el tamaño seleccionado de cada producto
   const [selectedSizes, setSelectedSizes] = useState<{[key: number]: number}>({})
   // Estado para tiendas y tienda seleccionada
@@ -276,20 +275,6 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, [uiElements]);
-
-  // Mostrar tema navideño en primera visita
-  useEffect(() => {
-    const hasSeenChristmas = sessionStorage.getItem('hasSeenChristmas');
-    if (!hasSeenChristmas) {
-      setShowChristmasTheme(true);
-      // Guardar después de 30 segundos para que se muestre por un tiempo
-      const timer = setTimeout(() => {
-        sessionStorage.setItem('hasSeenChristmas', 'true');
-        setShowChristmasTheme(false);
-      }, 30000); // 30 segundos
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
 
   // Obtener los slides del carrusel (banners de UI o videos por defecto)
@@ -498,26 +483,6 @@ export default function Home() {
       }
     }
   }, [showPopup, popupMuted])
-
-  // Generar copos de nieve (fuera del condicional para cumplir con las reglas de hooks)
-  const snowflakes = useMemo(() => {
-    return Array.from({ length: 50 }).map((_, i) => {
-      const left = Math.random() * 100;
-      const animationDuration = Math.random() * 3 + 2; // 2-5 segundos
-      const animationDelay = Math.random() * 2;
-      const size = Math.random() * 10 + 10; // 10-20px
-      const opacity = Math.random() * 0.5 + 0.5; // 0.5-1
-
-      return {
-        id: i,
-        left,
-        animationDuration,
-        animationDelay,
-        size,
-        opacity,
-      };
-    });
-  }, [])
 
   // Categorías se cargan dinámicamente desde el hook useCategories
 
@@ -1825,134 +1790,6 @@ export default function Home() {
             )}
           </div>
         </div>
-      )}
-
-      {/* Tema Navideño - Solo se muestra en primera visita */}
-      {showChristmasTheme && (
-        <>
-          {/* Estilos para animaciones navideñas */}
-          <style jsx global>{`
-            @keyframes snowfall {
-              0% {
-                transform: translateY(-100vh) rotate(0deg);
-                opacity: 1;
-              }
-              100% {
-                transform: translateY(100vh) rotate(360deg);
-                opacity: 0;
-              }
-            }
-
-            @keyframes float {
-              0%, 100% {
-                transform: translateY(0px) rotate(0deg);
-              }
-              50% {
-                transform: translateY(-20px) rotate(5deg);
-              }
-            }
-
-            @keyframes swing {
-              0%, 100% {
-                transform: rotate(-3deg);
-              }
-              50% {
-                transform: rotate(3deg);
-              }
-            }
-
-            .snowflake {
-              position: fixed;
-              top: -10px;
-              color: white;
-              font-size: 1em;
-              font-family: Arial, sans-serif;
-              text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
-              animation: snowfall linear infinite;
-              pointer-events: none;
-              z-index: 9999;
-            }
-
-            .candy-cane {
-              animation: swing 3s ease-in-out infinite;
-              filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
-            }
-          `}</style>
-
-          {/* Copos de nieve */}
-          {snowflakes.map((snowflake) => (
-            <div
-              key={snowflake.id}
-              className="snowflake"
-              style={{
-                left: `${snowflake.left}%`,
-                animationDuration: `${snowflake.animationDuration}s`,
-                animationDelay: `${snowflake.animationDelay}s`,
-                fontSize: `${snowflake.size}px`,
-                opacity: snowflake.opacity,
-              }}
-            >
-              ❄
-            </div>
-          ))}
-
-          {/* Imágenes navideñas decorativas */}
-          {/* Imagen esquina superior izquierda */}
-          <div
-            className="navidad-float fixed top-10 left-4 md:left-8 z-[9998] pointer-events-none"
-            style={{ animationDelay: '0s' }}
-          >
-            <Image
-              src="/navidad/1.png"
-              alt="Decoración navideña"
-              width={120}
-              height={120}
-              className="object-contain"
-            />
-          </div>
-
-          {/* Imagen esquina superior derecha */}
-          <div
-            className="navidad-float fixed top-10 right-4 md:right-8 z-[9998] pointer-events-none"
-            style={{ animationDelay: '1s' }}
-          >
-            <Image
-              src="/navidad/2.png"
-              alt="Decoración navideña"
-              width={120}
-              height={120}
-              className="object-contain"
-            />
-          </div>
-
-          {/* Imagen esquina inferior izquierda */}
-          <div
-            className="navidad-float fixed bottom-10 left-4 md:left-8 z-[9998] pointer-events-none"
-            style={{ animationDelay: '0.5s' }}
-          >
-            <Image
-              src="/navidad/3.png"
-              alt="Decoración navideña"
-              width={120}
-              height={120}
-              className="object-contain"
-            />
-          </div>
-
-          {/* Imagen esquina inferior derecha */}
-          <div
-            className="navidad-float fixed bottom-10 right-4 md:right-8 z-[9998] pointer-events-none"
-            style={{ animationDelay: '1.5s' }}
-          >
-            <Image
-              src="/navidad/4.png"
-              alt="Decoración navideña"
-              width={120}
-              height={120}
-              className="object-contain"
-            />
-          </div>
-        </>
       )}
 
     </MainLayout>

@@ -59,17 +59,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Buscar el pedido pendiente en localStorage no es posible desde el servidor
-    // Necesitamos buscar en la base de datos usando el requestId o reference
-    // Por ahora, intentamos buscar por reference (que es el orderId)
-    
-    let orderId = reference
-    if (orderId && orderId.startsWith('TEMP_')) {
-      // Si es un ID temporal, necesitamos buscar el pedido real
-      // Esto debería estar guardado en una tabla de transacciones
-      console.log('⚠️ ID temporal detectado, buscando pedido real...')
-    }
-
     // Mapear el estado de Evertec al estado de nuestro sistema
     let orderStatus = 'pendiente'
     if (status) {
@@ -89,32 +78,61 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Si tenemos el orderId, actualizar el pedido en la base de datos
-    if (orderId) {
+    // Buscar el pedido usando el request_id en la tabla pagos_pendientes
+    if (requestId) {
       try {
-        // Limpiar el orderId si es temporal (TEMP_xxx)
-        const cleanOrderId = orderId.replace('TEMP_', '').split('_')[0]
-        
-        // Intentar buscar el pedido por ID (puede ser numérico o string)
-        let pedido = null
-        let pedidoError = null
-        
-        // Intentar como número primero
-        const numericId = parseInt(cleanOrderId, 10)
-        if (!isNaN(numericId)) {
-          const result = await supabase
-            .from('pedidos')
-            .select('id, estado')
-            .eq('id', numericId)
-            .single()
-          pedido = result.data
-          pedidoError = result.error
-        }
-        
-        // Si no se encontró, intentar buscar por alguna referencia guardada
-        // (esto requeriría una tabla de mapeo requestId -> pedido_id)
-        
-        if (!pedidoError && pedido) {
+        // Buscar el registro en pagos_pendientes usando el request_id
+        const { data: pagoPendiente, error: pagoError } = await supabase
+          .from('pagos_pendientes')
+          .select('id, pedido_id, estado')
+          .eq('request_id', requestId)
+          .single()
+
+        if (pagoError) {
+          console.error('❌ Error buscando pago pendiente:', pagoError)
+          
+          // Fallback: Intentar buscar por referencia si existe
+          if (reference) {
+            console.log('🔄 Intentando buscar por referencia como fallback:', reference)
+            const cleanOrderId = reference.replace('TEMP_', '').split('_')[0]
+            const numericId = parseInt(cleanOrderId, 10)
+            
+            if (!isNaN(numericId)) {
+              const { data: pedido, error: pedidoError } = await supabase
+                .from('pedidos')
+                .select('id, estado')
+                .eq('id', numericId)
+                .single()
+
+              if (!pedidoError && pedido) {
+                console.log('✅ Pedido encontrado por referencia:', pedido.id)
+                
+                // Actualizar el estado del pedido
+                const { error: updateError } = await supabase
+                  .from('pedidos')
+                  .update({
+                    estado: orderStatus,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('id', pedido.id)
+
+                if (updateError) {
+                  console.error('❌ Error actualizando pedido:', updateError)
+                } else {
+                  console.log(`✅ Pedido ${pedido.id} actualizado a estado: ${orderStatus}`)
+                  
+                  // Si el pago fue aprobado, actualizar el stock
+                  if (orderStatus === 'pagado') {
+                    console.log(`📦 Stock debería actualizarse para pedido ${pedido.id}`)
+                  }
+                }
+              }
+            }
+          }
+        } else if (pagoPendiente) {
+          // Encontramos el registro en pagos_pendientes
+          console.log(`✅ Pago pendiente encontrado: pedido_id=${pagoPendiente.pedido_id}`)
+          
           // Actualizar el estado del pedido
           const { error: updateError } = await supabase
             .from('pedidos')
@@ -122,30 +140,39 @@ export async function POST(request: NextRequest) {
               estado: orderStatus,
               updated_at: new Date().toISOString(),
             })
-            .eq('id', pedido.id)
+            .eq('id', pagoPendiente.pedido_id)
 
           if (updateError) {
             console.error('❌ Error actualizando pedido:', updateError)
           } else {
-            console.log(`✅ Pedido ${pedido.id} actualizado a estado: ${orderStatus}`)
+            console.log(`✅ Pedido ${pagoPendiente.pedido_id} actualizado a estado: ${orderStatus}`)
             
-            // Si el pago fue aprobado, actualizar el stock (si existe la función)
+            // Actualizar el estado en pagos_pendientes
+            const statusUpper = typeof status === 'string' 
+              ? status.toUpperCase() 
+              : String(status).toUpperCase()
+            
+            await supabase
+              .from('pagos_pendientes')
+              .update({
+                estado: statusUpper,
+                ultima_verificacion: new Date().toISOString(),
+              })
+              .eq('id', pagoPendiente.id)
+            
+            // Si el pago fue aprobado, actualizar el stock
             if (orderStatus === 'pagado') {
-              try {
-                // Aquí podrías llamar a una función que actualice el stock
-                // Por ahora solo lo registramos
-                console.log(`📦 Stock debería actualizarse para pedido ${pedido.id}`)
-              } catch (stockError) {
-                console.error('⚠️ Error actualizando stock:', stockError)
-              }
+              console.log(`📦 Stock debería actualizarse para pedido ${pagoPendiente.pedido_id}`)
             }
           }
         } else {
-          console.log('⚠️ Pedido no encontrado con referencia:', orderId, pedidoError)
+          console.log('⚠️ No se encontró pago pendiente con request_id:', requestId)
         }
       } catch (dbError) {
         console.error('❌ Error en base de datos:', dbError)
       }
+    } else {
+      console.error('❌ Webhook sin requestId - no se puede procesar')
     }
 
     // Guardar la notificación en una tabla de transacciones (opcional pero recomendado)

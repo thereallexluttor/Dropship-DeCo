@@ -159,7 +159,7 @@ export default function CuentaPage() {
   const loadOrders = useCallback(async (userId: string) => {
     setIsLoadingOrders(true);
     try {
-      // ✅ OPTIMIZACIÓN: Query optimizada - solo campos necesarios, limitado a 10
+      // ✅ OPTIMIZACIÓN: Query optimizada - solo campos necesarios, aumentado a 50 para mostrar más pedidos
       const { data: pedidosData, error: pedidosError } = await supabase
         .from('pedidos')
         .select(`
@@ -179,7 +179,7 @@ export default function CuentaPage() {
         `)
         .eq('usuario_id', userId)
         .order('fecha', { ascending: false })
-        .limit(10);
+        .limit(50); // Aumentado de 10 a 50 para mostrar más pedidos
 
       if (pedidosError) {
         console.error('Error fetching pedidos:', pedidosError);
