@@ -382,6 +382,8 @@ export default function CarritoPage() {
             debugCartState('DESPUES_RESTAURACION_PAGO_NO_APROBADO')
 
             if (paymentStatus === 'PENDING' || paymentStatus === 'PENDING_VALIDATION') {
+              console.log('⏳ Pago pendiente detectado - iniciando polling')
+              
               // Pago pendiente: mostrar modal y empezar polling
               setCurrentOrderId(orderData?.orderId)
               setCurrentTotalAmount(orderData?.totalAmount)
@@ -389,10 +391,18 @@ export default function CarritoPage() {
               setPaymentStatus('pending')
               setPaymentStatusModalOpen(true)
               
-              // Iniciar polling para verificar estado cada 5 segundos
+              // Limpiar cualquier polling anterior
               if (paymentStatusPollingIntervalRef.current) {
                 clearInterval(paymentStatusPollingIntervalRef.current)
+                paymentStatusPollingIntervalRef.current = null
               }
+              
+              // Ejecutar inmediatamente una vez para verificar estado actual
+              setTimeout(() => {
+                checkPaymentStatusForPolling()
+              }, 1000)
+              
+              // Iniciar polling para verificar estado cada 5 segundos
               paymentStatusPollingIntervalRef.current = setInterval(() => {
                 checkPaymentStatusForPolling()
               }, 5000)
@@ -542,34 +552,89 @@ export default function CarritoPage() {
 
   // Función para verificar el estado del pago (usado para polling)
   const checkPaymentStatusForPolling = async () => {
-    if (!currentRequestId) return
+    // Obtener requestId del estado actual o de localStorage
+    let requestIdToCheck = currentRequestId
+    
+    if (!requestIdToCheck) {
+      const pendingPaymentData = localStorage.getItem('pendingPayment')
+      if (pendingPaymentData) {
+        try {
+          const { requestId } = JSON.parse(pendingPaymentData)
+          requestIdToCheck = requestId
+          setCurrentRequestId(requestId) // Actualizar el estado también
+        } catch (e) {
+          console.error('Error parseando pendingPayment:', e)
+          return
+        }
+      }
+    }
+
+    if (!requestIdToCheck) {
+      console.log('⚠️ No hay requestId para verificar en polling')
+      return
+    }
 
     try {
+      console.log('🔄 Consultando estado del pago con requestId:', requestIdToCheck)
+      
       const statusResponse = await fetch('/api/check-payment-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ requestId: currentRequestId }),
+        body: JSON.stringify({ requestId: requestIdToCheck }),
       })
 
       if (!statusResponse.ok) {
-        console.log('❌ Error verificando estado del pago para polling')
+        console.log('❌ Error verificando estado del pago para polling:', statusResponse.status)
         return
       }
 
       const sessionStatus = await statusResponse.json()
-      const paymentStatus = sessionStatus.status?.status || sessionStatus.payment?.[0]?.status?.status
+      console.log('📡 Respuesta completa de la API:', JSON.stringify(sessionStatus, null, 2))
+      
+      // Intentar obtener el estado de diferentes formas según la estructura de la respuesta
+      let paymentStatus = null
+      
+      // Estructura 1: sessionStatus.status.status
+      if (sessionStatus.status?.status) {
+        paymentStatus = sessionStatus.status.status
+      }
+      // Estructura 2: sessionStatus.payment[0].status.status
+      else if (sessionStatus.payment && Array.isArray(sessionStatus.payment) && sessionStatus.payment[0]?.status?.status) {
+        paymentStatus = sessionStatus.payment[0].status.status
+      }
+      // Estructura 3: sessionStatus.request?.status?.status
+      else if (sessionStatus.request?.status?.status) {
+        paymentStatus = sessionStatus.request.status.status
+      }
+      // Estructura 4: sessionStatus.status directamente
+      else if (sessionStatus.status && typeof sessionStatus.status === 'string') {
+        paymentStatus = sessionStatus.status
+      }
 
-      console.log('🔄 Estado del pago (polling):', paymentStatus)
+      console.log('🔄 Estado del pago extraído (polling):', paymentStatus)
 
-      if (paymentStatus === 'APPROVED' || paymentStatus === 'APPROVED_PARTIAL') {
+      // Normalizar el estado a mayúsculas para comparación
+      const statusUpper = paymentStatus ? String(paymentStatus).toUpperCase() : null
+      
+      if (!statusUpper) {
+        console.log('⚠️ No se pudo determinar el estado del pago')
+        return
+      }
+
+      console.log('✅ Estado normalizado:', statusUpper)
+
+      if (statusUpper === 'APPROVED' || statusUpper === 'APPROVED_PARTIAL') {
+        console.log('✅ Pago aprobado detectado - actualizando estado')
+        
         // Pago aprobado: actualizar modal y limpiar polling
         if (paymentStatusPollingIntervalRef.current) {
           clearInterval(paymentStatusPollingIntervalRef.current)
           paymentStatusPollingIntervalRef.current = null
         }
         
+        // Actualizar el estado del modal inmediatamente
         setPaymentStatus('approved')
         
         // Verificar si el pedido ya existe o crearlo
@@ -597,21 +662,28 @@ export default function CarritoPage() {
                 .limit(1)
 
               if (existingOrders && existingOrders.length > 0) {
+                console.log('✅ Pedido existente encontrado:', existingOrders[0].id)
                 setCurrentOrderId(existingOrders[0].id)
+                setCurrentTotalAmount(savedOrderData.totalAmount)
               } else {
                 // Crear el pedido
-                const orderResult = await createOrderFromPendingPayment(savedOrderData, savedRequestId || currentRequestId || '')
+                console.log('📦 Creando nuevo pedido desde polling...')
+                const orderResult = await createOrderFromPendingPayment(savedOrderData, savedRequestId || requestIdToCheck)
+                console.log('✅ Pedido creado:', orderResult?.id)
                 setCurrentOrderId(orderResult?.id || 'desconocido')
+                setCurrentTotalAmount(savedOrderData.totalAmount)
               }
             }
             
             localStorage.removeItem('pendingPayment')
             clearCart()
           } catch (error) {
-            console.error('Error procesando pago aprobado en polling:', error)
+            console.error('❌ Error procesando pago aprobado en polling:', error)
           }
         }
-      } else if (paymentStatus === 'REJECTED' || paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+      } else if (statusUpper === 'REJECTED' || statusUpper === 'FAILED' || statusUpper === 'CANCELLED') {
+        console.log('❌ Pago cancelado/rechazado detectado')
+        
         // Pago cancelado: actualizar modal y limpiar polling
         if (paymentStatusPollingIntervalRef.current) {
           clearInterval(paymentStatusPollingIntervalRef.current)
@@ -620,8 +692,12 @@ export default function CarritoPage() {
         
         setPaymentStatus('cancelled')
         localStorage.removeItem('pendingPayment')
+      } else if (statusUpper === 'PENDING' || statusUpper === 'PENDING_VALIDATION') {
+        console.log('⏳ Pago aún pendiente, continuando polling...')
+        // Si sigue pendiente, el polling continuará
+      } else {
+        console.log('⚠️ Estado desconocido:', statusUpper)
       }
-      // Si sigue pendiente, el polling continuará
     } catch (error) {
       console.error('Error en polling de estado de pago:', error)
     }

@@ -29,16 +29,7 @@ export default function PaymentStatusModal({
   requestId,
   onCheckStatus
 }: PaymentStatusModalProps) {
-  // Polling para verificar estado cuando está pendiente
-  useEffect(() => {
-    if (!isOpen || status !== 'pending' || !onCheckStatus) return
-
-    const interval = setInterval(() => {
-      onCheckStatus()
-    }, 5000) // Verificar cada 5 segundos
-
-    return () => clearInterval(interval)
-  }, [isOpen, status, onCheckStatus])
+  // El polling se maneja desde el componente padre para evitar duplicados
 
   const formatPrice = (precio: number | undefined) => {
     if (!precio) return 'N/A'
