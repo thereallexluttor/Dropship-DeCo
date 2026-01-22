@@ -576,7 +576,7 @@ export default function CarritoPage() {
         const pendingPaymentData = localStorage.getItem('pendingPayment')
         if (pendingPaymentData) {
           try {
-            const { orderData: savedOrderData } = JSON.parse(pendingPaymentData)
+            const { orderData: savedOrderData, requestId: savedRequestId } = JSON.parse(pendingPaymentData)
             
             // Verificar si ya existe el pedido
             const { data: userData } = await supabase
@@ -600,7 +600,7 @@ export default function CarritoPage() {
                 setCurrentOrderId(existingOrders[0].id)
               } else {
                 // Crear el pedido
-                const orderResult = await createOrderFromPendingPayment(savedOrderData, requestIdToCheck)
+                const orderResult = await createOrderFromPendingPayment(savedOrderData, savedRequestId || currentRequestId || '')
                 setCurrentOrderId(orderResult?.id || 'desconocido')
               }
             }
