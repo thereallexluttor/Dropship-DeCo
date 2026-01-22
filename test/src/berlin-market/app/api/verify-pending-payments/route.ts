@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
         // Mapear el estado de Evertec al estado de nuestro sistema
         let orderStatus = 'pendiente'
         if (statusUpper === 'APPROVED' || statusUpper === 'APPROVED_PARTIAL') {
-          orderStatus = 'pagado'
+          orderStatus = 'aprobado'
         } else if (statusUpper === 'REJECTED' || statusUpper === 'FAILED' || statusUpper === 'CANCELLED') {
           orderStatus = 'cancelado'
         } else if (statusUpper === 'PENDING' || statusUpper === 'PENDING_VALIDATION') {
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
             updated++
 
             // Si el pago fue aprobado, actualizar el stock (si existe la función)
-            if (orderStatus === 'pagado') {
+            if (orderStatus === 'aprobado') {
               console.log(`📦 Stock debería actualizarse para pedido ${pago.pedido_id}`)
             }
           }

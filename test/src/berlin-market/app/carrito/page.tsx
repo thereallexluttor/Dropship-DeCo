@@ -68,6 +68,7 @@ import { useCategories } from "../hooks/useCategories"
 import { useCart, CartItemWithSize } from "../contexts/CartContext"
 import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
+import PaymentStatusModal from "../components/PaymentStatusModal"
 import { supabase } from "../../lib/supabase"
 
 export default function CarritoPage() {
@@ -99,6 +100,13 @@ export default function CarritoPage() {
   // Estado para mostrar carga durante el procesamiento del pago
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
+  // Estados para el modal de estado de pago
+  const [paymentStatusModalOpen, setPaymentStatusModalOpen] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'approved' | 'cancelled' | null>(null)
+  const [currentOrderId, setCurrentOrderId] = useState<number | string | undefined>()
+  const [currentTotalAmount, setCurrentTotalAmount] = useState<number | undefined>()
+  const [currentRequestId, setCurrentRequestId] = useState<string | undefined>()
+
   // Dirección y zona para entrega y cálculo de envío
   const [deliveryAddress, setDeliveryAddress] = useState("")
   const [deliveryZone, setDeliveryZone] = useState<'bucaramanga_am' | 'piedecuesta' | ''>('')
@@ -108,6 +116,7 @@ export default function CarritoPage() {
   // Ref para prevenir múltiples ejecuciones simultáneas del procesamiento de pago
   const isProcessingPaymentRef = useRef(false)
   const processedRequestIdsRef = useRef<Set<string>>(new Set())
+  const paymentStatusPollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Usar el contexto del carrito
   const { items, updateQuantity, removeFromCart, updateProductSize, getTotalItems, getTotalPrice, clearCart, restoreCart } = useCart()
@@ -146,6 +155,16 @@ export default function CarritoPage() {
     }
     setShippingFee(fee)
   }, [deliveryZone, items, getTotalPrice, pickupInStore])
+
+  // Limpiar polling al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (paymentStatusPollingIntervalRef.current) {
+        clearInterval(paymentStatusPollingIntervalRef.current)
+        paymentStatusPollingIntervalRef.current = null
+      }
+    }
+  }, [])
 
   // Verificar estado del pago cuando regresa desde la pasarela
   useEffect(() => {
@@ -286,7 +305,13 @@ export default function CarritoPage() {
               clearCart()
               debugCartState('PEDIDO_YA_PROCESADO')
               
-              alert('Tu pedido ya fue procesado exitosamente. No se crearán pedidos duplicados.')
+              // Mostrar modal de estado aprobado
+              setCurrentOrderId(orderData?.orderId || 'existente')
+              setCurrentTotalAmount(orderData?.totalAmount)
+              setCurrentRequestId(requestId)
+              setPaymentStatus('approved')
+              setPaymentStatusModalOpen(true)
+              
               return
             }
 
@@ -308,11 +333,13 @@ export default function CarritoPage() {
               const orderResult = await createOrderFromPendingPayment(orderData, requestId)
 
               const orderId = orderResult?.alreadyExists ? 'existente' : orderResult?.id || 'desconocido'
-              const message = orderResult?.alreadyExists
-                ? `¡Pago aprobado exitosamente!\n\n📦 Tu pedido ya estaba confirmado.\n💰 Total pagado: $${orderData.totalAmount.toLocaleString('es-CO')}`
-                : `¡Pago aprobado exitosamente!\n\n📦 Tu pedido ha sido confirmado.\n💰 Total pagado: $${orderData.totalAmount.toLocaleString('es-CO')}\n\nTe enviaremos un correo de confirmación.`
-
-              alert(message)
+              
+              // Mostrar modal de estado aprobado
+              setCurrentOrderId(orderId)
+              setCurrentTotalAmount(orderData.totalAmount)
+              setCurrentRequestId(requestId)
+              setPaymentStatus('approved')
+              setPaymentStatusModalOpen(true)
 
               // Limpiar datos pendientes después de crear el pedido exitosamente
               localStorage.removeItem('pendingPayment')
@@ -337,12 +364,6 @@ export default function CarritoPage() {
             console.log('❌ Pago NO aprobado - estado:', paymentStatus)
             debugCartState('PAGO_NO_APROBADO_INICIO')
             
-            // Limpiar datos pendientes cuando el pago no es aprobado
-            localStorage.removeItem('pendingPayment')
-            
-            // Cualquier otro estado (REJECTED, FAILED, PENDING, null, undefined, o desconocido): mantener el carrito
-            console.log('🔄 Restaurando estado del carrito después de pago no aprobado')
-
             // Restaurar el estado del carrito desde los datos guardados
             if (cartState) {
               restoreCartState(cartState)
@@ -360,24 +381,40 @@ export default function CarritoPage() {
             })
             debugCartState('DESPUES_RESTAURACION_PAGO_NO_APROBADO')
 
-            let message = 'Tu carrito se mantiene intacto.'
-
-            if (paymentStatus === 'REJECTED') {
-              message = 'El pago fue rechazado.\n\nPor favor, intenta nuevamente o elige otro método de pago.\n\n' + message
-            } else if (paymentStatus === 'FAILED') {
-              message = 'El pago falló.\n\nPor favor, intenta nuevamente o elige otro método de pago.\n\n' + message
-            } else if (paymentStatus === 'PENDING') {
-              message = 'El pago está pendiente. Si ya realizaste el pago, espera unos momentos y vuelve a verificar.\n\n' + message
+            if (paymentStatus === 'PENDING' || paymentStatus === 'PENDING_VALIDATION') {
+              // Pago pendiente: mostrar modal y empezar polling
+              setCurrentOrderId(orderData?.orderId)
+              setCurrentTotalAmount(orderData?.totalAmount)
+              setCurrentRequestId(requestId)
+              setPaymentStatus('pending')
+              setPaymentStatusModalOpen(true)
+              
+              // Iniciar polling para verificar estado cada 5 segundos
+              if (paymentStatusPollingIntervalRef.current) {
+                clearInterval(paymentStatusPollingIntervalRef.current)
+              }
+              paymentStatusPollingIntervalRef.current = setInterval(() => {
+                checkPaymentStatusForPolling()
+              }, 5000)
+              
+              // NO limpiar datos pendientes - necesitamos el requestId para polling
+            } else if (paymentStatus === 'REJECTED' || paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+              // Pago cancelado/rechazado: mostrar modal
+              setCurrentOrderId(orderData?.orderId)
+              setCurrentTotalAmount(orderData?.totalAmount)
+              setCurrentRequestId(requestId)
+              setPaymentStatus('cancelled')
+              setPaymentStatusModalOpen(true)
+              
+              // Limpiar datos pendientes cuando el pago es cancelado
+              localStorage.removeItem('pendingPayment')
             } else {
               // Estado desconocido o null/undefined - probablemente el usuario canceló
-              // No mostrar alert para evitar spam cuando el usuario simplemente cancela
+              // No mostrar modal para evitar spam cuando el usuario simplemente cancela
               console.log('🚫 Estado de pago desconocido o cancelado:', paymentStatus, '- Carrito mantenido intacto')
+              localStorage.removeItem('pendingPayment')
               return // Salir sin mostrar mensaje
             }
-
-            console.log('💬 Mostrando mensaje al usuario:', message)
-            alert(message)
-            // NO se llama a clearCart() - el carrito se mantiene intacto
           }
         } catch (error) {
           console.error('Error verificando estado del pago:', error)
@@ -503,6 +540,93 @@ export default function CarritoPage() {
     })
   }
 
+  // Función para verificar el estado del pago (usado para polling)
+  const checkPaymentStatusForPolling = async () => {
+    if (!currentRequestId) return
+
+    try {
+      const statusResponse = await fetch('/api/check-payment-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ requestId: currentRequestId }),
+      })
+
+      if (!statusResponse.ok) {
+        console.log('❌ Error verificando estado del pago para polling')
+        return
+      }
+
+      const sessionStatus = await statusResponse.json()
+      const paymentStatus = sessionStatus.status?.status || sessionStatus.payment?.[0]?.status?.status
+
+      console.log('🔄 Estado del pago (polling):', paymentStatus)
+
+      if (paymentStatus === 'APPROVED' || paymentStatus === 'APPROVED_PARTIAL') {
+        // Pago aprobado: actualizar modal y limpiar polling
+        if (paymentStatusPollingIntervalRef.current) {
+          clearInterval(paymentStatusPollingIntervalRef.current)
+          paymentStatusPollingIntervalRef.current = null
+        }
+        
+        setPaymentStatus('approved')
+        
+        // Verificar si el pedido ya existe o crearlo
+        const pendingPaymentData = localStorage.getItem('pendingPayment')
+        if (pendingPaymentData) {
+          try {
+            const { orderData: savedOrderData } = JSON.parse(pendingPaymentData)
+            
+            // Verificar si ya existe el pedido
+            const { data: userData } = await supabase
+              .from('usuarios')
+              .select('id')
+              .eq('correo', user?.email)
+              .single()
+
+            if (userData) {
+              const { data: existingOrders } = await supabase
+                .from('pedidos')
+                .select('id')
+                .eq('usuario_id', userData.id)
+                .eq('total', savedOrderData.totalAmount)
+                .eq('Direccion', savedOrderData.address)
+                .gte('fecha', new Date(Date.now() - 600000).toISOString())
+                .order('fecha', { ascending: false })
+                .limit(1)
+
+              if (existingOrders && existingOrders.length > 0) {
+                setCurrentOrderId(existingOrders[0].id)
+              } else {
+                // Crear el pedido
+                const orderResult = await createOrderFromPendingPayment(savedOrderData, requestIdToCheck)
+                setCurrentOrderId(orderResult?.id || 'desconocido')
+              }
+            }
+            
+            localStorage.removeItem('pendingPayment')
+            clearCart()
+          } catch (error) {
+            console.error('Error procesando pago aprobado en polling:', error)
+          }
+        }
+      } else if (paymentStatus === 'REJECTED' || paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+        // Pago cancelado: actualizar modal y limpiar polling
+        if (paymentStatusPollingIntervalRef.current) {
+          clearInterval(paymentStatusPollingIntervalRef.current)
+          paymentStatusPollingIntervalRef.current = null
+        }
+        
+        setPaymentStatus('cancelled')
+        localStorage.removeItem('pendingPayment')
+      }
+      // Si sigue pendiente, el polling continuará
+    } catch (error) {
+      console.error('Error en polling de estado de pago:', error)
+    }
+  }
+
   // Función para crear el pedido desde los datos pendientes guardados
   const createOrderFromPendingPayment = async (orderData: any, requestId: string) => {
     try {
@@ -543,7 +667,7 @@ export default function CarritoPage() {
             usuario_id: orderData.userId,
             fecha: new Date().toISOString(),
             total: orderData.totalAmount,
-            estado: 'pendiente',
+            estado: 'pendiente', // Se actualizará a 'aprobado' cuando el webhook confirme el pago
             Direccion: orderData.address,
           }
         ])
@@ -1664,6 +1788,31 @@ export default function CarritoPage() {
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Modal de Estado de Pago */}
+      <PaymentStatusModal
+        isOpen={paymentStatusModalOpen}
+        onClose={() => {
+          setPaymentStatusModalOpen(false)
+          // Limpiar polling si está activo
+          if (paymentStatusPollingIntervalRef.current) {
+            clearInterval(paymentStatusPollingIntervalRef.current)
+            paymentStatusPollingIntervalRef.current = null
+          }
+          // Si el pago fue aprobado o cancelado, limpiar estado
+          if (paymentStatus === 'approved' || paymentStatus === 'cancelled') {
+            setPaymentStatus(null)
+            setCurrentOrderId(undefined)
+            setCurrentTotalAmount(undefined)
+            setCurrentRequestId(undefined)
+          }
+        }}
+        status={paymentStatus}
+        orderId={currentOrderId}
+        totalAmount={currentTotalAmount}
+        requestId={currentRequestId}
+        onCheckStatus={checkPaymentStatusForPolling}
+      />
 
     </MainLayout>
   )

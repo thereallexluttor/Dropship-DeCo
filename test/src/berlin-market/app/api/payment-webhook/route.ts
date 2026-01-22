@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         : String(status).toUpperCase()
       
       if (statusUpper === 'APPROVED' || statusUpper === 'APPROVED_PARTIAL') {
-        orderStatus = 'pagado'
+        orderStatus = 'aprobado'
       } else if (statusUpper === 'REJECTED' || statusUpper === 'FAILED' || statusUpper === 'CANCELLED') {
         orderStatus = 'cancelado'
       } else if (statusUpper === 'PENDING' || statusUpper === 'PENDING_VALIDATION') {
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
                   console.log(`✅ Pedido ${pedido.id} actualizado a estado: ${orderStatus}`)
                   
                   // Si el pago fue aprobado, actualizar el stock
-                  if (orderStatus === 'pagado') {
+                  if (orderStatus === 'aprobado') {
                     console.log(`📦 Stock debería actualizarse para pedido ${pedido.id}`)
                   }
                 }
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
               .eq('id', pagoPendiente.id)
             
             // Si el pago fue aprobado, actualizar el stock
-            if (orderStatus === 'pagado') {
+            if (orderStatus === 'aprobado') {
               console.log(`📦 Stock debería actualizarse para pedido ${pagoPendiente.pedido_id}`)
             }
           }
