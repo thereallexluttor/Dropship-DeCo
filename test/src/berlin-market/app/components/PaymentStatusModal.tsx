@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CheckCircle2, XCircle, Loader2, Clock, AlertCircle } from "lucide-react"
+import { CheckCircle2, XCircle, Loader2, Clock, AlertCircle, X } from "lucide-react"
 
 interface PaymentStatusModalProps {
   isOpen: boolean
@@ -29,7 +29,26 @@ export default function PaymentStatusModal({
   requestId,
   onCheckStatus
 }: PaymentStatusModalProps) {
-  // El polling se maneja desde el componente padre para evitar duplicados
+  // Polling para verificar estado cuando está pendiente
+  useEffect(() => {
+    if (!isOpen || status !== 'pending' || !onCheckStatus) return
+
+    const interval = setInterval(() => {
+      onCheckStatus()
+    }, 5000) // Verificar cada 5 segundos
+
+    return () => clearInterval(interval)
+  }, [isOpen, status, onCheckStatus])
+
+  // Prevenir que el modal se cierre cuando está pendiente
+  const handleOpenChange = (open: boolean) => {
+    // Si intentan cerrar el modal pero el pago está pendiente, no permitirlo
+    if (!open && status === 'pending') {
+      return
+    }
+    // Solo permitir cerrar si el pago no está pendiente
+    onClose()
+  }
 
   const formatPrice = (precio: number | undefined) => {
     if (!precio) return 'N/A'
@@ -75,8 +94,22 @@ export default function PaymentStatusModal({
   if (!statusContent) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`sm:max-w-md ${statusContent.bgColor} ${statusContent.borderColor} border-2`}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent 
+        className={`sm:max-w-md ${statusContent.bgColor} ${statusContent.borderColor} border-2 ${status === 'pending' ? '[&>button[data-radix-dialog-close]]:hidden' : ''}`}
+        onInteractOutside={(e) => {
+          // Prevenir cerrar haciendo clic fuera del modal si está pendiente
+          if (status === 'pending') {
+            e.preventDefault()
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          // Prevenir cerrar con ESC si está pendiente
+          if (status === 'pending') {
+            e.preventDefault()
+          }
+        }}
+      >
         <DialogHeader className="text-center space-y-4">
           <div className="flex justify-center">
             {statusContent.icon}
