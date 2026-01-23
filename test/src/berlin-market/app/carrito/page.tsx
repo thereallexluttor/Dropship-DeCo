@@ -102,7 +102,7 @@ export default function CarritoPage() {
 
   // Estados para el modal de estado de pago
   const [paymentStatusModalOpen, setPaymentStatusModalOpen] = useState(false)
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'approved' | 'cancelled' | null>(null)
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'approved' | 'cancelled' | 'verifying' | null>(null)
   const [currentOrderId, setCurrentOrderId] = useState<number | string | undefined>()
   const [currentTotalAmount, setCurrentTotalAmount] = useState<number | undefined>()
   const [currentRequestId, setCurrentRequestId] = useState<string | undefined>()
@@ -186,15 +186,16 @@ export default function CarritoPage() {
       if (paymentReturn === 'true') {
         console.log('💳 Detectado retorno desde pasarela de pago')
 
+        // Limpiar URL inmediatamente para evitar recargas
+        window.history.replaceState({}, '', '/carrito')
+
         // Buscar el requestId guardado en localStorage
         const pendingPaymentData = localStorage.getItem('pendingPayment')
         console.log('💾 Datos de pago pendientes en localStorage:', !!pendingPaymentData)
 
         if (!pendingPaymentData) {
           console.log('❌ No hay datos de pago pendiente - usuario canceló o navega manualmente')
-          // Limpiar URL y mantener el carrito intacto
-          window.history.replaceState({}, '', '/carrito')
-          // No mostrar alert aquí para evitar spam si el usuario navega manualmente
+          // No mostrar modal si no hay datos
           return
         }
 
@@ -202,6 +203,16 @@ export default function CarritoPage() {
           console.log('🔍 Verificando datos de pago pendientes...')
           const { requestId, orderData, cartState, timestamp } = JSON.parse(pendingPaymentData)
           console.log('📦 Datos parseados:', { requestId, hasOrderData: !!orderData, hasCartState: !!cartState, timestamp })
+
+          // MOSTRAR MODAL INMEDIATAMENTE con estado "verifying" para prevenir pagos duplicados
+          setCurrentOrderId(orderData?.orderId)
+          setCurrentTotalAmount(orderData?.totalAmount)
+          setCurrentRequestId(requestId)
+          setPaymentStatus('verifying')
+          setPaymentStatusModalOpen(true)
+          
+          // Marcar que estamos procesando para prevenir ejecuciones simultáneas
+          isProcessingPaymentRef.current = true
 
           // Verificar si este requestId ya fue procesado ANTES de continuar
           const processedOrderKey = `processed_order_${requestId}`
@@ -213,10 +224,13 @@ export default function CarritoPage() {
               localStorage: !!orderAlreadyProcessed,
               ref: processedRequestIdsRef.current.has(requestId)
             })
-            // Limpiar datos y URL
+            // Limpiar datos y carrito
             localStorage.removeItem('pendingPayment')
-            window.history.replaceState({}, '', '/carrito')
             clearCart()
+            
+            // Actualizar modal para mostrar que el pedido ya existe
+            setPaymentStatus('approved')
+            setCurrentOrderId(orderData?.orderId || 'existente')
             return
           }
 
@@ -305,24 +319,19 @@ export default function CarritoPage() {
               clearCart()
               debugCartState('PEDIDO_YA_PROCESADO')
               
-              // Mostrar modal de estado aprobado
+              // Actualizar modal para mostrar estado aprobado (ya está abierto)
               setCurrentOrderId(orderData?.orderId || 'existente')
               setCurrentTotalAmount(orderData?.totalAmount)
               setCurrentRequestId(requestId)
               setPaymentStatus('approved')
-              setPaymentStatusModalOpen(true)
+              
+              // Resetear flag de procesamiento
+              isProcessingPaymentRef.current = false
               
               return
             }
 
-            // CRÍTICO: Marcar como procesando ANTES de crear el pedido para prevenir ejecuciones simultáneas
-            if (isProcessingPaymentRef.current) {
-              console.log('⚠️ Ya hay un proceso de pago en curso, esperando...')
-              return
-            }
-
             // Marcar que estamos procesando este requestId
-            isProcessingPaymentRef.current = true
             processedRequestIdsRef.current.add(requestId)
             localStorage.setItem(processedOrderKey, Date.now().toString())
 
@@ -330,16 +339,15 @@ export default function CarritoPage() {
               debugCartState('PAGO_APROBADO_ANTES_CREAR_PEDIDO')
 
               // Pago aprobado: crear el pedido y limpiar el carrito
-              const orderResult = await createOrderFromPendingPayment(orderData, requestId)
+              const orderResult = await createOrderFromPendingPayment(orderData, requestId, 'APPROVED')
 
               const orderId = orderResult?.alreadyExists ? 'existente' : orderResult?.id || 'desconocido'
               
-              // Mostrar modal de estado aprobado
+              // Actualizar modal con estado aprobado (ya está abierto)
               setCurrentOrderId(orderId)
               setCurrentTotalAmount(orderData.totalAmount)
               setCurrentRequestId(requestId)
               setPaymentStatus('approved')
-              setPaymentStatusModalOpen(true)
 
               // Limpiar datos pendientes después de crear el pedido exitosamente
               localStorage.removeItem('pendingPayment')
@@ -353,6 +361,10 @@ export default function CarritoPage() {
               isProcessingPaymentRef.current = false
               processedRequestIdsRef.current.delete(requestId)
               localStorage.removeItem(processedOrderKey)
+              
+              // Cerrar modal y mostrar error
+              setPaymentStatusModalOpen(false)
+              setPaymentStatus(null)
               throw error
             } finally {
               // Resetear el flag de procesamiento después de un delay para evitar condiciones de carrera
@@ -382,12 +394,11 @@ export default function CarritoPage() {
             debugCartState('DESPUES_RESTAURACION_PAGO_NO_APROBADO')
 
             if (paymentStatus === 'PENDING' || paymentStatus === 'PENDING_VALIDATION') {
-              // Pago pendiente: mostrar modal y empezar polling
+              // Pago pendiente: actualizar modal (ya está abierto) y empezar polling
               setCurrentOrderId(orderData?.orderId)
               setCurrentTotalAmount(orderData?.totalAmount)
               setCurrentRequestId(requestId)
               setPaymentStatus('pending')
-              setPaymentStatusModalOpen(true)
               
               // Iniciar polling para verificar estado cada 5 segundos
               if (paymentStatusPollingIntervalRef.current) {
@@ -399,22 +410,26 @@ export default function CarritoPage() {
               
               // NO limpiar datos pendientes - necesitamos el requestId para polling
             } else if (paymentStatus === 'REJECTED' || paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
-              // Pago cancelado/rechazado: mostrar modal
+              // Pago cancelado/rechazado: actualizar modal (ya está abierto)
               setCurrentOrderId(orderData?.orderId)
               setCurrentTotalAmount(orderData?.totalAmount)
               setCurrentRequestId(requestId)
               setPaymentStatus('cancelled')
-              setPaymentStatusModalOpen(true)
               
               // Limpiar datos pendientes cuando el pago es cancelado
               localStorage.removeItem('pendingPayment')
             } else {
               // Estado desconocido o null/undefined - probablemente el usuario canceló
-              // No mostrar modal para evitar spam cuando el usuario simplemente cancela
+              // Cerrar modal y limpiar
               console.log('🚫 Estado de pago desconocido o cancelado:', paymentStatus, '- Carrito mantenido intacto')
+              setPaymentStatusModalOpen(false)
+              setPaymentStatus(null)
               localStorage.removeItem('pendingPayment')
               return // Salir sin mostrar mensaje
             }
+            
+            // Resetear flag de procesamiento después de determinar el estado
+            isProcessingPaymentRef.current = false
           }
         } catch (error) {
           console.error('Error verificando estado del pago:', error)
@@ -422,9 +437,10 @@ export default function CarritoPage() {
           // Resetear flags en caso de error
           isProcessingPaymentRef.current = false
           
-          // Limpiar datos pendientes
+          // Cerrar modal y limpiar datos pendientes
+          setPaymentStatusModalOpen(false)
+          setPaymentStatus(null)
           localStorage.removeItem('pendingPayment')
-          window.history.replaceState({}, '', '/carrito')
           
           // No mostrar alert en caso de error - asumir que el usuario canceló
           // El carrito se mantiene intacto
@@ -599,8 +615,8 @@ export default function CarritoPage() {
               if (existingOrders && existingOrders.length > 0) {
                 setCurrentOrderId(existingOrders[0].id)
               } else {
-                // Crear el pedido
-                const orderResult = await createOrderFromPendingPayment(savedOrderData, savedRequestId || currentRequestId || '')
+                // Crear el pedido (pago ya está aprobado según el polling)
+                const orderResult = await createOrderFromPendingPayment(savedOrderData, savedRequestId || currentRequestId || '', 'APPROVED')
                 setCurrentOrderId(orderResult?.id || 'desconocido')
               }
             }
@@ -628,9 +644,19 @@ export default function CarritoPage() {
   }
 
   // Función para crear el pedido desde los datos pendientes guardados
-  const createOrderFromPendingPayment = async (orderData: any, requestId: string) => {
+  const createOrderFromPendingPayment = async (orderData: any, requestId: string, paymentStatus?: string) => {
     try {
-      console.log('🔄 Creando pedido desde datos pendientes...', { requestId })
+      console.log('🔄 Creando pedido desde datos pendientes...', { requestId, paymentStatus })
+
+      // Determinar el estado inicial del pedido basado en el estado del pago
+      // Si el pago está aprobado, crear el pedido directamente como aprobado
+      const isApproved = paymentStatus === 'APPROVED' || paymentStatus === 'APPROVED_PARTIAL'
+      const initialEstado = isApproved ? 'aprobado' : 'pendiente'
+      
+      console.log(`📦 Creando pedido con estado inicial: ${initialEstado}`, { 
+        paymentStatus, 
+        isApproved 
+      })
 
       // Verificar si ya existe un pedido con los mismos datos (usuario, total, dirección)
       // para evitar duplicados en caso de que el proceso se ejecute múltiples veces
@@ -667,7 +693,7 @@ export default function CarritoPage() {
             usuario_id: orderData.userId,
             fecha: new Date().toISOString(),
             total: orderData.totalAmount,
-            estado: 'pendiente', // Se actualizará a 'aprobado' cuando el webhook confirme el pago
+            estado: initialEstado, // Si el pago está aprobado, crear directamente como aprobado
             Direccion: orderData.address,
           }
         ])
@@ -721,6 +747,9 @@ export default function CarritoPage() {
 
       // Guardar el registro en pagos_pendientes para que el webhook y la sonda puedan encontrarlo
       try {
+        // Si el pago está aprobado, guardar el estado como APPROVED en lugar de PENDING
+        const pagoEstado = isApproved ? 'APPROVED' : 'PENDING'
+        
         const { error: pagoPendienteError } = await supabase
           .from('pagos_pendientes')
           .insert({
@@ -728,14 +757,15 @@ export default function CarritoPage() {
             pedido_id: orderResult.id,
             referencia: String(orderResult.id),
             monto: orderData.totalAmount,
-            estado: 'PENDING',
+            estado: pagoEstado,
+            ultima_verificacion: isApproved ? new Date().toISOString() : null,
           })
 
         if (pagoPendienteError) {
           console.error('⚠️ Error guardando en pagos_pendientes:', pagoPendienteError)
           // No lanzar error aquí, solo registrar - el pedido ya fue creado
         } else {
-          console.log('✅ Registro guardado en pagos_pendientes:', { requestId, pedido_id: orderResult.id })
+          console.log(`✅ Registro guardado en pagos_pendientes con estado ${pagoEstado}:`, { requestId, pedido_id: orderResult.id })
         }
       } catch (pagoError) {
         console.error('⚠️ Error al guardar en pagos_pendientes:', pagoError)
@@ -1497,14 +1527,14 @@ export default function CarritoPage() {
                     <div className="space-y-3 sm:space-y-4">
                       <button
                         onClick={handlePayment}
-                        disabled={isProcessingPayment}
+                        disabled={isProcessingPayment || paymentStatusModalOpen || isProcessingPaymentRef.current}
                         className="group relative w-full bg-gradient-to-r from-[#196428] to-[#2d7a3d] hover:from-[#145020] hover:to-[#196428] active:from-[#0f3a15] active:to-[#145020] disabled:from-gray-400 disabled:to-gray-500 text-white py-4 sm:py-4 px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 disabled:cursor-not-allowed touch-manipulation shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2">
-                          {isProcessingPayment ? (
+                          {(isProcessingPayment || paymentStatusModalOpen || isProcessingPaymentRef.current) ? (
                             <>
                               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Procesando...
+                              {paymentStatusModalOpen ? 'Verificando pago...' : 'Procesando...'}
                             </>
                           ) : (
                             <>

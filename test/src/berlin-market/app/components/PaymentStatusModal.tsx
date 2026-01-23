@@ -13,7 +13,7 @@ import { CheckCircle2, XCircle, Loader2, Clock, AlertCircle, X } from "lucide-re
 interface PaymentStatusModalProps {
   isOpen: boolean
   onClose: () => void
-  status: 'pending' | 'approved' | 'cancelled' | null
+  status: 'pending' | 'approved' | 'cancelled' | 'verifying' | null
   orderId?: number | string
   totalAmount?: number
   requestId?: string
@@ -40,13 +40,13 @@ export default function PaymentStatusModal({
     return () => clearInterval(interval)
   }, [isOpen, status, onCheckStatus])
 
-  // Prevenir que el modal se cierre cuando está pendiente
+  // Prevenir que el modal se cierre cuando está pendiente o verificando
   const handleOpenChange = (open: boolean) => {
-    // Si intentan cerrar el modal pero el pago está pendiente, no permitirlo
-    if (!open && status === 'pending') {
+    // Si intentan cerrar el modal pero el pago está pendiente o verificando, no permitirlo
+    if (!open && (status === 'pending' || status === 'verifying')) {
       return
     }
-    // Solo permitir cerrar si el pago no está pendiente
+    // Solo permitir cerrar si el pago no está pendiente ni verificando
     onClose()
   }
 
@@ -57,6 +57,15 @@ export default function PaymentStatusModal({
 
   const getStatusContent = () => {
     switch (status) {
+      case 'verifying':
+        return {
+          icon: <Loader2 className="h-16 w-16 text-blue-500 animate-spin" />,
+          title: 'Verificando Pago',
+          description: 'Estamos verificando el estado de tu transacción. Por favor espera...',
+          bgColor: 'bg-blue-50',
+          borderColor: 'border-blue-200',
+          textColor: 'text-blue-900'
+        }
       case 'pending':
         return {
           icon: <Loader2 className="h-16 w-16 text-blue-500 animate-spin" />,
@@ -96,16 +105,16 @@ export default function PaymentStatusModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent 
-        className={`sm:max-w-md ${statusContent.bgColor} ${statusContent.borderColor} border-2 ${status === 'pending' ? '[&>button[data-radix-dialog-close]]:hidden' : ''}`}
+        className={`sm:max-w-md ${statusContent.bgColor} ${statusContent.borderColor} border-2 ${(status === 'pending' || status === 'verifying') ? '[&>button[data-radix-dialog-close]]:hidden' : ''}`}
         onInteractOutside={(e) => {
-          // Prevenir cerrar haciendo clic fuera del modal si está pendiente
-          if (status === 'pending') {
+          // Prevenir cerrar haciendo clic fuera del modal si está pendiente o verificando
+          if (status === 'pending' || status === 'verifying') {
             e.preventDefault()
           }
         }}
         onEscapeKeyDown={(e) => {
-          // Prevenir cerrar con ESC si está pendiente
-          if (status === 'pending') {
+          // Prevenir cerrar con ESC si está pendiente o verificando
+          if (status === 'pending' || status === 'verifying') {
             e.preventDefault()
           }
         }}
@@ -137,10 +146,10 @@ export default function PaymentStatusModal({
           )}
         </div>
 
-        {status === 'pending' && (
+        {(status === 'pending' || status === 'verifying') && (
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-600">
             <Clock className="h-4 w-4 animate-pulse" />
-            <span>Verificando estado del pago...</span>
+            <span>{status === 'verifying' ? 'Verificando estado del pago...' : 'Verificando estado del pago...'}</span>
           </div>
         )}
 
