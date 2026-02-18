@@ -1145,7 +1145,7 @@ export default function CarritoPage() {
 
   // Account Popover Content Component
   const AccountContent = () => (
-    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FCFFEF] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
+    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-white p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
       {/* Ya soy cliente */}
       <div>
 
@@ -1250,7 +1250,7 @@ export default function CarritoPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
         <Header 
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

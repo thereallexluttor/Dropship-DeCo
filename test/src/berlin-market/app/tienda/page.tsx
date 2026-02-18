@@ -34,19 +34,6 @@ import CategoryMenu from '../components/CategoryMenu'
 import StoreLocator from '../components/StoreLocator'
 import Footer from '../components/Footer'
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetOverlay,
-} from "@/components/ui/sheet"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
   Drawer,
   DrawerClose,
   DrawerContent,
@@ -58,13 +45,11 @@ import {
 import { Slider } from "@/components/ui/slider"
 import MainLayout from "../components/MainLayout"
 import CategoryDropdown from "../components/CategoryDropdown"
-import AccountPopover from "../components/AccountPopover"
 import AccountPopoverContent from "../components/AccountPopoverContent"
-import SearchAutocomplete from "../components/SearchAutocomplete"
+import Header from "../components/Header"
 import { Marca } from "@/lib/supabase"
 import { useCategories } from "../hooks/useCategories"
 import { useProducts, ProductWithDetails } from "../hooks/useProducts"
-import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
 import { useCart } from "../contexts/CartContext"
 import { loadStoresFromSupabase, type Store } from "../lib/stores"
@@ -98,7 +83,13 @@ function TiendaPageContent() {
   const [selectedProductCategory, setSelectedProductCategory] = useState<number | null>(null)
   const [selectedProductSubcategory, setSelectedProductSubcategory] = useState<number | null>(null)
   const [sortBy, setSortBy] = useState<string>("Más popular") // Estado para ordenamiento
-  
+
+  // Configuración de paginado por filas (7 filas en desktop: 4 productos por fila)
+  const PRODUCTS_PER_ROW_DESKTOP = 4
+  const ROWS_PER_BATCH = 7
+  const PRODUCTS_PER_BATCH = PRODUCTS_PER_ROW_DESKTOP * ROWS_PER_BATCH
+  const [visibleProductCount, setVisibleProductCount] = useState<number>(PRODUCTS_PER_BATCH)
+
   // Estado para tiendas y tienda seleccionada
   const [tiendas, setTiendas] = useState<Store[]>([])
   const [selectedStoreId, setSelectedStoreId] = useState<number>(1) // Default: tienda con id 1
@@ -125,6 +116,7 @@ function TiendaPageContent() {
 
   // Constantes para categorías especiales
   const CATEGORIES = {
+    MASCOTAS: 997, // Categoría agrupada de PERRO (4) y GATO (5)
     OFERTAS: 999,
     NOVEDADES: 998,
     TODOS_LOS_PRODUCTOS: 1000
@@ -159,42 +151,65 @@ function TiendaPageContent() {
 
           // Si también hay subcategoría, verificar que pertenece a la categoría
           if (subcategoryParam) {
-            const subcategoryId = parseInt(subcategoryParam)
-            if (!isNaN(subcategoryId)) {
-              console.log('Configurando subcategoría desde URL:', subcategoryId)
+            // Mascotas puede usar subcategoria=5,6 (IDs separados por coma)
+            const subcategoryIds = subcategoryParam.includes(",")
+              ? subcategoryParam.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n))
+              : [parseInt(subcategoryParam)].filter(n => !isNaN(n))
+            
+            if (subcategoryIds.length > 0) {
+              const subcategoryId = subcategoryIds[0]
+              console.log('Configurando subcategoría desde URL:', subcategoryIds)
               setSelectedSubcategoryFromUrl(subcategoryId)
               setSelectedSubcategory(subcategoryId)
 
-              // Verificar que la subcategoría pertenece a la categoría
-              const categoryData = productsByCategory.find(cat => cat.categoryId === categoryId)
-              const subcategoryData = categoryData?.subcategories.find(sub => sub.subcategoryId === subcategoryId)
-
-              if (subcategoryData) {
-                // La subcategoría existe en la categoría, configurarla
-                // Buscar información de la categoría y subcategoría
-                const category = categories.find(cat => cat.id === categoryId)
-                if (category && subcategoryData) {
-                  setCurrentTitle(subcategoryData.subcategoryName)
-                  setCurrentBreadcrumbs(["Inicio", "Tienda", category.name, subcategoryData.subcategoryName])
+              // Caso especial: Mascotas (subcategorías agrupadas por nombre)
+              if (categoryId === CATEGORIES.MASCOTAS) {
+                setSelectedMascotasSubcategoryIds(subcategoryIds)
+                const groups = getMascotasGroupedSubcategories()
+                const idsMatch = (a: number[], b: number[]) => {
+                  if (a.length !== b.length) return false
+                  const sa = [...a].sort((x, y) => x - y)
+                  const sb = [...b].sort((x, y) => x - y)
+                  return sa.every((x, i) => x === sb[i])
                 }
-              } else {
-                // La subcategoría no existe en la categoría, resetear a "Todas las subcategorías"
-                console.log('Subcategoría no encontrada en la categoría, reseteando')
-                // Usar 0 como indicador de "todas las subcategorías de esta categoría"
-                setSelectedSubcategory(0)
-
-                // Solo mostrar categoría
+                const group = groups.find(g => idsMatch(g.subcategoryIds, subcategoryIds))
                 const category = categories.find(cat => cat.id === categoryId)
                 if (category) {
-                  setCurrentTitle(category.name)
-                  setCurrentBreadcrumbs(["Inicio", "Tienda", category.name])
+                  setCurrentTitle(group?.displayName ?? "Subcategoría")
+                  setCurrentBreadcrumbs(["Inicio", "Tienda", category.name, group?.displayName ?? "Subcategoría"])
+                }
+              } else {
+                // Verificar que la subcategoría pertenece a la categoría (categorías normales)
+                const categoryData = productsByCategory.find(cat => cat.categoryId === categoryId)
+                const subcategoryData = categoryData?.subcategories.find(sub => sub.subcategoryId === subcategoryId)
+
+                if (subcategoryData) {
+                  // La subcategoría existe en la categoría, configurarla
+                  // Buscar información de la categoría y subcategoría
+                  const category = categories.find(cat => cat.id === categoryId)
+                  if (category && subcategoryData) {
+                    setCurrentTitle(subcategoryData.subcategoryName)
+                    setCurrentBreadcrumbs(["Inicio", "Tienda", category.name, subcategoryData.subcategoryName])
+                  }
+                } else {
+                  // La subcategoría no existe en la categoría, resetear a "Todas las subcategorías"
+                  console.log('Subcategoría no encontrada en la categoría, reseteando')
+                  // Usar 0 como indicador de "todas las subcategorías de esta categoría"
+                  setSelectedSubcategory(0)
+
+                  // Solo mostrar categoría
+                  const category = categories.find(cat => cat.id === categoryId)
+                  if (category) {
+                    setCurrentTitle(category.name)
+                    setCurrentBreadcrumbs(["Inicio", "Tienda", category.name])
+                  }
                 }
               }
             }
           } else {
             // Solo categoría, mostrar todos los productos de esa categoría
-            // Usar 0 como indicador de "todas las subcategorías de esta categoría"
             setSelectedSubcategory(0)
+            if (categoryId === CATEGORIES.MASCOTAS) setSelectedMascotasSubcategoryIds(null)
             const category = categories.find(cat => cat.id === categoryId)
             if (category) {
               setCurrentTitle(category.name)
@@ -239,8 +254,44 @@ function TiendaPageContent() {
   // Estado para la navegación de categorías
   const [selectedCategory, setSelectedCategory] = useState<number>(1000) // ID de categoría por defecto (todos los productos)
   const [selectedSubcategory, setSelectedSubcategory] = useState<number>(1000) // ID de subcategoría por defecto (todos los productos)
+  const [selectedMascotasSubcategoryIds, setSelectedMascotasSubcategoryIds] = useState<number[] | null>(null) // Subcategorías agrupadas en Mascotas
   const [currentTitle, setCurrentTitle] = useState<string>("Todos los productos")
   const [currentBreadcrumbs, setCurrentBreadcrumbs] = useState<string[]>(["Inicio", "Tienda"])
+
+  // Normalizar nombre para agrupar subcategorías (ej: " CONCENTRADO" y "CONCENTRADO" -> mismo grupo)
+  const normalizeSubcategoryName = (name: string) =>
+    (name || "")
+      .trim()
+      .toUpperCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+
+  // Agrupar subcategorías de PERRO y GATO por nombre normalizado
+  const getMascotasGroupedSubcategories = () => {
+    const perroData = productsByCategory.find(cat => cat.categoryId === 4)
+    const gatoData = productsByCategory.find(cat => cat.categoryId === 5)
+    const allSubs = [
+      ...(perroData?.subcategories || []).map(s => ({ ...s, categoryId: 4 })),
+      ...(gatoData?.subcategories || []).map(s => ({ ...s, categoryId: 5 }))
+    ]
+    const byKey = new Map<string, { displayName: string; subcategoryIds: number[] }>()
+    for (const sub of allSubs) {
+      const key = normalizeSubcategoryName(sub.subcategoryName)
+      const existing = byKey.get(key)
+      if (existing) {
+        if (!existing.subcategoryIds.includes(sub.subcategoryId)) {
+          existing.subcategoryIds.push(sub.subcategoryId)
+        }
+      } else {
+        byKey.set(key, {
+          displayName: sub.subcategoryName.trim(),
+          subcategoryIds: [sub.subcategoryId]
+        })
+      }
+    }
+    return Array.from(byKey.values())
+  }
 
   // Actualizar título cuando hay búsqueda
   useEffect(() => {
@@ -251,10 +302,15 @@ function TiendaPageContent() {
   }, [searchQueryParam])
 
   // Función para manejar el cambio de categoría
-  const handleCategoryChange = (categoryId: number, subcategoryId: number) => {
+  const handleCategoryChange = (
+    categoryId: number,
+    subcategoryId: number,
+    mascotasGroup?: { displayName: string; subcategoryIds: number[] }
+  ) => {
     // Actualizar estados inmediatamente
     setSelectedCategory(categoryId)
     setSelectedSubcategory(subcategoryId)
+    setSelectedMascotasSubcategoryIds(mascotasGroup?.subcategoryIds ?? null)
 
     // Limpiar búsqueda cuando se cambia de categoría
     setSearchQuery("")
@@ -290,6 +346,25 @@ function TiendaPageContent() {
       setCurrentBreadcrumbs(["Inicio", "Tienda", "Ofertas"])
       // Actualizar URL sin esperar
       router.push('/tienda?categoria=999')
+      return
+    }
+
+    // Manejar categoría Mascotas (agrupada de PERRO y GATO)
+    if (categoryId === CATEGORIES.MASCOTAS) {
+      const category = categories.find(cat => cat.id === categoryId)
+      if (category) {
+        if (subcategoryId === 0 || !mascotasGroup?.subcategoryIds?.length) {
+          // Todas las subcategorías de Mascotas
+          setCurrentTitle(category.name)
+          setCurrentBreadcrumbs(["Inicio", "Tienda", category.name])
+          router.push('/tienda?categoria=997')
+        } else {
+          // Subcategoría agrupada - mostrar productos de PERRO y GATO
+          setCurrentTitle(mascotasGroup.displayName)
+          setCurrentBreadcrumbs(["Inicio", "Tienda", category.name, mascotasGroup.displayName])
+          router.push(`/tienda?categoria=997&subcategoria=${mascotasGroup.subcategoryIds.join(",")}`)
+        }
+      }
       return
     }
 
@@ -334,17 +409,26 @@ function TiendaPageContent() {
       }
     } else if (breadcrumbIndex === 3) {
       // Es una subcategoría (ej: "ALIMENTO HÚMEDO")
-      // Necesitamos encontrar la categoría padre y la subcategoría
-      const categoryName = currentBreadcrumbs[2] // El breadcrumb anterior es la categoría
+      const categoryName = currentBreadcrumbs[2]
       const category = categories.find(cat => cat.name === categoryName)
       
       if (category) {
-        const categoryData = productsByCategory.find(cat => cat.categoryId === category.id)
-        if (categoryData) {
-          const subcategory = categoryData.subcategories.find(sub => sub.subcategoryName === breadcrumbName)
-          if (subcategory) {
-            handleCategoryChange(category.id, subcategory.subcategoryId)
+        if (category.id === CATEGORIES.MASCOTAS) {
+          const group = getMascotasGroupedSubcategories().find(
+            g => normalizeSubcategoryName(g.displayName) === normalizeSubcategoryName(breadcrumbName)
+          )
+          if (group) {
+            handleCategoryChange(CATEGORIES.MASCOTAS, 1, group)
             return
+          }
+        } else {
+          const categoryData = productsByCategory.find(cat => cat.categoryId === category.id)
+          if (categoryData) {
+            const subcategory = categoryData.subcategories.find(sub => sub.subcategoryName === breadcrumbName)
+            if (subcategory) {
+              handleCategoryChange(category.id, subcategory.subcategoryId)
+              return
+            }
           }
         }
       }
@@ -375,6 +459,23 @@ function TiendaPageContent() {
     if (categoryId === CATEGORIES.NOVEDADES) {
       // Para novedades, obtener marcas de productos nuevos
       const brandIds = new Set(newProducts.map(p => p.id_marca).filter(Boolean))
+      return brands.filter(brand => brandIds.has(brand.id))
+    }
+
+    // Caso especial: Mascotas (combina PERRO id:4 y GATO id:5)
+    if (categoryId === CATEGORIES.MASCOTAS) {
+      let mascotasProducts: ProductWithDetails[] = []
+      if (!selectedMascotasSubcategoryIds?.length) {
+        const productosPerro = getAllProductsByCategory(4) || []
+        const productosGato = getAllProductsByCategory(5) || []
+        mascotasProducts = [...productosPerro, ...productosGato]
+      } else {
+        for (const subId of selectedMascotasSubcategoryIds) {
+          mascotasProducts.push(...(getProductsBySubcategory(4, subId) || []))
+          mascotasProducts.push(...(getProductsBySubcategory(5, subId) || []))
+        }
+      }
+      const brandIds = new Set(mascotasProducts.map(p => p.id_marca).filter(Boolean))
       return brands.filter(brand => brandIds.has(brand.id))
     }
 
@@ -470,7 +571,8 @@ function TiendaPageContent() {
     }
 
     // Filtro por categoría específica
-    if (selectedProductCategory) {
+    // En Mascotas (997) mostramos productos de categorías 4 y 5, ignoramos este filtro
+    if (selectedProductCategory && selectedCategory !== CATEGORIES.MASCOTAS) {
       filteredProducts = filteredProducts.filter(product => {
         return product.subcategoria?.categories_id === selectedProductCategory
       })
@@ -525,12 +627,36 @@ function TiendaPageContent() {
   // Obtener productos actuales
   // Si selectedSubcategory es 0, significa que se seleccionó toda la categoría
   // Solo aplicar esta lógica para categorías normales (no especiales)
-  const currentProducts = (selectedSubcategory === 0 && 
-    selectedCategory !== CATEGORIES.TODOS_LOS_PRODUCTOS && 
-    selectedCategory !== CATEGORIES.OFERTAS && 
-    selectedCategory !== CATEGORIES.NOVEDADES)
-    ? getAllProductsByCategory(selectedCategory) || []
-    : getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
+  const currentProducts = (() => {
+    // Caso especial: Mascotas (combina PERRO id:4 y GATO id:5)
+    if (selectedCategory === CATEGORIES.MASCOTAS) {
+      if (!selectedMascotasSubcategoryIds?.length) {
+        // Todas las subcategorías de Mascotas (combinar PERRO y GATO)
+        const productosPerro = getAllProductsByCategory(4) || []
+        const productosGato = getAllProductsByCategory(5) || []
+        const allProducts = [...productosPerro, ...productosGato]
+        return Array.from(new Map(allProducts.map(product => [product.id, product])).values())
+      }
+      // Subcategoría agrupada - productos de todas las subcategorías del grupo (PERRO y GATO)
+      const allProducts: ProductWithDetails[] = []
+      for (const subId of selectedMascotasSubcategoryIds) {
+        const fromPerro = getProductsBySubcategory(4, subId) || []
+        const fromGato = getProductsBySubcategory(5, subId) || []
+        allProducts.push(...fromPerro, ...fromGato)
+      }
+      return Array.from(new Map(allProducts.map(product => [product.id, product])).values())
+    }
+    
+    // Categorías normales
+    if (selectedSubcategory === 0 && 
+      selectedCategory !== CATEGORIES.TODOS_LOS_PRODUCTOS && 
+      selectedCategory !== CATEGORIES.OFERTAS && 
+      selectedCategory !== CATEGORIES.NOVEDADES) {
+      return getAllProductsByCategory(selectedCategory) || []
+    }
+    
+    return getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
+  })()
 
   // Determinar qué productos mostrar según la categoría seleccionada o búsqueda
   let baseProducts = selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS
@@ -539,6 +665,8 @@ function TiendaPageContent() {
     ? discountedProducts
     : selectedCategory === CATEGORIES.NOVEDADES
     ? newProducts
+    : selectedCategory === CATEGORIES.MASCOTAS
+    ? currentProducts // Mascotas ya está manejado en currentProducts
     : currentProducts.length > 0
     ? currentProducts
     : featuredProducts
@@ -593,6 +721,17 @@ function TiendaPageContent() {
     selectedStoreId
   ])
 
+  // Reiniciar el conteo visible cuando cambie el conjunto de productos
+  useEffect(() => {
+    if (displayProducts.length === 0) {
+      setVisibleProductCount(0)
+      return
+    }
+
+    const initial = Math.min(PRODUCTS_PER_BATCH, displayProducts.length)
+    setVisibleProductCount(initial)
+  }, [displayProducts.length, PRODUCTS_PER_BATCH])
+
   // Efecto para actualizar marcas disponibles cuando cambia la categoría
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -607,14 +746,11 @@ function TiendaPageContent() {
     // No necesitamos limpiar filtros avanzados cuando cambia la categoría
   }, [selectedCategory, selectedSubcategory, products, discountedProducts, newProducts])
 
-  // Efecto para limpiar filtros avanzados cuando cambia la categoría desde el sidebar (no para categorías específicas)
+  // Efecto para limpiar filtros avanzados cuando cambia la categoría desde el sidebar
   useEffect(() => {
-    // Si estamos en una categoría específica (no "Todos los productos", Ofertas o Novedades), limpiar filtros avanzados
-    if (selectedCategory !== CATEGORIES.TODOS_LOS_PRODUCTOS && 
-        selectedCategory !== CATEGORIES.OFERTAS && 
-        selectedCategory !== CATEGORIES.NOVEDADES) {
-      // Los filtros de categoría/subcategoría específica solo aplican en "Todos los productos"
-      // Así que los limpiamos cuando cambias a una categoría específica
+    // Cuando estamos en una categoría específica (Mascotas, Ofertas, Novedades u otra), limpiar filtros avanzados
+    // para que se muestren todos los productos de esa categoría (en Mascotas = categorías 4 y 5)
+    if (selectedCategory !== CATEGORIES.TODOS_LOS_PRODUCTOS) {
       setSelectedProductCategory(null)
       setSelectedProductSubcategory(null)
     }
@@ -661,16 +797,34 @@ function TiendaPageContent() {
 
   // Función para generar categorías dinámicamente
   const renderDynamicCategories = () => {
-    return productsByCategory.map((categoryData) => {
+    // Filtrar PERRO (id:4) y GATO (id:5) y crear entrada especial para Mascotas
+    const filteredCategories = productsByCategory.filter(cat => cat.categoryId !== 4 && cat.categoryId !== 5)
+    
+    const mascotasGroups = getMascotasGroupedSubcategories()
+    
+    const mascotasCategoryData = {
+      categoryId: CATEGORIES.MASCOTAS,
+      categoryName: "Mascotas",
+      groupedSubcategories: mascotasGroups,
+      subcategories: [] as Array<{ subcategoryId: number; subcategoryName: string }>
+    }
+    
+    // Combinar todas las categorías (filtradas + Mascotas)
+    const allCategories = [mascotasCategoryData, ...filteredCategories]
+    
+    return allCategories.map((categoryData) => {
       const category = categories.find(cat => cat.id === categoryData.categoryId)
       if (!category) return null
+
+      const isMascotas = categoryData.categoryId === CATEGORIES.MASCOTAS
 
       return (
         <div key={categoryData.categoryId} className="mb-5">
           <button
             onClick={() => handleCategoryChange(categoryData.categoryId, 0)}
             className={`w-full text-left text-xs font-medium uppercase tracking-wider mb-2 transition-all duration-200 ${
-              selectedCategory === categoryData.categoryId && selectedSubcategory === 0
+              selectedCategory === categoryData.categoryId && 
+              (isMascotas ? !selectedMascotasSubcategoryIds : selectedSubcategory === 0)
                 ? "text-[#196428] font-semibold"
                 : "text-gray-500 hover:text-[#196428] cursor-pointer"
             }`}
@@ -678,19 +832,39 @@ function TiendaPageContent() {
             {category.name}
           </button>
           <div className="space-y-1">
-            {categoryData.subcategories.map((subcategory) => (
-              <button
-                key={subcategory.subcategoryId}
-                onClick={() => handleCategoryChange(categoryData.categoryId, subcategory.subcategoryId)}
-                className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
-                  selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId
-                    ? "text-[#196428] font-medium bg-[#196428]/5"
-                    : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
-                }`}
-              >
-                <span className="lowercase">{subcategory.subcategoryName}</span>
-              </button>
-            ))}
+            {isMascotas
+              ? mascotasGroups.map((group) => {
+                  const isSelected = selectedCategory === CATEGORIES.MASCOTAS &&
+                    selectedMascotasSubcategoryIds &&
+                    selectedMascotasSubcategoryIds.length === group.subcategoryIds.length &&
+                    selectedMascotasSubcategoryIds.every((id, i) => id === group.subcategoryIds[i])
+                  return (
+                    <button
+                      key={group.displayName + group.subcategoryIds.join("-")}
+                      onClick={() => handleCategoryChange(CATEGORIES.MASCOTAS, 1, group)}
+                      className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                        isSelected
+                          ? "text-[#196428] font-medium bg-[#196428]/5"
+                          : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="lowercase">{group.displayName}</span>
+                    </button>
+                  )
+                })
+              : (categoryData as { subcategories: Array<{ subcategoryId: number; subcategoryName: string }> }).subcategories?.map((subcategory) => (
+                <button
+                  key={subcategory.subcategoryId}
+                  onClick={() => handleCategoryChange(categoryData.categoryId, subcategory.subcategoryId)}
+                  className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
+                    selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId
+                      ? "text-[#196428] font-medium bg-[#196428]/5"
+                      : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="lowercase">{subcategory.subcategoryName}</span>
+                </button>
+              ))}
             {/* Subcategorías especiales por categoría: Ofertas y Novedades (excluye Tienda, Ofertas, Especiales) */}
             {(() => {
               const lowerName = (category.name || '').toLowerCase();
@@ -859,7 +1033,7 @@ function TiendaPageContent() {
 
   // Account Popover Content Component
   const AccountContent = () => (
-    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FCFFEF] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
+    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-white p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
       {/* Ya soy cliente */}
       <div>
 
@@ -956,418 +1130,17 @@ function TiendaPageContent() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
-        <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
-          {/* Mobile Header (< 640px) */}
-          <div className="md:hidden">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <Link href="/" className="flex items-center flex-shrink-0">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={100}
-                    height={25}
-                    className="w-auto h-6 sm:h-7"
-                  />
-                </Link>
-
-                <div className="flex-1 w-full max-w-xs relative">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      onFocus={handleSearchInputFocus}
-                      onBlur={handleSearchInputBlur}
-                      placeholder="Buscar..."
-                      className="w-full h-9 px-3 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-4 w-4" />
-                    </button>
-                  </form>
-                  <SearchAutocomplete
-                    isOpen={isAutocompleteOpen}
-                    searchQuery={searchQuery}
-                    searchResults={liveSearchResults}
-                    isSearching={isLiveSearching}
-                    onClose={handleCloseAutocomplete}
-                    onSelectProduct={handleSelectProduct}
-                  />
-                </div>
-
-                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                  <SheetTrigger asChild>
-                    <button className="p-2 -mr-2">
-                      <Menu className="h-6 w-6 text-gray-700" />
-                    </button>
-                  </SheetTrigger>
-                  <SheetOverlay className="z-[100] bg-black/40" />
-                  <SheetContent side="right" className="w-[80%] max-w-[300px] overflow-y-auto z-[101]">
-                    <SheetHeader>
-                      <SheetTitle className="text-lg font-bold">Menú</SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-8 flex flex-col gap-6">
-                      <div>
-                        <h3 className="mb-2 text-sm font-semibold text-gray-500 px-2">Categorías</h3>
-                        <nav className="flex flex-col gap-1">
-                          {processedCategories.map((category) => (
-                            <Link key={category.name} href={category.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                              <span className="text-sm font-bold text-gray-800">{category.name}</span>
-                            </Link>
-                          ))}
-                        </nav>
-                      </div>
-                      <div className="border-t border-gray-200 -mx-6"></div>
-                      <nav className="flex flex-col gap-1">
-                        {navLinks.map((link) => {
-                          if (link.name === "Inicio") {
-                            return (
-                              <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                                <link.icon className="h-5 w-5 text-gray-500" />
-                                <span className="text-sm font-medium text-gray-500">{link.name}</span>
-                              </Link>
-                            );
-                          }
-                          if (link.name === "Tienda") {
-                            return (
-                              <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                                <link.icon className="h-5 w-5 text-[#196428]" />
-                                <span className="text-sm font-medium text-[#196428]">{link.name}</span>
-                              </Link>
-                            );
-                          }
-                          if (link.name === "Cuenta") {
-                            return (
-                              <button
-                                key={link.name}
-                                onClick={() => {
-                                  setIsMobileMenuOpen(false);
-                                  setTimeout(() => setIsAccountDrawerOpen(true), 300);
-                                }}
-                                className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors text-left w-full"
-                              >
-                                <link.icon className="h-5 w-5 text-gray-600" />
-                                <span className="text-sm font-medium text-gray-800">{link.name}</span>
-                              </button>
-                            );
-                          }
-                        if (link.name === "Tiendas" || link.name === "Info" || link.name === "Vacantes") {
-                          return (
-                            <Link
-                              key={link.name}
-                              href={link.href}
-                              className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
-                              onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                              <link.icon className="h-5 w-5 text-gray-600" />
-                              <span className="text-sm font-medium text-gray-800">{link.name === "Info" ? "Sobre Nosotros" : link.name}</span>
-                            </Link>
-                          );
-                        }
-                        return (
-                          <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                            <link.icon className="h-5 w-5 text-gray-600" />
-                            <span className="text-sm font-medium text-gray-800">{link.name}</span>
-                          </Link>
-                        );
-                        })}
-                      </nav>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
-            </div>
-          </div>
-
-          {/* Tablet Header (640px - 1023px) */}
-          <div className="hidden md:block lg:hidden">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={150}
-                    height={38}
-                    className="w-auto h-8"
-                  />
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-sm mx-4 relative">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      onFocus={handleSearchInputFocus}
-                      onBlur={handleSearchInputBlur}
-                      placeholder="Buscar productos..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-5 w-5" />
-                    </button>
-                  </form>
-                  <SearchAutocomplete
-                    isOpen={isAutocompleteOpen}
-                    searchQuery={searchQuery}
-                    searchResults={liveSearchResults}
-                    isSearching={isLiveSearching}
-                    onClose={handleCloseAutocomplete}
-                    onSelectProduct={handleSelectProduct}
-                  />
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  <div className="flex items-center space-x-1">
-                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 transition-colors">
-                        <HomeIcon className="h-full w-full" />
-                      </div>
-                      <span className="text-xs font-light text-gray-500 mt-1 transition-colors">Inicio</span>
-                    </Link>
-                    <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
-                        <ShoppingBag className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Tienda</span>
-                    </Link>
-                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <CartCounter />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </Link>
-                    <AccountPopover />
-                  </div>
-                  <div className="w-[1px] h-6 bg-gray-200"></div>
-                  <div className="flex items-center space-x-1">
-                    <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Info className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
-                    </Link>
-                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Briefcase className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
-                    </Link>
-                    <Link href="/contacto" className="group flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <MapPin className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Large Tablet Header (1024px - 1279px) */}
-          <div className="hidden lg:block xl:hidden">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={170}
-                    height={43}
-                    className="w-auto h-9"
-                  />
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-md mx-6 relative">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      onFocus={handleSearchInputFocus}
-                      onBlur={handleSearchInputBlur}
-                      placeholder="Buscar productos..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-5 w-5" />
-                    </button>
-                  </form>
-                  <SearchAutocomplete
-                    isOpen={isAutocompleteOpen}
-                    searchQuery={searchQuery}
-                    searchResults={liveSearchResults}
-                    isSearching={isLiveSearching}
-                    onClose={handleCloseAutocomplete}
-                    onSelectProduct={handleSelectProduct}
-                  />
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-3 flex-shrink-0">
-                  <div className="flex items-center space-x-2">
-                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 transition-colors">
-                        <HomeIcon className="h-full w-full" />
-                      </div>
-                      <span className="text-xs font-light text-gray-500 mt-1 transition-colors">Inicio</span>
-                    </Link>
-                    <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
-                        <ShoppingBag className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Tienda</span>
-                    </Link>
-                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <CartCounter />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </Link>
-                    <AccountPopover />
-                  </div>
-                  <div className="w-[1px] h-6 bg-gray-200"></div>
-                  <div className="flex items-center space-x-2">
-                    <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Info className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
-                    </Link>
-                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Briefcase className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
-                    </Link>
-                    <Link href="/contacto" className="group flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <MapPin className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop Header (≥ 1280px) */}
-          <div className="hidden xl:block">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0 ml-[150px] xl:ml-[150px] 2xl:ml-[180px]">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={200}
-                    height={50}
-                    className="w-auto h-12"
-                  />
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-lg mx-8 ml-[70px] relative">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      onFocus={handleSearchInputFocus}
-                      onBlur={handleSearchInputBlur}
-                      placeholder="Busca el producto o categoria de tu preferencia..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-5 w-5" />
-                    </button>
-                  </form>
-                  <SearchAutocomplete
-                    isOpen={isAutocompleteOpen}
-                    searchQuery={searchQuery}
-                    searchResults={liveSearchResults}
-                    isSearching={isLiveSearching}
-                    onClose={handleCloseAutocomplete}
-                    onSelectProduct={handleSelectProduct}
-                  />
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-4 flex-shrink-0">
-                  <div className="flex items-center space-x-3">
-                    <Link href="/" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 transition-colors">
-                        <HomeIcon className="h-full w-full" />
-                      </div>
-                      <span className="text-xs font-light text-gray-500 mt-1 transition-colors">Inicio</span>
-                    </Link>
-                    <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
-                        <ShoppingBag className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Tienda</span>
-                    </Link>
-                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <CartCounter />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </Link>
-                    <AccountPopover />
-                  </div>
-                  <div className="w-[1.5px] h-5 bg-gray-200"></div>
-                  <div className="flex items-center space-x-3">
-                    <Link href="/contacto" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Info className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
-                    </Link>
-                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Briefcase className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
-                    </Link>
-                    <Link href="/contacto" className="group flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <MapPin className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Nuestras Tiendas</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </header>
+      <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
+        <Header
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={handleSearch}
+          onAccountClick={() => setIsAccountDrawerOpen(true)}
+        />
 
         <main>
           {/* Main content with sidebar and products */}
-          <section className="py-4 md:py-8" style={{ backgroundColor: '#FCFFEF' }}>
+          <section className="py-4 md:py-8" style={{ backgroundColor: '#ffffff' }}>
             <div className="container mx-auto px-4">
               <div className="flex gap-4 md:gap-8">
                 {/* Sidebar with categories - Hidden on mobile, shown on tablet and desktop */}
@@ -1389,7 +1162,7 @@ function TiendaPageContent() {
                           ) : (
                             tiendas.map((tienda) => (
                               <option key={tienda.id} value={tienda.id}>
-                                {tienda.name} - {tienda.city}
+                                {tienda.city} — {tienda.address}
                               </option>
                             ))
                           )}
@@ -2038,8 +1811,9 @@ function TiendaPageContent() {
 
                   {/* Products Grid - responsive layout */}
                   {displayProducts.length > 0 ? (
+                  <>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 pb-2">
-                      {displayProducts.map((product: ProductWithDetails) => {
+                      {displayProducts.slice(0, visibleProductCount).map((product: ProductWithDetails) => {
                         const selectedSizeIndex = selectedSizes[product.id!] || 0;
                         const hasSizes = product.tamano && product.tamano.length > 0;
                         const hasPrices = product.precios && product.precios.length > 0;
@@ -2085,7 +1859,7 @@ function TiendaPageContent() {
 
                         return (
                         <Link key={product.id} href={productUrl} className="block h-full group">
-                          <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                          <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                             <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
                               <Image
                                 src={product.imagen_url || "/placeholder.jpg"}
@@ -2188,6 +1962,26 @@ function TiendaPageContent() {
                         );
                       })}
                   </div>
+                  {visibleProductCount < displayProducts.length && (
+                    <div className="mt-8 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVisibleProductCount((prev) => {
+                            if (prev >= displayProducts.length) {
+                              return prev
+                            }
+                            const next = prev + PRODUCTS_PER_BATCH
+                            return next >= displayProducts.length ? displayProducts.length : next
+                          })
+                        }}
+                        className="px-6 py-2 rounded-full bg-[#196428] hover:bg-[#145020] text-white text-sm font-semibold transition-colors shadow-sm"
+                      >
+                        Cargar más productos
+                      </button>
+                    </div>
+                  )}
+                  </>
                   ) : (
                     <div className="text-center py-20">
                       <p className="text-gray-600 text-lg mb-4">
@@ -2271,7 +2065,7 @@ function TiendaPageContent() {
                   ) : (
                     tiendas.map((tienda) => (
                       <option key={tienda.id} value={tienda.id}>
-                        {tienda.name} - {tienda.city}
+                        {tienda.city} — {tienda.address}
                       </option>
                     ))
                   )}
@@ -2307,38 +2101,70 @@ function TiendaPageContent() {
               </div>
 
               {/* Categorías dinámicas desde Supabase */}
-              {productsByCategory.map((categoryData) => {
-                const category = categories.find(cat => cat.id === categoryData.categoryId)
-                if (!category) return null
+              {(() => {
+                const filteredCategories = productsByCategory.filter(cat => cat.categoryId !== 4 && cat.categoryId !== 5)
+                const mascotasGroups = getMascotasGroupedSubcategories()
+                
+                const mascotasCategoryData = {
+                  categoryId: CATEGORIES.MASCOTAS,
+                  categoryName: "Mascotas",
+                  groupedSubcategories: mascotasGroups
+                }
+                const allCategories = [mascotasCategoryData, ...filteredCategories]
+                
+                return allCategories.map((categoryData) => {
+                  const category = categories.find(cat => cat.id === categoryData.categoryId)
+                  if (!category) return null
+                  const isMascotas = categoryData.categoryId === CATEGORIES.MASCOTAS
 
-                return (
-                  <div key={categoryData.categoryId}>
-                    <button
-                      onClick={() => {
-                        handleCategoryChange(categoryData.categoryId, 0);
-                        setIsCategoriesDrawerOpen(false);
-                      }}
-                      className={`w-full text-left text-base font-semibold mb-2 transition-colors ${
-                        selectedCategory === categoryData.categoryId && selectedSubcategory === 0
-                          ? "text-[#196428]"
-                          : "text-gray-700 hover:text-[#196428]"
-                      }`}
-                    >
-                      {category.name}
-                    </button>
-                    <div className="space-y-1 ml-2">
-                      {categoryData.subcategories.map((subcategory) => (
-                        <button
-                          key={subcategory.subcategoryId}
-                          onClick={() => {
-                            handleCategoryChange(categoryData.categoryId, subcategory.subcategoryId);
-                            setIsCategoriesDrawerOpen(false);
-                          }}
-                          className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
-                        >
-                          <span className="lowercase">{subcategory.subcategoryName}</span>
-                        </button>
-                      ))}
+                  return (
+                    <div key={categoryData.categoryId}>
+                      <button
+                        onClick={() => {
+                          handleCategoryChange(categoryData.categoryId, 0);
+                          setIsCategoriesDrawerOpen(false);
+                        }}
+                        className={`w-full text-left text-base font-semibold mb-2 transition-colors ${
+                          selectedCategory === categoryData.categoryId &&
+                          (isMascotas ? !selectedMascotasSubcategoryIds : selectedSubcategory === 0)
+                            ? "text-[#196428]"
+                            : "text-gray-700 hover:text-[#196428]"
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                      <div className="space-y-1 ml-2">
+                        {isMascotas
+                          ? mascotasGroups.map((group) => {
+                              const isSelected = selectedCategory === CATEGORIES.MASCOTAS &&
+                                selectedMascotasSubcategoryIds &&
+                                selectedMascotasSubcategoryIds.length === group.subcategoryIds.length &&
+                                selectedMascotasSubcategoryIds.every((id, i) => id === group.subcategoryIds[i])
+                              return (
+                                <button
+                                  key={group.displayName + group.subcategoryIds.join("-")}
+                                  onClick={() => {
+                                    handleCategoryChange(CATEGORIES.MASCOTAS, 1, group);
+                                    setIsCategoriesDrawerOpen(false);
+                                  }}
+                                  className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${isSelected ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                                >
+                                  <span className="lowercase">{group.displayName}</span>
+                                </button>
+                              )
+                            })
+                          : (categoryData as { subcategories: Array<{ subcategoryId: number; subcategoryName: string }> }).subcategories?.map((subcategory) => (
+                            <button
+                              key={subcategory.subcategoryId}
+                              onClick={() => {
+                                handleCategoryChange(categoryData.categoryId, subcategory.subcategoryId);
+                                setIsCategoriesDrawerOpen(false);
+                              }}
+                              className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === categoryData.categoryId && selectedSubcategory === subcategory.subcategoryId ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                            >
+                              <span className="lowercase">{subcategory.subcategoryName}</span>
+                            </button>
+                          ))}
                     {/* Subcategorías especiales por categoría: Ofertas y Novedades (excluye Tienda, Ofertas, Especiales) */}
                     {(() => {
                       const lowerName = (category.name || '').toLowerCase();
@@ -2369,8 +2195,9 @@ function TiendaPageContent() {
                     })()}
                     </div>
                   </div>
-                )
-              })}
+                  )
+                })
+              })()}
 
               {/* Special sections */}
               <div>

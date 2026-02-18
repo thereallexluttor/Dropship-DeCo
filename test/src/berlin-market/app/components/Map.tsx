@@ -272,11 +272,8 @@ export default function Map({ stores, selectedStore, onStoreSelect, selectedCity
               <div className="relative overflow-hidden rounded-2xl border border-[#196428]/20 bg-gradient-to-br from-[#196428] via-[#145020] to-[#0d2d15] shadow-xl">
                 <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#196428] via-[#1d7a3a] to-[#0b2611]" />
                 <div className="p-4 text-white">
-                  {/* Header con nombre y ciudad */}
+                  {/* Header con ciudad y dirección */}
                   <div className="mb-4">
-                    <h4 className="text-base font-semibold leading-tight text-white mb-2">
-                      {store.name}
-                    </h4>
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin className="h-3.5 w-3.5 text-white flex-shrink-0" />
                       <span className="text-xs text-white/90">{store.city}</span>

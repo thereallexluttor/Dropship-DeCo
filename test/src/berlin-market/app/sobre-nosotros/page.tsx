@@ -80,7 +80,7 @@ export default function AboutUs() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
         <Header 
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

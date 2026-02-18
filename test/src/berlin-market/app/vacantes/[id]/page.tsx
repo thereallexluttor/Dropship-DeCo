@@ -350,7 +350,7 @@ const OfertaDetalle = () => {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428]"></div>
         </div>
       </MainLayout>
@@ -360,7 +360,7 @@ const OfertaDetalle = () => {
   if (!trabajo) {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Oferta no encontrada</h1>
             <Link href="/vacantes" className="text-[#196428] hover:underline">
@@ -374,7 +374,7 @@ const OfertaDetalle = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         {/* Header */}
         <div className="bg-white border-b border-gray-200">
           <div className="container mx-auto px-4 py-4">

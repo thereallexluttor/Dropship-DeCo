@@ -80,10 +80,10 @@ export default function AccountPopover() {
             type="button"
             className="group flex flex-col items-center justify-center cursor-pointer bg-transparent border-none p-0 outline-none"
           >
-            <div className={`h-4 w-4 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'}`}>
+            <div className={`h-6 w-6 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'}`}>
               <User className="h-full w-full" />
             </div>
-            <span className={`text-xs font-light mt-1 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'}`}>
+            <span className={`text-xs font-light mt-1.5 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'}`}>
               Cuenta
             </span>
           </button>
@@ -104,12 +104,12 @@ export default function AccountPopover() {
           type="button"
           className="group flex flex-col items-center justify-center cursor-pointer bg-transparent border-none p-0 outline-none"
         >
-          <div className={`h-5 w-5 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'} bg-gray-200 rounded-full flex items-center justify-center`}>
+          <div className={`h-6 w-6 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'} bg-gray-200 rounded-full flex items-center justify-center`}>
             <span className="text-xs font-medium text-gray-700">
               {(user.user_metadata?.nombre || user.email || 'U')[0].toUpperCase()}
             </span>
           </div>
-          <span className={`text-xs font-light mt-1 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'}`}>
+          <span className={`text-xs font-light mt-1.5 transition-colors group-hover:text-[#196428] ${isOpen ? 'text-[#196428]' : 'text-gray-500'}`}>
             Cuenta
           </span>
         </button>

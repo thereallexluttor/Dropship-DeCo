@@ -6,7 +6,7 @@ import Header from "../components/Header"
 import Footer from "../components/Footer"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { MapPin, Phone, User } from "lucide-react"
+import { MapPin, Phone } from "lucide-react"
 import { stores, loadStoresFromSupabase, type Store } from "../lib/stores"
 
 const Map = dynamic(() => import("../components/Map"), { ssr: false })
@@ -54,7 +54,7 @@ export default function ContactoPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
         <div className="bg-[#196428] text-white py-1 overflow-hidden">
           <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
             <span className="inline-block mr-8">Contáctanos — Tiendas y teléfonos</span>
@@ -124,17 +124,12 @@ export default function ContactoPage() {
                       <div className="relative z-[1] p-3 sm:p-4">
                         <div className="flex items-start">
                           <div className="flex-1 min-w-0">
-                            <h4 className={`text-sm sm:text-base font-semibold tracking-tight ${selectedStore?.id === store.id ? 'text-white' : 'text-[#0f3c1a]'}`}>{store.name}</h4>
-                            <p className={`text-xs sm:text-sm mt-0.5 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-gray-600'}`}>{store.address}</p>
-                            <p className={`text-xs sm:text-sm ${selectedStore?.id === store.id ? 'text-emerald-100' : 'text-[#196428]'}`}>{store.city}</p>
+                            <p className={`text-xs sm:text-sm ${selectedStore?.id === store.id ? 'text-white/80' : 'text-gray-600'}`}>{store.address}</p>
+                            <p className={`text-xs sm:text-sm mt-0.5 ${selectedStore?.id === store.id ? 'text-emerald-100' : 'text-[#196428]'}`}>{store.city}</p>
                           </div>
                         </div>
 
                         <div className={`mt-3 grid grid-cols-1 gap-2 rounded-xl p-3 ${selectedStore?.id === store.id ? 'bg-black/10 backdrop-blur border border-white/20' : 'bg-[#f5fdf5] border border-[#196428]/10'}`}>
-                          <div className="flex items-center gap-2 text-xs sm:text-sm">
-                            <User className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
-                            <span className={selectedStore?.id === store.id ? 'text-white/90' : 'text-gray-700'}>{store.contact}</span>
-                          </div>
                           <div className="flex items-center gap-2 text-xs sm:text-sm">
                             <Phone className={`h-4 w-4 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-[#196428]'}`} />
                             <a

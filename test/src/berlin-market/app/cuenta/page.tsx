@@ -262,7 +262,7 @@ export default function CuentaPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+        <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
           <Header />
           <main className="py-16 sm:py-20 md:py-24">
             <div className="container mx-auto px-4 sm:px-6 w-full">
@@ -302,7 +302,7 @@ export default function CuentaPage() {
   if (!user) {
     return (
       <MainLayout>
-        <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+        <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
           <Header />
 
           <main className="py-16 sm:py-20 md:py-24">
@@ -329,7 +329,7 @@ export default function CuentaPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
         <Header />
 
         <main className="py-16 sm:py-20 md:py-24">

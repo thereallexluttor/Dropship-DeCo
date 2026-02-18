@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
@@ -35,9 +35,13 @@ interface CategoryMenuProps {
   containerRef: React.RefObject<HTMLDivElement>
 }
 
+const CAROUSEL_INTERVAL_MS = 3500
+
 export default function CategoryMenu({ category, containerRef }: CategoryMenuProps) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [bannerSlide, setBannerSlide] = useState(0)
+  const [brandsSlide, setBrandsSlide] = useState(0)
 
   // Usar el contexto global de categorías
   const { isCategoryOpen, toggleCategory, closeAllCategories } = useCategory()
@@ -93,6 +97,25 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
       closeAllCategories()
     }
   }, [shouldClose, isOpen, closeAllCategories])
+
+  // Carrusel para Mascotas: banners y marcas
+  const hasBannerCarousel = "bannerImagesCarousel" in category && (category as CategoryWithSubcategories & { bannerImagesCarousel?: Array<{ src: string; alt: string; href: string }> }).bannerImagesCarousel?.length
+  const hasBrandsCarousel = "brandsCarousel" in category && (category as CategoryWithSubcategories & { brandsCarousel?: Array<Array<{ name: string; logo: string; href: string }>> }).brandsCarousel?.length
+
+  useEffect(() => {
+    if (!isOpen) {
+      setBannerSlide(0)
+      setBrandsSlide(0)
+      return
+    }
+    const bannerSlides = (category as CategoryWithSubcategories & { bannerImagesCarousel?: Array<{ src: string; alt: string; href: string }> }).bannerImagesCarousel?.length ?? 0
+    const brandsSlides = (category as CategoryWithSubcategories & { brandsCarousel?: Array<Array<{ name: string; logo: string; href: string }>> }).brandsCarousel?.length ?? 0
+    const t = setInterval(() => {
+      if (bannerSlides > 1) setBannerSlide((s) => (s + 1) % bannerSlides)
+      if (brandsSlides > 1) setBrandsSlide((s) => (s + 1) % brandsSlides)
+    }, CAROUSEL_INTERVAL_MS)
+    return () => clearInterval(t)
+  }, [isOpen, category])
 
   // Función para calcular la posición centrada del menú respecto al contenedor de categorías
   const getCenteredMenuPosition = useCallback(() => {
@@ -219,7 +242,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                 </div>
               )}
 
-              {/* Marcas */}
+              {/* Marcas - carrusel para Mascotas, estático para el resto */}
               {category.brands && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -233,32 +256,105 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                       Todas las marcas
                     </Link>
                   </div>
-                  <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
-                    {category.brands.map((brand) => (
-                      <Link
-                        key={brand.name}
-                        href={brand.href}
-                        className="group flex items-center justify-center aspect-[4/3] rounded-lg bg-white p-4 transition-all duration-300 hover:shadow-md border border-gray-100"
-                      >
-                        <div className="relative w-full h-full">
-                          <Image 
-                            src={brand.logo} 
-                            alt={brand.name} 
-                            fill
-                            className="object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300" 
-                            sizes="(max-width: 768px) 33vw, 20vw"
-                          />
+                  {hasBrandsCarousel ? (
+                    <div className="relative overflow-hidden min-h-[100px]">
+                      {(category as CategoryWithSubcategories & { brandsCarousel?: Array<Array<{ name: string; logo: string; href: string }>> }).brandsCarousel!.map((slideBrands, idx) => (
+                        <div
+                          key={idx}
+                          className={`grid grid-cols-3 md:grid-cols-5 gap-4 transition-opacity duration-500 ${idx === brandsSlide ? "opacity-100 relative" : "opacity-0 absolute inset-0 pointer-events-none"}`}
+                        >
+                          {slideBrands.map((brand) => (
+                            <Link
+                              key={`${idx}-${brand.name}`}
+                              href={brand.href}
+                              className="group flex items-center justify-center aspect-[4/3] rounded-lg bg-white p-4 transition-all duration-300 hover:shadow-md border border-gray-100"
+                            >
+                              <div className="relative w-full h-full">
+                                <Image 
+                                  src={brand.logo} 
+                                  alt={brand.name} 
+                                  fill
+                                  className="object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300" 
+                                  sizes="(max-width: 768px) 33vw, 20vw"
+                                />
+                              </div>
+                            </Link>
+                          ))}
                         </div>
-                      </Link>
-                    ))}
-                  </div>
+                      ))}
+                      {((category as CategoryWithSubcategories & { brandsCarousel?: Array<Array<{ name: string; logo: string; href: string }>> }).brandsCarousel?.length ?? 0) > 1 && (
+                        <div className="flex justify-center gap-1.5 mt-3">
+                          {(category as CategoryWithSubcategories & { brandsCarousel?: Array<Array<{ name: string; logo: string; href: string }>> }).brandsCarousel!.map((_, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              aria-label={`Slide ${i + 1}`}
+                              className={`w-1.5 h-1.5 rounded-full transition-colors ${i === brandsSlide ? "bg-[#196428]" : "bg-gray-300"}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
+                      {category.brands!.map((brand) => (
+                        <Link
+                          key={brand.name}
+                          href={brand.href}
+                          className="group flex items-center justify-center aspect-[4/3] rounded-lg bg-white p-4 transition-all duration-300 hover:shadow-md border border-gray-100"
+                        >
+                          <div className="relative w-full h-full">
+                            <Image 
+                              src={brand.logo} 
+                              alt={brand.name} 
+                              fill
+                              className="object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-300" 
+                              sizes="(max-width: 768px) 33vw, 20vw"
+                            />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Sección 3: Banner Vertical */}
-            <div className="w-full md:w-1/5 min-h-[200px] md:min-h-[380px] flex items-stretch overflow-hidden md:rounded-r-lg">
-              {category.bannerImage && (
+            {/* Sección 3: Banner Vertical - carrusel para Mascotas (PERRO + GATO), estático para el resto */}
+            <div className="w-full md:w-1/5 min-h-[200px] md:min-h-[380px] flex items-stretch overflow-hidden md:rounded-r-lg relative">
+              {hasBannerCarousel ? (
+                <>
+                  {(category as CategoryWithSubcategories & { bannerImagesCarousel?: Array<{ src: string; alt: string; href: string }> }).bannerImagesCarousel!.map((banner, idx) => (
+                    <Link
+                      key={idx}
+                      href={banner.href}
+                      className={`block w-full absolute inset-0 transition-opacity duration-500 ${idx === bannerSlide ? "opacity-100 z-10" : "opacity-0 pointer-events-none"}`}
+                    >
+                      <div className="relative w-full h-full min-h-[200px] md:min-h-[380px]">
+                        <Image
+                          src={banner.src}
+                          alt={banner.alt}
+                          fill
+                          className="object-cover object-center"
+                          sizes="(max-width: 768px) 100vw, 20vw"
+                        />
+                      </div>
+                    </Link>
+                  ))}
+                  {((category as CategoryWithSubcategories & { bannerImagesCarousel?: Array<{ src: string; alt: string; href: string }> }).bannerImagesCarousel?.length ?? 0) > 1 && (
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                      {(category as CategoryWithSubcategories & { bannerImagesCarousel?: Array<{ src: string; alt: string; href: string }> }).bannerImagesCarousel!.map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          aria-label={`Banner ${i + 1}`}
+                          className={`w-1.5 h-1.5 rounded-full transition-colors ${i === bannerSlide ? "bg-white" : "bg-white/50"}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : category.bannerImage ? (
                 <Link href={category.bannerImage.href} className="block w-full">
                   <div className="relative w-full h-full min-h-[200px] md:min-h-[380px]">
                     <Image
@@ -270,7 +366,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                     />
                   </div>
                 </Link>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

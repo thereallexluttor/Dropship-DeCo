@@ -54,6 +54,7 @@ import MainLayout from "../components/MainLayout"
 import CategoryDropdown from "../components/CategoryDropdown"
 import AccountPopover from "../components/AccountPopover"
 import AccountPopoverContent from "../components/AccountPopoverContent"
+import Header from "../components/Header"
 import { useCategories } from "../hooks/useCategories"
 import { useCart, CartItemWithSize } from "../contexts/CartContext"
 import CartCounter from "../components/CartCounter"
@@ -385,7 +386,13 @@ const Vacantes = () => {
 
   return (
     <MainLayout>
-      <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
+      <Header
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={handleSearch}
+        onAccountClick={() => setIsAccountDrawerOpen(true)}
+      />
+      <header className="hidden">
         {/* Mobile Header (< 640px) */}
         <div className="md:hidden">
           <div className="container mx-auto px-4 py-3">

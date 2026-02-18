@@ -83,9 +83,8 @@ export default function StoreLocator() {
               <div className="relative z-[1] p-3 sm:p-4">
                 <div className="flex items-start">
                   <div className="flex-1 min-w-0">
-                    <h4 className={`text-sm sm:text-base font-semibold tracking-tight ${selectedStore?.id === store.id ? 'text-white' : 'text-[#0f3c1a]'}`}>{store.name}</h4>
-                    <p className={`text-xs sm:text-sm mt-0.5 ${selectedStore?.id === store.id ? 'text-white/80' : 'text-gray-600'}`}>{store.address}</p>
-                    <p className={`text-xs sm:text-sm ${selectedStore?.id === store.id ? 'text-emerald-100' : 'text-[#196428]'}`}>{store.city}</p>
+                    <p className={`text-xs sm:text-sm ${selectedStore?.id === store.id ? 'text-white/80' : 'text-gray-600'}`}>{store.address}</p>
+                    <p className={`text-xs sm:text-sm mt-0.5 ${selectedStore?.id === store.id ? 'text-emerald-100' : 'text-[#196428]'}`}>{store.city}</p>
                   </div>
                 </div>
 

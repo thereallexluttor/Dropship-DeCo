@@ -486,7 +486,7 @@ const AccountForm = () => {
 
 export default function AccountPopoverContent() {
   return (
-    <div className="w-full bg-[#FBFFE6] p-4 xs:p-4 sm:p-5 md:p-6 rounded-lg shadow-sm mobile-fixed-height md:mobile-fixed-height-none relative">
+    <div className="w-full bg-white border border-gray-200 p-4 xs:p-4 sm:p-5 md:p-6 rounded-lg shadow-sm mobile-fixed-height md:mobile-fixed-height-none relative">
       {/* Indicador visual para bottom sheet en móvil */}
       <div className="md:hidden absolute top-2 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-gray-300 rounded-full"></div>
       <AccountForm />

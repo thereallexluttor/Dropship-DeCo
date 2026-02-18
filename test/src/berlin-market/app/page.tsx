@@ -11,7 +11,6 @@ import {
   ShoppingCart,
   Info,
   MapPin,
-  Menu,
   Dog,
   Cat,
   Rabbit,
@@ -32,26 +31,12 @@ import { useCategories } from './hooks/useCategories'
 import { useProducts } from './hooks/useProducts'
 import { useCart } from './contexts/CartContext'
 import { loadStoresFromSupabase, type Store } from './lib/stores'
-import CartCounter from './components/CartCounter'
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 import CategoryMenu from './components/CategoryMenu'
 import StoreLocator from './components/StoreLocator'
 import ProductSizeBadges from './components/ProductSizeBadges'
 import Footer from './components/Footer'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetOverlay,
-} from "@/components/ui/sheet"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import {
   Drawer,
   DrawerClose,
@@ -63,9 +48,8 @@ import {
 } from "@/components/ui/drawer"
 import MainLayout from "./components/MainLayout"
 import CategoryDropdown from "./components/CategoryDropdown"
-import AccountPopover from "./components/AccountPopover"
 import AccountPopoverContent from "./components/AccountPopoverContent"
-import SearchAutocomplete from "./components/SearchAutocomplete"
+import Header from "./components/Header"
 
 // Helper to leverage Supabase Image Transformations for faster, cheaper delivery
 function optimizeSupabaseImage(url: string, width: number, quality: number = 60, format: string = 'webp') {
@@ -185,7 +169,7 @@ export default function Home() {
       try {
         const { data, error } = await supabase
           .from('ui')
-          .select('banner, popup')
+          .select('banner, hiddenbanner, popup')
           .order('id', { ascending: false })
           .limit(1);
 
@@ -526,7 +510,7 @@ export default function Home() {
 
   // Account Popover Content Component
   const AccountContent = () => (
-    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FCFFEF] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
+    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-white p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
       {/* Ya soy cliente */}
       <div>
        
@@ -623,419 +607,13 @@ export default function Home() {
 
   return (
     <MainLayout>
-      <div className="flex flex-col flex-1" style={{ backgroundColor: '#FCFFEF', marginBottom: 0, paddingBottom: 0, minHeight: 0 }}>
-        <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
-          {/* Mobile Header (< 640px) */}
-          <div className="md:hidden">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <Link href="/" className="flex items-center flex-shrink-0">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={100}
-                    height={25}
-                    className="w-auto h-6 sm:h-7"
-                  />
-                </Link>
-
-                <div className="flex-1 w-full max-w-xs relative">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      onFocus={handleSearchInputFocus}
-                      onBlur={handleSearchInputBlur}
-                      placeholder="Buscar..."
-                      className="w-full h-9 px-3 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-4 w-4" />
-                    </button>
-                  </form>
-                  <SearchAutocomplete
-                    isOpen={isAutocompleteOpen}
-                    searchQuery={searchQuery}
-                    searchResults={liveSearchResults}
-                    isSearching={isLiveSearching}
-                    onClose={handleCloseAutocomplete}
-                    onSelectProduct={handleSelectProduct}
-                  />
-                </div>
-
-                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                  <SheetTrigger asChild>
-                    <button className="p-2 -mr-2">
-                      <Menu className="h-6 w-6 text-gray-700" />
-                    </button>
-                  </SheetTrigger>
-                  <SheetOverlay className="z-[100] bg-black/40" />
-                  <SheetContent side="right" className="w-[80%] max-w-[300px] overflow-y-auto z-[101]">
-                    <SheetHeader>
-                      <SheetTitle className="text-lg font-bold">Menú</SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-8 flex flex-col gap-6">
-                      <div>
-                        <h3 className="mb-2 text-sm font-semibold text-gray-500 px-2">Categorías</h3>
-                        <nav className="flex flex-col gap-1">
-                          {categories.map((category) => (
-                            <Link key={category.name} href={category.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                              <span className="text-sm font-bold text-gray-800">{category.name}</span>
-                            </Link>
-                          ))}
-                        </nav>
-                      </div>
-                      <div className="border-t border-gray-200 -mx-6"></div>
-                      <div className="px-2">
-                        <Link 
-                          href="https://micrositios.avalpaycenter.com/unisantander-sas-ma"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg bg-white border-2 border-[#196428] text-[#196428] text-sm font-medium hover:bg-gray-50 transition-colors shadow-[0_4px_6px_rgba(25,100,40,0.3)]"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          Pagos en linea
-                          <Image src="/pse2.png" alt="PSE" width={48} height={48} quality={90} className="w-6 h-6" />
-                        </Link>
-                      </div>
-                      <div className="border-t border-gray-200 -mx-6"></div>
-                      <nav className="flex flex-col gap-1">
-                        {navLinks.map((link) => {
-                          if (link.name === "Inicio") {
-                            return (
-                              <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                                <link.icon className="h-5 w-5 text-[#196428]" />
-                                <span className="text-sm font-medium text-[#196428]">{link.name}</span>
-                              </Link>
-                            );
-                          }
-                          if (link.name === "Cuenta") {
-                            return (
-                              <button
-                                key={link.name}
-                                onClick={() => {
-                                  setIsMobileMenuOpen(false);
-                                  setTimeout(() => setIsAccountDrawerOpen(true), 300);
-                                }}
-                                className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors text-left w-full"
-                              >
-                                <link.icon className="h-5 w-5 text-gray-600" />
-                                <span className="text-sm font-medium text-gray-800">{link.name}</span>
-                              </button>
-                            );
-                          }
-                          if (link.name === "Tiendas" || link.name === "Info" || link.name === "Vacantes") {
-                            return (
-                              <Link
-                                key={link.name}
-                                href={link.href}
-                                className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                              >
-                                <link.icon className="h-5 w-5 text-gray-600" />
-                                <span className="text-sm font-medium text-gray-800">{link.name === "Info" ? "Sobre Nosotros" : link.name}</span>
-                              </Link>
-                            );
-                          }
-                          return (
-                            <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                              <link.icon className="h-5 w-5 text-gray-600" />
-                              <span className="text-sm font-medium text-gray-800">{link.name}</span>
-                            </Link>
-                          );
-                        })}
-                      </nav>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
-            </div>
-          </div>
-
-          {/* Tablet Header (640px - 1023px) */}
-          <div className="hidden md:block lg:hidden">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={150}
-                    height={38}
-                    className="w-auto h-8"
-                  />
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-sm mx-4 relative">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      onFocus={handleSearchInputFocus}
-                      onBlur={handleSearchInputBlur}
-                      placeholder="Buscar productos..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-5 w-5" />
-                    </button>
-                  </form>
-                  <SearchAutocomplete
-                    isOpen={isAutocompleteOpen}
-                    searchQuery={searchQuery}
-                    searchResults={liveSearchResults}
-                    isSearching={isLiveSearching}
-                    onClose={handleCloseAutocomplete}
-                    onSelectProduct={handleSelectProduct}
-                  />
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-2 flex-shrink-0">
-                  <div className="flex items-center space-x-1">
-                    <Link href="#" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/")}>
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
-                        <HomeIcon className="h-full w-full" />
-                      </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
-                    </Link>
-                    <Link href="/tienda" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/tienda")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <ShoppingBag className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
-                    </Link>
-                    <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/carrito")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <CartCounter />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </Link>
-                    <AccountPopover />
-                  </div>
-                  <div className="w-[1px] h-6 bg-gray-200"></div>
-                  <div className="flex items-center space-x-1">
-                    <Link href="/sobre-nosotros" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/sobre-nosotros")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Info className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
-                    </Link>
-                    <Link href="/vacantes" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/vacantes")}>
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Briefcase className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
-                    </Link>
-                    <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <MapPin className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Large Tablet Header (1024px - 1279px) */}
-          <div className="hidden lg:block xl:hidden">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={170}
-                    height={43}
-                    className="w-auto h-9"
-                  />
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-md mx-6 relative">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      onFocus={handleSearchInputFocus}
-                      onBlur={handleSearchInputBlur}
-                      placeholder="Buscar productos..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-5 w-5" />
-                    </button>
-                  </form>
-                  <SearchAutocomplete
-                    isOpen={isAutocompleteOpen}
-                    searchQuery={searchQuery}
-                    searchResults={liveSearchResults}
-                    isSearching={isLiveSearching}
-                    onClose={handleCloseAutocomplete}
-                    onSelectProduct={handleSelectProduct}
-                  />
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-3 flex-shrink-0">
-                  <div className="flex items-center space-x-2">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
-                        <HomeIcon className="h-full w-full" />
-                      </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
-                    </Link>
-                    <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <ShoppingBag className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
-                    </Link>
-                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <CartCounter />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </Link>
-                    <AccountPopover />
-                  </div>
-                  <div className="w-[1px] h-6 bg-gray-200"></div>
-                  <div className="flex items-center space-x-2">
-                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Info className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Info</span>
-                    </Link>
-                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Briefcase className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
-                    </Link>
-                    <a href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <MapPin className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tiendas</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop Header (≥ 1280px) */}
-          <div className="hidden xl:block">
-            <div className="container mx-auto px-4 py-3">
-              <div className="flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center flex-shrink-0 ml-[150px] xl:ml-[150px] 2xl:ml-[180px]">
-                  <Image
-                    src="/unisantander.png"
-                    alt="Logo Unisantander"
-                    width={200}
-                    height={50}
-                    className="w-auto h-12"
-                  />
-                </Link>
-
-                {/* Search Bar */}
-                <div className="flex-1 max-w-lg mx-8 ml-[70px] relative">
-                  <form onSubmit={handleSearch} className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      onFocus={handleSearchInputFocus}
-                      onBlur={handleSearchInputBlur}
-                      placeholder="Busca el producto o categoria de tu preferencia..."
-                      className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <Search className="h-5 w-5" />
-                    </button>
-                  </form>
-                  <SearchAutocomplete
-                    isOpen={isAutocompleteOpen}
-                    searchQuery={searchQuery}
-                    searchResults={liveSearchResults}
-                    isSearching={isLiveSearching}
-                    onClose={handleCloseAutocomplete}
-                    onSelectProduct={handleSelectProduct}
-                  />
-                </div>
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-4 flex-shrink-0">
-                  <div className="flex items-center space-x-3">
-                    <Link href="#" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-[#196428] transition-colors">
-                        <HomeIcon className="h-full w-full" />
-                      </div>
-                      <span className="text-xs font-light text-[#196428] mt-1 transition-colors">Inicio</span>
-                    </Link>
-                    <Link href="/tienda" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <ShoppingBag className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Tienda</span>
-                    </Link>
-                    <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <CartCounter />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Carrito</span>
-                    </Link>
-                    <AccountPopover />
-                  </div>
-                  <div className="w-[1.5px] h-5 bg-gray-200"></div>
-                  <div className="flex items-center space-x-3">
-                    <Link href="/sobre-nosotros" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Info className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Sobre Nosotros</span>
-                    </Link>
-                    <Link href="/vacantes" className="group flex flex-col items-center justify-center cursor-pointer">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <Briefcase className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Vacantes</span>
-                    </Link>
-                    <Link href="#nuestras-tiendas" className="group flex flex-col items-center justify-center">
-                      <div className="h-4 w-4 text-gray-500 group-hover:text-[#196428] transition-colors">
-                        <MapPin className="h-full w-full" />
-                      </div>
-                          <span className="text-xs font-light text-gray-500 mt-1 group-hover:text-[#196428] transition-colors">Nuestras Tiendas</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </header>
+      <div className="flex flex-col flex-1" style={{ backgroundColor: '#ffffff', marginBottom: 0, paddingBottom: 0, minHeight: 0 }}>
+        <Header
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={handleSearch}
+          onAccountClick={() => setIsAccountDrawerOpen(true)}
+        />
 
         <main className="flex-1">
           {/* Category Grid */}
@@ -1126,7 +704,7 @@ export default function Home() {
 
           {/* Ofertas de la semana */}
           {productosEnOferta.length >= 4 && (
-            <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
+            <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#ffffff' }}>
               <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
                 <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
                 <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 md:pb-2 md:overflow-x-hidden scroll-container">
@@ -1157,7 +735,7 @@ export default function Home() {
 
                     return (
                     <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[170px] xs:w-[180px] md:w-full block group">
-                      <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                      <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                         {/* Imagen del producto */}
                         <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
                           <Image
@@ -1273,7 +851,7 @@ export default function Home() {
           )}
 
           {/* Productos destacados */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
+          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#ffffff' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 md:mb-7 gap-3 sm:gap-4">
                 <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black">Productos destacados</h2>
@@ -1353,7 +931,7 @@ export default function Home() {
 
                                 return (
                                   <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full group">
-                                    <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 flex flex-col h-full border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                                    <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 flex flex-col h-full border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                                       <div className="relative aspect-[1/1] flex-shrink-0 bg-white">
                                         <Image
                                           src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 400, 60) : '/placeholder.jpg'}
@@ -1512,7 +1090,7 @@ export default function Home() {
 
                             return (
                             <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full group">
-                              <div className="bg-white rounded-2xl overflow-hidden  transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                              <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                                 <div className="relative aspect-[1/1] flex-shrink-0 bg-white">
                                   <Image
                                     src={producto.imagen_url ? optimizeSupabaseImage(producto.imagen_url, 600, 60) : '/placeholder.jpg'}
@@ -1628,10 +1206,11 @@ export default function Home() {
 
           {/* Hidden Banner Section - Solo se muestra si hay hidden banners */}
           {getHiddenBannerSlides().length > 0 && (
-            <section className="relative w-full mt-6 md:mt-8" style={{ backgroundColor: '#FCFFEF' }}>
+            <section className="relative w-full mt-6 md:mt-8" style={{ backgroundColor: '#ffffff' }}>
               <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
                 <div className="w-full">
-                  <div className="relative aspect-[16/2] w-full">
+                  {/* Contenedor adaptable para que el banner no se recorte */}
+                  <div className="relative w-full min-h-[140px] sm:min-h-[160px] md:min-h-[180px] lg:min-h-[200px]">
                     <div className="absolute inset-0">
                       {getHiddenBannerSlides().map((slide, index) => (
                         <div
@@ -1648,7 +1227,7 @@ export default function Home() {
                               loop
                               playsInline
                               preload="metadata"
-                              className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                              className="absolute inset-0 w-full h-full object-contain rounded-lg"
                             />
                           ) : (
                             <div className="relative w-full h-full">
@@ -1656,7 +1235,7 @@ export default function Home() {
                                 src={slide.url}
                                 alt={slide.alt}
                                 fill
-                                className="object-cover rounded-lg"
+                                className="object-contain rounded-lg"
                                 sizes="100vw"
                               />
                             </div>
@@ -1671,7 +1250,7 @@ export default function Home() {
           )}
 
           {/* Nuestras marcas */}
-          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#FCFFEF' }}>
+          <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#ffffff' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Nuestros aliados</h2>
               <div className="relative">
@@ -1716,7 +1295,7 @@ export default function Home() {
           </section>
 
           {/* Encuentra nuestras tiendas */}
-          <section id="nuestras-tiendas" className="py-6 sm:py-8 md:py-10 scroll-mt-20" style={{ backgroundColor: '#FCFFEF' }}>
+          <section id="nuestras-tiendas" className="py-6 sm:py-8 md:py-10 scroll-mt-20" style={{ backgroundColor: '#ffffff' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
               <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Encuentra nuestras tiendas</h2>
               <div className="bg-white rounded-[15px] sm:rounded-[20px] md:rounded-[25px] shadow-sm overflow-hidden">

@@ -47,6 +47,7 @@ import CategoryDropdown from '@/app/components/CategoryDropdown'
 import AccountPopover from '@/app/components/AccountPopover'
 import AccountPopoverContent from '@/app/components/AccountPopoverContent'
 import { useCategories } from '@/app/hooks/useCategories'
+import Header from '@/app/components/Header'
 import {
   Sheet,
   SheetContent,
@@ -486,7 +487,7 @@ function ProductPageContent() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="min-h-screen flex items-center justify-center bg-[#FCFFEF]">
+        <div className="min-h-screen flex items-center justify-center bg-white">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428] mx-auto mb-4"></div>
             <p className="text-gray-600">Cargando producto...</p>
@@ -500,7 +501,7 @@ function ProductPageContent() {
   if (!product) {
     return (
       <MainLayout>
-        <div className="min-h-screen flex items-center justify-center bg-[#FCFFEF]">
+        <div className="min-h-screen flex items-center justify-center bg-white">
           <div className="text-center">
             <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Producto no encontrado</h2>
@@ -536,7 +537,7 @@ function ProductPageContent() {
 
   // Account Popover Content Component
   const AccountContent = () => (
-    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-[#FCFFEF] p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
+    <div className="w-[200px] xs:w-[220px] sm:w-[240px] md:w-[260px] lg:w-[280px] xl:w-[300px] space-y-2 xs:space-y-2.5 sm:space-y-3 md:space-y-3 lg:space-y-4 xl:space-y-5 bg-white p-2 xs:p-2.5 sm:p-3 md:p-3.5 lg:p-4 xl:p-5 rounded-lg max-h-[80vh] overflow-y-auto border border-gray-200/60 shadow-sm">
       {/* Ya soy cliente */}
       <div>
 
@@ -658,8 +659,14 @@ function ProductPageContent() {
           }
         }
       `}</style>
-      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#FCFFEF' }}>
-        <header className="w-full border-b border-gray-200 relative z-50" style={{ backgroundColor: '#FCFFEF' }}>
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#ffffff' }}>
+        <Header
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchSubmit={handleSearch}
+          onAccountClick={() => setIsAccountDrawerOpen(true)}
+        />
+        <header className="hidden">
           {/* Mobile Header (< 640px) */}
           <div className="md:hidden">
             <div className="container mx-auto px-4 py-3">
@@ -1067,7 +1074,7 @@ function ProductPageContent() {
 
         </header>
 
-        <div className="flex-1 py-8" style={{ backgroundColor: '#FCFFEF' }}>
+        <div className="flex-1 py-8" style={{ backgroundColor: '#ffffff' }}>
         <div className="container mx-auto px-4 max-w-[1200px]">
           {/* Breadcrumbs */}
           <div className="mb-6 text-xs sm:text-sm text-gray-500 flex items-center gap-2 pl-2">
@@ -1273,7 +1280,7 @@ function ProductPageContent() {
 
                   return (
                     <Link key={relatedProduct.id} href={`/producto/${relatedProduct.id}`} className="block h-full group">
-                      <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-100 hover:border-gray-200" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
+                      <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                         <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
                           <Image
                             src={relatedProduct.imagen_url || "/placeholder.jpg"}
@@ -1441,7 +1448,7 @@ export default function ProductPage() {
   return (
     <Suspense fallback={
       <MainLayout>
-        <div className="min-h-screen flex items-center justify-center bg-[#FCFFEF]">
+        <div className="min-h-screen flex items-center justify-center bg-white">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#196428] mx-auto mb-4"></div>
             <p className="text-gray-600">Cargando producto...</p>

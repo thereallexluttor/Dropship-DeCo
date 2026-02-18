@@ -46,7 +46,7 @@ function AuthCallbackContent() {
   }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 xs:p-6 sm:p-8">
         <div className="text-center">
           {isLoading ? (
@@ -100,7 +100,7 @@ function AuthCallbackContent() {
 export default function AuthCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 xs:p-6 sm:p-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#196428] mx-auto mb-4"></div>

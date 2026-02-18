@@ -15,7 +15,7 @@ export default function PrensaPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
         <div className="bg-[#196428] text-white py-1 overflow-hidden">
           <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
             <span className="inline-block mr-8">Sala de prensa</span>

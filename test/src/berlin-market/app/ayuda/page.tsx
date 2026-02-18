@@ -48,7 +48,7 @@ export default function AyudaPage() {
       items: [
         { q: "¿Cómo creo una cuenta?", a: "Desde la opción Mi cuenta puedes registrarte con correo o proveedores habilitados." },
         { q: "Olvidé mi contraseña", a: "Usa la opción de recuperación en Mi cuenta. Revisa tu correo (incluida la carpeta de spam)." },
-        { q: "Privacidad de mis datos", a: "Tratamos tus datos conforme a nuestra política de protección de datos. Puedes consultar tus derechos en la sección Responsabilidad." },
+        { q: "Privacidad de mis datos", a: "Tratamos tus datos conforme a nuestra política de protección de datos. Puedes consultar tus derechos en la sección Políticas." },
       ],
     },
   ]
@@ -56,7 +56,7 @@ export default function AyudaPage() {
   const quickLinks = [
     { href: "/contacto", label: "Contacto" },
     { href: "/cuenta", label: "Mi cuenta" },
-    { href: "/responsabilidad", label: "Protección de datos" },
+    { href: "/responsabilidad", label: "Política de Tratamiento de Datos" },
     { href: "/cumplimiento", label: "Políticas corporativas" },
   ]
 
@@ -64,7 +64,7 @@ export default function AyudaPage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen" style={{ backgroundColor: '#FCFFEF' }}>
+      <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
         <div className="bg-[#196428] text-white py-1 overflow-hidden">
           <div className="animate-scroll whitespace-nowrap text-sm font-bold" style={{ animationDuration: '40s' }}>
             <span className="inline-block mr-8">Centro de Ayuda</span>
