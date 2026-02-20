@@ -66,6 +66,7 @@ import AccountPopoverContent from "../components/AccountPopoverContent"
 import Footer from "../components/Footer"
 import { useCategories } from "../hooks/useCategories"
 import { useCart, CartItemWithSize } from "../contexts/CartContext"
+import { loadStoresFromSupabase, type Store } from "../lib/stores"
 import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
 import PaymentStatusModal from "../components/PaymentStatusModal"
@@ -123,6 +124,12 @@ export default function CarritoPage() {
 
   // Usar el hook personalizado para cargar categorías dinámicamente
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
+
+  // Cargar tiendas para mostrar nombre en items del carrito
+  const [tiendas, setTiendas] = useState<Store[]>([])
+  useEffect(() => {
+    loadStoresFromSupabase().then(setTiendas)
+  }, [])
 
 
   // Efecto para verificar autenticación
@@ -931,7 +938,8 @@ export default function CarritoPage() {
           producto_id: item.id!,
           cantidad: item.quantity,
           subtotal: item.unitPrice * item.quantity,
-          tamano_index: item.selectedSizeIndex || 0
+          tamano_index: item.selectedSizeIndex || 0,
+          tienda_id: item.selectedStoreId ?? item.stocks?.[item.selectedSizeIndex ?? 0]?.tienda ?? item.Tienda ?? 0
         }))
 
         // Calcular envío y total del pedido (según reglas)
@@ -957,6 +965,7 @@ export default function CarritoPage() {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             selectedSizeIndex: item.selectedSizeIndex,
+            selectedStoreId: item.selectedStoreId,
             tamano: item.tamano
           }))
         }
@@ -1299,9 +1308,13 @@ export default function CarritoPage() {
                     }}></div>
                     
                     <div className="relative space-y-4 sm:space-y-5">
-                      {items.map((item, index) => (
+                      {items.map((item, index) => {
+                        const storeId = item.selectedStoreId ?? item.stocks?.[item.selectedSizeIndex ?? 0]?.tienda ?? item.Tienda ?? 0
+                        const tienda = tiendas.find((t) => t.id === storeId)
+                        const itemKey = `${item.id}-${item.selectedSizeIndex ?? 0}-${storeId}`
+                        return (
                         <div 
-                          key={item.id!} 
+                          key={itemKey} 
                           className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 p-4 sm:p-5 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/60 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(25,100,40,0.12)] hover:border-[#196428]/20 transition-all duration-300 ease-out"
                         >
                           {/* Imagen del producto */}
@@ -1328,10 +1341,16 @@ export default function CarritoPage() {
                                 tamaños={item.tamano}
                                 size="sm"
                                 selectedIndex={item.selectedSizeIndex}
-                                onSizeSelect={(newSizeIndex) => updateProductSize(item.id!, newSizeIndex)}
+                                onSizeSelect={(newSizeIndex) => updateProductSize(item.id!, newSizeIndex, item.selectedStoreId)}
                                 interactive={true}
                                 className="mb-2"
                               />
+                              {tienda && (
+                                <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                                  <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                                  {tienda.name} — {tienda.city}
+                                </p>
+                              )}
                             </div>
 
                             {/* Indicadores */}
@@ -1379,7 +1398,7 @@ export default function CarritoPage() {
                           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start border-t sm:border-t-0 border-gray-200/60 pt-4 sm:pt-0">
                             <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-1.5">
                               <button
-                                onClick={() => updateQuantity(item.id!, (item.quantity || 1) - 1)}
+                                onClick={() => updateQuantity(item.id!, (item.quantity || 1) - 1, item.selectedSizeIndex, item.selectedStoreId)}
                                 className="w-9 h-9 sm:w-10 sm:h-10 bg-white hover:bg-[#196428] hover:text-white active:bg-[#145020] text-gray-700 rounded-lg flex items-center justify-center transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
                                 aria-label="Disminuir cantidad"
                               >
@@ -1391,7 +1410,7 @@ export default function CarritoPage() {
                               </span>
 
                               <button
-                                onClick={() => updateQuantity(item.id!, (item.quantity || 1) + 1)}
+                                onClick={() => updateQuantity(item.id!, (item.quantity || 1) + 1, item.selectedSizeIndex, item.selectedStoreId)}
                                 className="w-9 h-9 sm:w-10 sm:h-10 bg-white hover:bg-[#196428] hover:text-white active:bg-[#145020] text-gray-700 rounded-lg flex items-center justify-center transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
                                 aria-label="Aumentar cantidad"
                               >
@@ -1400,7 +1419,7 @@ export default function CarritoPage() {
                             </div>
 
                             <button
-                              onClick={() => removeFromCart(item.id!)}
+                              onClick={() => removeFromCart(item.id!, item.selectedSizeIndex, item.selectedStoreId)}
                               className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-500 hover:to-red-600 active:from-red-600 active:to-red-700 text-red-600 hover:text-white rounded-lg flex items-center justify-center transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
                               aria-label="Eliminar producto"
                             >
@@ -1408,7 +1427,7 @@ export default function CarritoPage() {
                             </button>
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense, useMemo } from 'react'
 import { useParams, useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -37,6 +37,7 @@ import {
   Menu
 } from 'lucide-react'
 import { supabase, Producto, UI } from '@/lib/supabase'
+import { filterProductDataByStore } from '@/lib/productStoreUtils'
 import { useCart } from '@/app/contexts/CartContext'
 import MainLayout from '@/app/components/MainLayout'
 import Footer from '@/app/components/Footer'
@@ -97,9 +98,11 @@ function ProductPageContent() {
   // Check if we're on a product page
   const isProductPage = pathname?.startsWith('/producto/')
   
-  // Obtener la subcategoría desde la URL (si viene de la página de tienda)
+  // Obtener la subcategoría y tienda desde la URL (si viene de la página de tienda)
   const subcategoriaFromUrl = searchParams.get('subcategoria')
   const subcategoriaIdFromUrl = subcategoriaFromUrl ? parseInt(subcategoriaFromUrl) : null
+  const tiendaFromUrl = searchParams.get('tienda')
+  const selectedStoreIdFromUrl = tiendaFromUrl ? parseInt(tiendaFromUrl) : 0
 
   // Header states
   const [activeSlide, setActiveSlide] = useState(0)
@@ -437,23 +440,41 @@ function ProductPageContent() {
     loadProduct()
   }, [params.id, subcategoriaIdFromUrl])
 
-  // Obtener precio actual según tamaño seleccionado
-  const getCurrentPrice = () => {
-    if (!product) return 0
-    if (product.precios && product.precios.length > selectedSizeIndex) {
-      return product.precios[selectedSizeIndex]
+  // Filtrar producto por tienda cuando viene desde URL con tienda seleccionada
+  const displayProduct = useMemo(() => {
+    if (!product) return null
+    if (selectedStoreIdFromUrl > 0) {
+      return filterProductDataByStore(product, selectedStoreIdFromUrl)
     }
-    if (product.stocks && product.stocks.length > selectedSizeIndex) {
-      return product.stocks[selectedSizeIndex].precio
+    return product
+  }, [product, selectedStoreIdFromUrl])
+
+  // Asegurar que selectedSizeIndex sea válido cuando cambia displayProduct
+  useEffect(() => {
+    if (displayProduct?.tamano && displayProduct.tamano.length > 0 && selectedSizeIndex >= displayProduct.tamano.length) {
+      setSelectedSizeIndex(0)
+    }
+  }, [displayProduct, selectedSizeIndex])
+
+  // Obtener precio actual según tamaño seleccionado (usa displayProduct filtrado por tienda)
+  const getCurrentPrice = () => {
+    const p = displayProduct || product
+    if (!p) return 0
+    if (p.precios && p.precios.length > selectedSizeIndex) {
+      return p.precios[selectedSizeIndex]
+    }
+    if (p.stocks && p.stocks.length > selectedSizeIndex) {
+      return p.stocks[selectedSizeIndex].precio
     }
     return 0
   }
 
   // Obtener stock disponible según tamaño seleccionado
   const getCurrentStock = () => {
-    if (!product) return 0
-    if (product.stocks && product.stocks.length > selectedSizeIndex) {
-      return product.stocks[selectedSizeIndex].stock
+    const p = displayProduct || product
+    if (!p) return 0
+    if (p.stocks && p.stocks.length > selectedSizeIndex) {
+      return p.stocks[selectedSizeIndex].stock
     }
     // Si no hay campo stocks, asumir stock ilimitado o un número alto
     return 999
@@ -462,20 +483,22 @@ function ProductPageContent() {
   // Calcular precio con descuento
   const getPriceWithDiscount = () => {
     const basePrice = getCurrentPrice()
-    if (product?.descuento && product.descuento_valor) {
-      const discount = typeof product.descuento_valor === 'string' 
-        ? parseFloat(product.descuento_valor) 
-        : Number(product.descuento_valor)
+    const p = displayProduct || product
+    if (p?.descuento && p.descuento_valor) {
+      const discount = typeof p.descuento_valor === 'string' 
+        ? parseFloat(p.descuento_valor) 
+        : Number(p.descuento_valor)
       return basePrice * (1 - discount / 100)
     }
     return basePrice
   }
 
-  // Agregar al carrito
+  // Agregar al carrito (usa displayProduct para tener datos filtrados por tienda)
   const handleAddToCart = () => {
-    if (product) {
-      addToCart(product, quantity, selectedSizeIndex)
-      // Opcional: mostrar notificación
+    const p = displayProduct || product
+    if (p) {
+      const storeId = p.stocks?.[selectedSizeIndex]?.tienda ?? p.Tienda ?? selectedStoreIdFromUrl ?? 0
+      addToCart(p, quantity, selectedSizeIndex, storeId)
     }
   }
 
@@ -1185,14 +1208,14 @@ function ProductPageContent() {
                    </span>
                </div>
 
-               {/* Size Selector */}
-               {product.tamano && product.tamano.length > 0 && (
+               {/* Size Selector - usa displayProduct para mostrar solo opciones de la tienda seleccionada */}
+               {(displayProduct || product)?.tamano && (displayProduct || product)!.tamano!.length > 0 && (
                    <div className="mb-8">
                        <span className="text-xs font-bold uppercase tracking-wide text-gray-900 mb-3 block">
                            Tamaño
                        </span>
                        <div className="flex flex-wrap gap-2">
-                           {product.tamano.map((size, index) => (
+                           {(displayProduct || product)!.tamano!.map((size, index) => (
                                <button
                                    key={index}
                                    onClick={() => {
@@ -1243,22 +1266,25 @@ function ProductPageContent() {
             </div>
           </div>
 
-          {/* Related Products */}
+          {/* Related Products - filtrados por tienda cuando aplica */}
           {relatedProducts.length > 0 && (
             <div className="mt-20">
               <h2 className="text-2xl font-black text-gray-900 mb-8 pl-2">Productos relacionados</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 pb-4">
                 {relatedProducts.map((relatedProduct) => {
-                  const selectedSizeIndex = selectedRelatedSizes[relatedProduct.id!] || 0;
-                  const hasSizes = relatedProduct.tamano && relatedProduct.tamano.length > 0;
-                  const hasPrices = relatedProduct.precios && relatedProduct.precios.length > 0;
+                  const relatedDisplay = selectedStoreIdFromUrl > 0
+                    ? filterProductDataByStore(relatedProduct, selectedStoreIdFromUrl)
+                    : relatedProduct
+                  const selectedSizeIndex = selectedRelatedSizes[relatedProduct.id!] || 0
+                  const hasSizes = relatedDisplay.tamano && relatedDisplay.tamano.length > 0
+                  const hasPrices = relatedDisplay.precios && relatedDisplay.precios.length > 0
 
                   const getCurrentPrice = () => {
-                    if (hasSizes && hasPrices && relatedProduct.precios![selectedSizeIndex] !== undefined) {
-                      return relatedProduct.precios![selectedSizeIndex];
+                    if (hasSizes && hasPrices && relatedDisplay.precios![selectedSizeIndex] !== undefined) {
+                      return relatedDisplay.precios![selectedSizeIndex]
                     }
-                    if (relatedProduct.stocks && relatedProduct.stocks.length > selectedSizeIndex) {
-                      return relatedProduct.stocks[selectedSizeIndex].precio;
+                    if (relatedDisplay.stocks && relatedDisplay.stocks.length > selectedSizeIndex) {
+                      return relatedDisplay.stocks[selectedSizeIndex].precio
                     }
                     return 0;
                   };
@@ -1278,8 +1304,12 @@ function ProductPageContent() {
                   const finalPrice = getPriceWithDiscount();
                   const hasDiscount = relatedProduct.descuento && relatedProduct.descuento_valor;
 
+                  const relatedProductUrl = selectedStoreIdFromUrl > 0
+                    ? `/producto/${relatedProduct.id}?tienda=${selectedStoreIdFromUrl}`
+                    : `/producto/${relatedProduct.id}`
+
                   return (
-                    <Link key={relatedProduct.id} href={`/producto/${relatedProduct.id}`} className="block h-full group">
+                    <Link key={relatedProduct.id} href={relatedProductUrl} className="block h-full group">
                       <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                         <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
                           <Image
@@ -1307,7 +1337,12 @@ function ProductPageContent() {
                             onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
-                              addToCart(relatedProduct, 1, selectedSizeIndex)
+                              addToCart(
+                                relatedDisplay,
+                                1,
+                                selectedSizeIndex,
+                                relatedDisplay.stocks?.[selectedSizeIndex]?.tienda ?? relatedDisplay.Tienda ?? selectedStoreIdFromUrl ?? 0
+                              )
                             }}
                             className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
                           >
@@ -1326,7 +1361,7 @@ function ProductPageContent() {
                             <div className="mt-1">
                               <p className="text-[10px] sm:text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">Tamaños</p>
                               <div className="flex flex-wrap gap-1.5">
-                                {relatedProduct.tamano!.slice(0, 3).map((tamano, index) => (
+                                {relatedDisplay.tamano!.slice(0, 3).map((tamano, index) => (
                                   <button
                                     key={index}
                                     onClick={(e) => {

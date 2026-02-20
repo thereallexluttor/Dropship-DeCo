@@ -7,16 +7,17 @@ import { useCartNotification, NotificationType, NOTIFICATION_TYPES } from './Car
 export interface CartItemWithSize extends Producto {
   quantity: number
   selectedSizeIndex: number  // Índice del tamaño seleccionado (0-based)
-  unitPrice: number          // Precio unitario para el tamaño seleccionado
-  discountApplied: number    // Descuento aplicado en porcentaje (0 si no hay descuento)
+  selectedStoreId: number   // Tienda de la que proviene el inventario
+  unitPrice: number         // Precio unitario para el tamaño seleccionado
+  discountApplied: number   // Descuento aplicado en porcentaje (0 si no hay descuento)
 }
 
 interface CartContextType {
   items: CartItemWithSize[]
-  addToCart: (product: Producto, quantity?: number, selectedSizeIndex?: number) => void
-  removeFromCart: (productId: number) => void
-  updateQuantity: (productId: number, quantity: number) => void
-  updateProductSize: (productId: number, newSizeIndex: number) => void
+  addToCart: (product: Producto, quantity?: number, selectedSizeIndex?: number, selectedStoreId?: number) => void
+  removeFromCart: (productId: number, selectedSizeIndex?: number, selectedStoreId?: number) => void
+  updateQuantity: (productId: number, quantity: number, selectedSizeIndex?: number, selectedStoreId?: number) => void
+  updateProductSize: (productId: number, newSizeIndex: number, selectedStoreId?: number) => void
   clearCart: () => void
   restoreCart: (cartItems: CartItemWithSize[]) => void
   getTotalItems: () => number
@@ -56,13 +57,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const parsedCart = JSON.parse(savedCart)
         // Verificar que los items tengan la estructura correcta
         if (Array.isArray(parsedCart)) {
-          // Migrar items antiguos que no tienen selectedSizeIndex
+          // Migrar items antiguos que no tienen selectedSizeIndex o selectedStoreId
           const migratedCart = parsedCart.map((item: any) => {
+            let sizeIndex = item.selectedSizeIndex
+            if (sizeIndex === undefined || sizeIndex === null) {
+              sizeIndex = 0
+            }
+            const storeId = item.selectedStoreId ?? item.stocks?.[sizeIndex]?.tienda ?? item.Tienda ?? 0
             if (!item.selectedSizeIndex && item.selectedSizeIndex !== 0) {
               return {
                 ...item,
-                selectedSizeIndex: 0,
-                unitPrice: calculateUnitPrice(item, 0),
+                selectedSizeIndex: sizeIndex,
+                selectedStoreId: storeId,
+                unitPrice: calculateUnitPrice(item, sizeIndex),
                 discountApplied: item.descuento && item.descuento_valor
                   ? (typeof item.descuento_valor === 'string'
                       ? parseFloat(item.descuento_valor)
@@ -70,7 +77,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   : 0
               }
             }
-            return item
+            return { ...item, selectedStoreId: item.selectedStoreId ?? storeId }
           })
           setItems(migratedCart)
         }
@@ -91,9 +98,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (product.stocks && product.stocks.length > 0) {
       const stock = product.stocks[selectedSizeIndex] || product.stocks[0]
       if (stock && stock.stock !== undefined) {
-        // Buscar si ya existe el producto en el carrito con el mismo tamaño
+        // Buscar si ya existe el producto en el carrito con el mismo tamaño y tienda
+        const effectiveStoreId = product.stocks?.[selectedSizeIndex]?.tienda ?? product.Tienda ?? 0
         const existingItem = items.find(item =>
-          item.id === product.id && item.selectedSizeIndex === selectedSizeIndex
+          item.id === product.id &&
+          item.selectedSizeIndex === selectedSizeIndex &&
+          (item.selectedStoreId ?? 0) === effectiveStoreId
         )
         const currentQuantity = existingItem ? existingItem.quantity : 0
         const availableStock = stock.stock - currentQuantity
@@ -145,7 +155,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return 0
   }
 
-  const addToCart = (product: Producto, quantity: number = 1, selectedSizeIndex: number = 0) => {
+  const addToCart = (product: Producto, quantity: number = 1, selectedSizeIndex: number = 0, selectedStoreId?: number) => {
+    const effectiveStoreId = selectedStoreId ?? product.stocks?.[selectedSizeIndex]?.tienda ?? product.Tienda ?? 0
+
     // Verificar stock disponible ANTES de agregar al carrito
     const stockCheck = checkStockAvailability(product, quantity, selectedSizeIndex)
 
@@ -164,9 +176,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showNotification(product, quantity, NOTIFICATION_TYPES.SUCCESS, 'Agregado al carrito')
 
     setItems(prevItems => {
-      // Buscar si ya existe el mismo producto con el mismo tamaño
+      // Buscar si ya existe el mismo producto con el mismo tamaño y tienda
       const existingItem = prevItems.find(item =>
-        item.id === product.id && item.selectedSizeIndex === selectedSizeIndex
+        item.id === product.id &&
+        item.selectedSizeIndex === selectedSizeIndex &&
+        (item.selectedStoreId ?? 0) === effectiveStoreId
       )
 
       const unitPrice = calculateUnitPrice(product, selectedSizeIndex)
@@ -177,19 +191,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         : 0
 
       if (existingItem) {
-        // Si el producto ya existe con el mismo tamaño, aumentar la cantidad
+        // Si el producto ya existe con el mismo tamaño y tienda, aumentar la cantidad
         const newQuantity = existingItem.quantity + quantity
         return prevItems.map(item =>
-          item.id === product.id && item.selectedSizeIndex === selectedSizeIndex
+          item.id === product.id &&
+          item.selectedSizeIndex === selectedSizeIndex &&
+          (item.selectedStoreId ?? 0) === effectiveStoreId
             ? { ...item, quantity: newQuantity }
             : item
         )
       } else {
-        // Si es un nuevo producto o diferente tamaño, agregarlo
+        // Si es un nuevo producto o diferente tamaño/tienda, agregarlo
         const newItem: CartItemWithSize = {
           ...product,
           quantity,
           selectedSizeIndex,
+          selectedStoreId: effectiveStoreId,
           unitPrice,
           discountApplied
         }
@@ -198,18 +215,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })
   }
 
-  const removeFromCart = (productId: number) => {
-    setItems(prevItems => prevItems.filter(item => item.id !== productId))
+  const removeFromCart = (productId: number, selectedSizeIndex?: number, selectedStoreId?: number) => {
+    setItems(prevItems => {
+      if (selectedSizeIndex === undefined || selectedStoreId === undefined) {
+        return prevItems.filter(item => item.id !== productId)
+      }
+      return prevItems.filter(item =>
+        item.id !== productId ||
+        (item.selectedSizeIndex ?? 0) !== selectedSizeIndex ||
+        (item.selectedStoreId ?? 0) !== selectedStoreId
+      )
+    })
   }
 
-  const updateQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = (productId: number, quantity: number, selectedSizeIndex?: number, selectedStoreId?: number) => {
     if (quantity <= 0) {
-      removeFromCart(productId)
+      if (selectedSizeIndex !== undefined && selectedStoreId !== undefined) {
+        removeFromCart(productId, selectedSizeIndex, selectedStoreId)
+      } else {
+        removeFromCart(productId)
+      }
       return
     }
 
     setItems(prevItems => {
-      const itemToUpdate = prevItems.find(item => item.id === productId)
+      const itemToUpdate = prevItems.find(item => {
+        if (item.id !== productId) return false
+        if (selectedSizeIndex !== undefined && selectedStoreId !== undefined) {
+          return (item.selectedSizeIndex ?? 0) === selectedSizeIndex && (item.selectedStoreId ?? 0) === selectedStoreId
+        }
+        return true
+      })
       if (itemToUpdate) {
         // Verificar stock disponible antes de actualizar
         const stockCheck = checkStockAvailability(itemToUpdate, quantity - itemToUpdate.quantity, itemToUpdate.selectedSizeIndex)
@@ -226,26 +262,33 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
+      const matchItem = (item: CartItemWithSize) => {
+        if (item.id !== productId) return false
+        if (selectedSizeIndex !== undefined && selectedStoreId !== undefined) {
+          return (item.selectedSizeIndex ?? 0) === selectedSizeIndex && (item.selectedStoreId ?? 0) === selectedStoreId
+        }
+        return true
+      }
+
       return prevItems.map(item =>
-        item.id === productId
-          ? { ...item, quantity }
-          : item
+        matchItem(item) ? { ...item, quantity } : item
       )
     })
   }
 
-  const updateProductSize = (productId: number, newSizeIndex: number) => {
+  const updateProductSize = (productId: number, newSizeIndex: number, selectedStoreId?: number) => {
     setItems(prevItems =>
       prevItems.map(item => {
-        if (item.id === productId) {
-          const newUnitPrice = calculateUnitPrice(item, newSizeIndex)
-          return {
-            ...item,
-            selectedSizeIndex: newSizeIndex,
-            unitPrice: newUnitPrice
-          }
+        if (item.id !== productId) return item
+        if (selectedStoreId !== undefined && (item.selectedStoreId ?? 0) !== selectedStoreId) return item
+        const newUnitPrice = calculateUnitPrice(item, newSizeIndex)
+        const newStoreId = item.stocks?.[newSizeIndex]?.tienda ?? item.selectedStoreId ?? item.Tienda ?? 0
+        return {
+          ...item,
+          selectedSizeIndex: newSizeIndex,
+          selectedStoreId: newStoreId,
+          unitPrice: newUnitPrice
         }
-        return item
       })
     )
   }

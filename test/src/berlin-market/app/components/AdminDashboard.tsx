@@ -1666,9 +1666,9 @@ const AdminDashboard = () => {
         tiendasDelStock.forEach(tiendaId => {
           stocksExpandidos.push({
             ...stock,
-            cantidad: typeof stock.cantidad === 'string' ? parseFloat(stock.cantidad as any) || 0 : stock.cantidad,
-            precio: typeof stock.precio === 'string' ? parseFloat(stock.precio as any) || 0 : stock.precio,
-            stock: typeof stock.stock === 'string' ? parseInt(stock.stock as any) || 0 : stock.stock,
+            cantidad: typeof stock.cantidad === 'string' ? parseFloat(stock.cantidad as string) || 0 : stock.cantidad,
+            precio: typeof stock.precio === 'string' ? parseFloat(stock.precio as string) || 0 : stock.precio,
+            stock: typeof stock.stock === 'string' ? parseInt(stock.stock as string, 10) || 0 : (stock.stock ?? 0),
             tienda: tiendaId,
             tiendas: undefined // Limpiar el array de tiendas para el guardado
           });
@@ -1814,98 +1814,220 @@ const AdminDashboard = () => {
       alert('Espera a que termine de subirse la imagen antes de guardar.');
       return;
     }
-    // Validar campos obligatorios
     if (!producto.nombre || !producto.nombre.trim()) {
       alert('Por favor completa el nombre del producto');
       return;
     }
-
     if (!producto.descripcion || !producto.descripcion.trim()) {
       alert('Por favor completa la descripción del producto');
       return;
     }
 
+    // Validar y expandir stocks con múltiples tiendas (igual que en create)
+    let stocksValidos: ProductoStock[] = [];
+    if (producto.stocks && producto.stocks.length > 0) {
+      const stocksSinTiendas = producto.stocks.filter((stock) => {
+        const tieneTiendas = stock.tiendas && stock.tiendas.length > 0;
+        const tieneTienda = stock.tienda !== undefined && stock.tienda !== null;
+        return !tieneTiendas && !tieneTienda;
+      });
 
-    // Convertir y validar tamaños
-    if (producto.tamano && producto.tamano.length > 0) {
-      // Convertir strings a números
-      producto.tamano = producto.tamano.map(t => ({
+      if (stocksSinTiendas.length > 0) {
+        alert('Cada tamaño debe tener al menos una tienda seleccionada. Por favor, selecciona al menos una tienda para cada tamaño.');
+        return;
+      }
+
+      const stocksExpandidos: ProductoStock[] = [];
+      producto.stocks.forEach((stock) => {
+        const tiendasDelStock =
+          stock.tiendas && stock.tiendas.length > 0
+            ? stock.tiendas
+            : stock.tienda !== undefined && stock.tienda !== null
+              ? [stock.tienda]
+              : [producto.Tienda || 1];
+
+        tiendasDelStock.forEach((tiendaId) => {
+          stocksExpandidos.push({
+            ...stock,
+            cantidad: typeof stock.cantidad === 'string' ? parseFloat(stock.cantidad as string) || 0 : stock.cantidad,
+            precio: typeof stock.precio === 'string' ? parseFloat(stock.precio as string) || 0 : stock.precio,
+            stock: typeof stock.stock === 'string' ? parseInt(stock.stock as string, 10) || 0 : (stock.stock ?? 0),
+            tienda: tiendaId,
+            tiendas: undefined
+          });
+        });
+      });
+
+      stocksValidos = stocksExpandidos.filter((s) => s.cantidad > 0 && s.precio > 0);
+
+      if (stocksValidos.length === 0) {
+        alert('Debe haber al menos un tamaño con cantidad y precio mayores a 0');
+        return;
+      }
+    } else if (producto.tamano && producto.tamano.length > 0) {
+      // Fallback a campos antiguos
+      producto.tamano = producto.tamano.map((t) => ({
         ...t,
         cantidad: typeof t.cantidad === 'string' ? parseFloat(t.cantidad) || 0 : t.cantidad
       }));
 
-      const tamañosValidos = producto.tamano.filter(t => t.cantidad > 0);
+      const tamañosValidos = producto.tamano.filter((t) => t.cantidad > 0);
       if (tamañosValidos.length === 0) {
         alert('Si defines tamaños, al menos uno debe tener una cantidad mayor a 0');
         return;
       }
-      // Actualizar solo los tamaños válidos
-      producto.tamano = tamañosValidos;
-    }
 
-    // Convertir y validar precios
-    if (producto.tamano && producto.tamano.length > 0) {
       if (!producto.precios || producto.precios.length !== producto.tamano.length) {
         alert('Debe haber un precio para cada tamaño definido');
         return;
       }
-      
-      // Convertir strings a números
-      producto.precios = producto.precios.map(p => 
-        typeof p === 'string' ? parseFloat(p) || 0 : p
-      );
 
-      // Validar que todos los precios sean mayores a 0
-      if (producto.precios.some(p => p <= 0)) {
+      const preciosNumeros = producto.precios.map((p) => (typeof p === 'string' ? parseFloat(p) || 0 : p));
+      if (preciosNumeros.some((p) => p <= 0)) {
         alert('Todos los precios deben ser mayores a 0');
         return;
       }
+
+      stocksValidos = tamañosValidos.map((tamano, index) => ({
+        cantidad: tamano.cantidad,
+        unidad: tamano.unidad,
+        precio: preciosNumeros[index],
+        stock: producto.stocks?.[index]?.stock ?? 0,
+        tienda: producto.Tienda || 1
+      }));
+    } else {
+      alert('Debe definir al menos un tamaño con cantidad y precio.');
+      return;
     }
 
+    const basePayload = {
+      subcategorias_id: producto.subcategorias_id,
+      subcategorias_id2: producto.subcategorias_id2 || null,
+      subcategorias_id3: producto.subcategorias_id3 || null,
+      nombre: producto.nombre,
+      descripcion: producto.descripcion,
+      imagen_url: producto.imagen_url || null,
+      descuento: producto.descuento || false,
+      descuento_valor: producto.descuento_valor ? parseFloat(producto.descuento_valor.toString()) : null,
+      destacado: producto.destacado || false,
+      novedad: producto.novedad || false,
+      id_marca: producto.id_marca || null
+    };
+
     try {
-      // Limpiar el campo tiendas de los stocks (solo es para UI, no para almacenamiento)
-      const stocksLimpios = producto.stocks?.map(stock => ({
-        ...stock,
-        tiendas: undefined
-      })) || null;
+      // Si estamos editando un producto existente (tiene id), actualizar esa fila con tamano, precios y stocks completos
+      if (producto.id) {
+        const stocksLimpios = stocksValidos.map((s) => ({
+          ...s,
+          tiendas: undefined
+        }));
+        const tamanosArray = stocksValidos.map((s) => ({ cantidad: s.cantidad, unidad: s.unidad }));
+        const preciosArray = stocksValidos.map((s) => s.precio);
 
-      const { error } = await supabase
-        .from('productos')
-        .update({
-          subcategorias_id: producto.subcategorias_id,
-          subcategorias_id2: producto.subcategorias_id2 || null,
-          subcategorias_id3: producto.subcategorias_id3 || null,
-          nombre: producto.nombre,
-          descripcion: producto.descripcion,
-          imagen_url: producto.imagen_url || null,
-          descuento: producto.descuento || false,
-          descuento_valor: producto.descuento_valor ? parseFloat(producto.descuento_valor.toString()) : null,
-          destacado: producto.destacado || false,
-          novedad: producto.novedad || false,
-          id_marca: producto.id_marca || null,
-          Tienda: producto.Tienda || null,
-          stocks: stocksLimpios && stocksLimpios.length > 0 ? stocksLimpios : null,
-          // Campos antiguos mantenidos para compatibilidad durante la transición
-          tamano: producto.tamano && producto.tamano.length > 0 ? producto.tamano : null,
-          precios: producto.precios && producto.precios.length > 0 ? producto.precios : null
-        })
-        .eq('id', producto.id);
+        const payload = {
+          ...basePayload,
+          Tienda: producto.Tienda ?? stocksValidos[0]?.tienda ?? 1,
+          tamano: tamanosArray,
+          precios: preciosArray,
+          stocks: stocksLimpios
+        };
 
-      if (error) throw error;
+        const { data: updated, error } = await supabase
+          .from('productos')
+          .update(payload)
+          .eq('id', producto.id)
+          .select()
+          .single();
 
-      setProductos(productos.map(p => p.id === producto.id ? producto : p));
+        if (error) throw error;
+
+        setProductos((prev) =>
+          prev.map((p) => (p.id === producto.id ? (updated as Producto) : p))
+        );
+        setEditingProducto(null);
+        alert('Producto actualizado exitosamente');
+        return;
+      }
+
+      // Crear nuevo producto: agrupar stocks por tienda y crear/actualizar filas
+      const stocksPorTienda = new Map<number, ProductoStock[]>();
+      stocksValidos.forEach((stock) => {
+        const tiendaId = stock.tienda ?? producto.Tienda ?? 1;
+        if (!stocksPorTienda.has(tiendaId)) {
+          stocksPorTienda.set(tiendaId, []);
+        }
+        stocksPorTienda.get(tiendaId)!.push(stock);
+      });
+
+      const productosActualizados: Producto[] = [];
+
+      for (const [tiendaId, stocks] of stocksPorTienda) {
+        const stocksLimpios = stocks.map((s) => ({
+          ...s,
+          tiendas: undefined
+        }));
+        const tamanosGrupo = stocks.map((s) => ({ cantidad: s.cantidad, unidad: s.unidad }));
+        const preciosGrupo = stocks.map((s) => s.precio);
+
+        const productoExistente = productos.find(
+          (p) => p.nombre === producto.nombre && (p.Tienda ?? null) === tiendaId
+        );
+
+        const payload = {
+          ...basePayload,
+          Tienda: tiendaId,
+          stocks: stocksLimpios,
+          tamano: tamanosGrupo,
+          precios: preciosGrupo
+        };
+
+        if (productoExistente && productoExistente.id) {
+          const { data: updated, error } = await supabase
+            .from('productos')
+            .update(payload)
+            .eq('id', productoExistente.id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          if (updated) productosActualizados.push(updated);
+        } else {
+          const { data: inserted, error } = await supabase
+            .from('productos')
+            .insert(payload)
+            .select()
+            .single();
+
+          if (error) throw error;
+          if (inserted) productosActualizados.push(inserted);
+        }
+      }
+
+      const idsActualizados = new Set(productosActualizados.map((p) => p.id));
+      const productosFinales = [
+        ...productos.filter((p) => !idsActualizados.has(p.id)),
+        ...productosActualizados
+      ].filter(Boolean);
+
+      setProductos(productosFinales as Producto[]);
       setEditingProducto(null);
-      alert('Producto actualizado exitosamente');
-    } catch (error: any) {
-      console.error('Error actualizando producto:', error);
-      if (error?.message?.includes('relation "productos" does not exist')) {
+
+      const msg =
+        productosActualizados.length > 1
+          ? `Producto actualizado en ${productosActualizados.length} tiendas`
+          : 'Producto actualizado exitosamente';
+      alert(msg);
+    } catch (error: unknown) {
+      const err = error as { message?: string; code?: string };
+      console.error('Error actualizando producto:', err);
+      if (err?.message?.includes('relation "productos" does not exist')) {
         alert('La tabla "productos" no existe en Supabase. Crea las tablas siguiendo las instrucciones del archivo SUPABASE_SETUP.md');
-      } else if (error?.message?.includes('violates foreign key constraint')) {
-        alert('Error: La subcategoría seleccionada no existe. Selecciona una subcategoría válida.');
-      } else if (error?.code === 'PGRST301') {
+      } else if (err?.message?.includes('violates foreign key constraint')) {
+        alert('Error: La subcategoría o tienda seleccionada no existe. Selecciona valores válidos.');
+      } else if (err?.code === 'PGRST301') {
         alert('Error de conexión con Supabase. Verifica tu conexión a internet y las credenciales.');
       } else {
-        alert(`Error al actualizar el producto: ${error?.message || 'Error desconocido'}`);
+        alert(`Error al actualizar el producto: ${err?.message ?? 'Error desconocido'}`);
       }
     }
   };
@@ -2160,25 +2282,20 @@ const AdminDashboard = () => {
     });
   };
 
-  // Nueva función para manejar selección múltiple de tiendas
+  // Función para manejar selección de una sola tienda
   const toggleTiendaStock = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number, tiendaId: number) => {
     const nuevosStocks = [...(producto.stocks || [])];
     const stockActual = nuevosStocks[index];
-    const tiendasActuales = stockActual?.tiendas || (stockActual?.tienda ? [stockActual.tienda] : []);
+    const tiendaActual = stockActual?.tienda;
     
-    let nuevasTiendas: number[];
-    if (tiendasActuales.includes(tiendaId)) {
-      // Si ya está seleccionada, la removemos (permite dejar vacío)
-      nuevasTiendas = tiendasActuales.filter(id => id !== tiendaId);
-    } else {
-      // Si no está seleccionada, la agregamos
-      nuevasTiendas = [...tiendasActuales, tiendaId];
-    }
+    // Si la tienda ya está seleccionada, la deseleccionamos (permite dejar vacío)
+    // Si es otra tienda o no hay ninguna seleccionada, seleccionamos esta
+    const nuevaTienda = tiendaActual === tiendaId ? undefined : tiendaId;
     
     nuevosStocks[index] = { 
       ...nuevosStocks[index], 
-      tiendas: nuevasTiendas,
-      tienda: nuevasTiendas.length > 0 ? nuevasTiendas[0] : undefined // Mantener compatibilidad con tienda única
+      tienda: nuevaTienda,
+      tiendas: nuevaTienda ? [nuevaTienda] : [] // Mantener compatibilidad con array
     };
 
     setProducto({
@@ -2187,38 +2304,6 @@ const AdminDashboard = () => {
     });
   };
 
-  // Función para seleccionar todas las tiendas de un stock
-  const seleccionarTodasTiendas = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number) => {
-    const nuevosStocks = [...(producto.stocks || [])];
-    const todasLasTiendas = tiendas.map(t => t.id!);
-    
-    nuevosStocks[index] = { 
-      ...nuevosStocks[index], 
-      tiendas: todasLasTiendas,
-      tienda: todasLasTiendas[0]
-    };
-
-    setProducto({
-      ...producto,
-      stocks: nuevosStocks
-    });
-  };
-
-  // Función para deseleccionar todas las tiendas
-  const deseleccionarTodasTiendas = (producto: ProductoForm | Producto, setProducto: (producto: ProductoForm | Producto) => void, index: number) => {
-    const nuevosStocks = [...(producto.stocks || [])];
-    
-    nuevosStocks[index] = { 
-      ...nuevosStocks[index], 
-      tiendas: [],
-      tienda: undefined
-    };
-
-    setProducto({
-      ...producto,
-      stocks: nuevosStocks
-    });
-  };
 
   // Función para sanear segmentos de ruta de archivo
   function sanitizePathSegment(input: string) {
@@ -4322,19 +4407,12 @@ const AdminDashboard = () => {
                                   <summary className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm cursor-pointer bg-white list-none flex items-center justify-between">
                                     <span className="truncate">
                                       {(() => {
-                                        const tiendasSeleccionadas = newProducto.stocks?.[index]?.tiendas || 
-                                          (newProducto.stocks?.[index]?.tienda ? [newProducto.stocks[index].tienda] : []);
-                                        if (tiendasSeleccionadas.length === 0) {
-                                          return 'Seleccionar tiendas...';
+                                        const tiendaSeleccionada = newProducto.stocks?.[index]?.tienda;
+                                        if (!tiendaSeleccionada) {
+                                          return 'Seleccionar tienda...';
                                         }
-                                        if (tiendasSeleccionadas.length === tiendas.length) {
-                                          return 'Todas las tiendas';
-                                        }
-                                        if (tiendasSeleccionadas.length === 1) {
-                                          const tienda = tiendas.find(t => t.id === tiendasSeleccionadas[0]);
-                                          return tienda ? `${tienda.nombre} - ${tienda.ciudad}` : '1 tienda';
-                                        }
-                                        return `${tiendasSeleccionadas.length} tiendas seleccionadas`;
+                                        const tienda = tiendas.find(t => t.id === tiendaSeleccionada);
+                                        return tienda ? `${tienda.nombre} - ${tienda.ciudad}` : 'Seleccionar tienda...';
                                       })()}
                                     </span>
                                     <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4342,37 +4420,20 @@ const AdminDashboard = () => {
                                     </svg>
                                   </summary>
                                   <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                    <div className="p-2 border-b border-gray-200 flex gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => seleccionarTodasTiendas(newProducto, setNewProducto as any, index)}
-                                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                      >
-                                        Todas
-                                      </button>
-                                      <span className="text-gray-300">|</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => deseleccionarTodasTiendas(newProducto, setNewProducto as any, index)}
-                                        className="text-xs text-gray-600 hover:text-gray-800 font-medium"
-                                      >
-                                        Ninguna
-                                      </button>
-                                    </div>
                                     {tiendas.map((tienda) => {
-                                      const tiendasSeleccionadas = newProducto.stocks?.[index]?.tiendas || 
-                                        (newProducto.stocks?.[index]?.tienda ? [newProducto.stocks[index].tienda] : []);
-                                      const isChecked = tiendasSeleccionadas.includes(tienda.id!);
+                                      const tiendaSeleccionada = newProducto.stocks?.[index]?.tienda;
+                                      const isChecked = tiendaSeleccionada === tienda.id;
                                       return (
                                         <label
                                           key={tienda.id}
                                           className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
                                         >
                                           <input
-                                            type="checkbox"
+                                            type="radio"
+                                            name={`tienda-${index}`}
                                             checked={isChecked}
                                             onChange={() => toggleTiendaStock(newProducto, setNewProducto as any, index, tienda.id!)}
-                                            className="rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-2"
+                                            className="border-gray-300 text-gray-900 focus:ring-gray-900 mr-2"
                                           />
                                           <span className="text-sm">{tienda.nombre} - {tienda.ciudad}</span>
                                         </label>
@@ -4850,19 +4911,12 @@ const AdminDashboard = () => {
                                                   <summary className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm cursor-pointer bg-white list-none flex items-center justify-between">
                                                     <span className="truncate">
                                                       {(() => {
-                                                        const tiendasSeleccionadas = editingProducto?.stocks?.[index]?.tiendas || 
-                                                          (editingProducto?.stocks?.[index]?.tienda ? [editingProducto.stocks[index].tienda] : []);
-                                                        if (tiendasSeleccionadas.length === 0) {
-                                                          return 'Seleccionar tiendas...';
+                                                        const tiendaSeleccionada = editingProducto?.stocks?.[index]?.tienda;
+                                                        if (!tiendaSeleccionada) {
+                                                          return 'Seleccionar tienda...';
                                                         }
-                                                        if (tiendasSeleccionadas.length === tiendas.length) {
-                                                          return 'Todas las tiendas';
-                                                        }
-                                                        if (tiendasSeleccionadas.length === 1) {
-                                                          const tienda = tiendas.find(t => t.id === tiendasSeleccionadas[0]);
-                                                          return tienda ? `${tienda.nombre} - ${tienda.ciudad}` : '1 tienda';
-                                                        }
-                                                        return `${tiendasSeleccionadas.length} tiendas seleccionadas`;
+                                                        const tienda = tiendas.find(t => t.id === tiendaSeleccionada);
+                                                        return tienda ? `${tienda.nombre} - ${tienda.ciudad}` : 'Seleccionar tienda...';
                                                       })()}
                                                     </span>
                                                     <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4870,37 +4924,20 @@ const AdminDashboard = () => {
                                                     </svg>
                                                   </summary>
                                                   <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                                    <div className="p-2 border-b border-gray-200 flex gap-2">
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => editingProducto && seleccionarTodasTiendas(editingProducto, (producto) => setEditingProducto(producto as Producto), index)}
-                                                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                                      >
-                                                        Todas
-                                                      </button>
-                                                      <span className="text-gray-300">|</span>
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => editingProducto && deseleccionarTodasTiendas(editingProducto, (producto) => setEditingProducto(producto as Producto), index)}
-                                                        className="text-xs text-gray-600 hover:text-gray-800 font-medium"
-                                                      >
-                                                        Ninguna
-                                                      </button>
-                                                    </div>
                                                     {tiendas.map((tienda) => {
-                                                      const tiendasSeleccionadas = editingProducto?.stocks?.[index]?.tiendas || 
-                                                        (editingProducto?.stocks?.[index]?.tienda ? [editingProducto.stocks[index].tienda] : []);
-                                                      const isChecked = tiendasSeleccionadas.includes(tienda.id!);
+                                                      const tiendaSeleccionada = editingProducto?.stocks?.[index]?.tienda;
+                                                      const isChecked = tiendaSeleccionada === tienda.id;
                                                       return (
                                                         <label
                                                           key={tienda.id}
                                                           className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
                                                         >
                                                           <input
-                                                            type="checkbox"
+                                                            type="radio"
+                                                            name={`tienda-edit-${index}`}
                                                             checked={isChecked}
                                                             onChange={() => editingProducto && toggleTiendaStock(editingProducto, (producto) => setEditingProducto(producto as Producto), index, tienda.id!)}
-                                                            className="rounded border-gray-300 text-gray-900 focus:ring-gray-900 mr-2"
+                                                            className="border-gray-300 text-gray-900 focus:ring-gray-900 mr-2"
                                                           />
                                                           <span className="text-sm">{tienda.nombre} - {tienda.ciudad}</span>
                                                         </label>

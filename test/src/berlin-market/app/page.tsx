@@ -31,6 +31,7 @@ import { useCategories } from './hooks/useCategories'
 import { useProducts } from './hooks/useProducts'
 import { useCart } from './contexts/CartContext'
 import { loadStoresFromSupabase, type Store } from './lib/stores'
+import { productAvailableInStore } from '@/lib/productStoreUtils'
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 import CategoryMenu from './components/CategoryMenu'
@@ -201,7 +202,7 @@ export default function Home() {
         try {
           const { data, error } = await supabase
             .from('productos')
-            .select('*, Tienda')
+            .select('*')
             .eq('destacado', true);
 
           if (error) throw error;
@@ -375,21 +376,15 @@ export default function Home() {
   }
 
   const handleAddToCart = (producto: Producto) => {
-    addToCart(producto, 1)
-    // Aquí podrías agregar una notificación o toast
-    console.log(`Agregado al carrito: ${producto.nombre}`)
+    const selectedSizeIndex = selectedSizes[producto.id!] || 0
+    const storeId = selectedStoreId > 0 ? selectedStoreId : producto.stocks?.[selectedSizeIndex]?.tienda ?? producto.Tienda ?? 0
+    addToCart(producto, 1, selectedSizeIndex, storeId)
   }
 
-  // Filtrar productos destacados por tienda seleccionada
-  // Mostrar productos que pertenecen a la tienda seleccionada o que no tienen tienda asignada (null)
-  const productosDestacadosFiltrados = productosDestacados.filter((producto) => {
-    // Si el producto no tiene tienda asignada (null o undefined), mostrarlo (productos generales)
-    if (producto.Tienda === null || producto.Tienda === undefined) {
-      return true
-    }
-    // Si tiene tienda asignada, mostrar solo si coincide con la seleccionada
-    return producto.Tienda === selectedStoreId
-  })
+  // Filtrar productos destacados por tienda (Tienda, stocks.tienda, stocks.tiendas)
+  const productosDestacadosFiltrados = productosDestacados.filter((producto) =>
+    productAvailableInStore(producto, selectedStoreId)
+  )
 
   const PRODUCTS_PER_SLIDE = 8
   const MOBILE_PRODUCTS_PER_SLIDE = 4 // 2x2 grid
@@ -734,7 +729,7 @@ export default function Home() {
                     const currentPrice = getCurrentPrice();
 
                     return (
-                    <Link key={producto.id} href={`/producto/${producto.id}`} className="flex-none w-[170px] xs:w-[180px] md:w-full block group">
+                    <Link key={producto.id} href={selectedStoreId > 0 ? `/producto/${producto.id}?tienda=${selectedStoreId}` : `/producto/${producto.id}`} className="flex-none w-[170px] xs:w-[180px] md:w-full block group">
                       <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                         {/* Imagen del producto */}
                         <div className="relative aspect-[4/3] flex-shrink-0 bg-white">
@@ -930,7 +925,7 @@ export default function Home() {
                                 const currentPrice = getCurrentPrice()
 
                                 return (
-                                  <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full group">
+                                  <Link key={producto.id} href={selectedStoreId > 0 ? `/producto/${producto.id}?tienda=${selectedStoreId}` : `/producto/${producto.id}`} className="block h-full group">
                                     <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 flex flex-col h-full border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                                       <div className="relative aspect-[1/1] flex-shrink-0 bg-white">
                                         <Image
@@ -1089,7 +1084,7 @@ export default function Home() {
                             const currentPrice = getCurrentPrice();
 
                             return (
-                            <Link key={producto.id} href={`/producto/${producto.id}`} className="block h-full group">
+                            <Link key={producto.id} href={selectedStoreId > 0 ? `/producto/${producto.id}?tienda=${selectedStoreId}` : `/producto/${producto.id}`} className="block h-full group">
                               <div className="bg-white rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md" style={{ fontFamily: '"Helvetica Neue", sans-serif' }}>
                                 <div className="relative aspect-[1/1] flex-shrink-0 bg-white">
                                   <Image

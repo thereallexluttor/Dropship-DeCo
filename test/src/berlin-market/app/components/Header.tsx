@@ -30,6 +30,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import AccountPopover from "./AccountPopover"
+import { useCart } from "../contexts/CartContext"
 
 interface HeaderProps {
   searchQuery?: string
@@ -42,6 +43,8 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
   const pathname = usePathname()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { getTotalItems } = useCart()
+  const cartCount = getTotalItems()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -171,9 +174,21 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                           </Link>
                         );
                       }
+                      const isCarrito = link.name === "Carrito"
                       return (
                         <Link key={link.name} href={link.href} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                          <link.icon className="h-5 w-5 text-gray-600" />
+                          {isCarrito ? (
+                            <div className="relative">
+                              <link.icon className="h-5 w-5 text-gray-600" />
+                              {cartCount > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-medium rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                                  {cartCount > 99 ? "99+" : cartCount}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <link.icon className="h-5 w-5 text-gray-600" />
+                          )}
                           <span className="text-sm font-medium text-gray-800">{link.name}</span>
                         </Link>
                       );
@@ -233,8 +248,15 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Tienda</span>
                 </Link>
                 <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer min-w-[44px]" onMouseEnter={() => router.prefetch("/carrito")}>
-                  <div className={`h-4 w-4 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
-                    <ShoppingCart className="h-full w-full" />
+                  <div className="relative">
+                    <div className={`h-4 w-4 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
+                      <ShoppingCart className="h-full w-full" />
+                    </div>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-medium rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                        {cartCount > 99 ? "99+" : cartCount}
+                      </span>
+                    )}
                   </div>
                   <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1 transition-colors whitespace-nowrap`}>Carrito</span>
                 </Link>
@@ -315,8 +337,15 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   <span className={`text-sm font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1.5 transition-colors whitespace-nowrap`}>Tienda</span>
                 </Link>
                 <Link href="/carrito" className="group flex flex-col items-center justify-center cursor-pointer min-w-[52px]">
-                  <div className={`h-7 w-7 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
-                    <ShoppingCart className="h-full w-full" />
+                  <div className="relative">
+                    <div className={`h-7 w-7 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
+                      <ShoppingCart className="h-full w-full" />
+                    </div>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-medium rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+                        {cartCount > 99 ? "99+" : cartCount}
+                      </span>
+                    )}
                   </div>
                   <span className={`text-sm font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1.5 transition-colors whitespace-nowrap`}>Carrito</span>
                 </Link>
@@ -397,8 +426,15 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   <span className={`text-xs font-light ${pathname === "/tienda" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1.5 transition-colors`}>Tienda</span>
                 </Link>
                 <Link href="/carrito" prefetch className="group flex flex-col items-center justify-center cursor-pointer" onMouseEnter={() => router.prefetch("/carrito")}>
-                  <div className={`h-6 w-6 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
-                    <ShoppingCart className="h-full w-full" />
+                  <div className="relative">
+                    <div className={`h-6 w-6 ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} transition-colors`}>
+                      <ShoppingCart className="h-full w-full" />
+                    </div>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-medium rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                        {cartCount > 99 ? "99+" : cartCount}
+                      </span>
+                    )}
                   </div>
                   <span className={`text-xs font-light ${pathname === "/carrito" ? "text-[#196428]" : "text-gray-500 group-hover:text-[#196428]"} mt-1.5 transition-colors`}>Carrito</span>
                 </Link>

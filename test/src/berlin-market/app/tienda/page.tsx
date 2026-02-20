@@ -53,6 +53,7 @@ import { useProducts, ProductWithDetails } from "../hooks/useProducts"
 import ProductSizeBadges from "../components/ProductSizeBadges"
 import { useCart } from "../contexts/CartContext"
 import { loadStoresFromSupabase, type Store } from "../lib/stores"
+import { productAvailableInStore, filterProductDataByStore } from "@/lib/productStoreUtils"
 
 function TiendaPageContent() {
   const [activeSlide, setActiveSlide] = useState(0)
@@ -90,9 +91,9 @@ function TiendaPageContent() {
   const PRODUCTS_PER_BATCH = PRODUCTS_PER_ROW_DESKTOP * ROWS_PER_BATCH
   const [visibleProductCount, setVisibleProductCount] = useState<number>(PRODUCTS_PER_BATCH)
 
-  // Estado para tiendas y tienda seleccionada
+  // Estado para tiendas y tienda seleccionada (0 = Todas las tiendas)
   const [tiendas, setTiendas] = useState<Store[]>([])
-  const [selectedStoreId, setSelectedStoreId] = useState<number>(1) // Default: tienda con id 1
+  const [selectedStoreId, setSelectedStoreId] = useState<number>(0) // 0 = Todas las tiendas, >0 = tienda específica
 
   // Hooks para datos de Supabase
   const { categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
@@ -242,10 +243,11 @@ function TiendaPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryParam, subcategoryParam, categories, productsByCategory])
 
-  // Función para agregar productos al carrito considerando el tamaño seleccionado
+  // Función para agregar productos al carrito considerando el tamaño y tienda seleccionados
   const handleAddToCart = (product: ProductWithDetails) => {
     const selectedSizeIndex = selectedSizes[product.id!] || 0
-    addToCart(product, 1, selectedSizeIndex)
+    const storeId = selectedStoreId > 0 ? selectedStoreId : product.stocks?.[selectedSizeIndex]?.tienda ?? product.Tienda ?? 0
+    addToCart(product, 1, selectedSizeIndex, storeId)
   }
 
   // Tipos para categorías
@@ -497,13 +499,13 @@ function TiendaPageContent() {
     return products.filter(product => product.id_marca === selectedBrand)
   }
 
-  // Función para obtener el precio de un producto (para filtros de precio)
+  // Función para obtener el precio de un producto (considera precios[] y stocks[].precio)
   const getProductPrice = (product: ProductWithDetails): number => {
-    if (product.precios && product.precios.length > 0) {
-      return product.precios[0] // Tomar el primer precio disponible
+    if (product.precios && Array.isArray(product.precios) && product.precios.length > 0) {
+      return product.precios[0]
     }
-    if (product.stocks && product.stocks.length > 0) {
-      return product.stocks[0].precio // Tomar el precio del stock
+    if (product.stocks && Array.isArray(product.stocks) && product.stocks.length > 0) {
+      return product.stocks[0].precio
     }
     return 0
   }
@@ -541,16 +543,12 @@ function TiendaPageContent() {
 
     let filteredProducts = [...products]
 
-    // Filtro por tienda seleccionada
-    // Mostrar productos que pertenecen a la tienda seleccionada o que no tienen tienda asignada (null)
-    filteredProducts = filteredProducts.filter(product => {
-      // Si el producto no tiene tienda asignada (null o undefined), mostrarlo (productos generales)
-      if (product.Tienda === null || product.Tienda === undefined) {
-        return true
-      }
-      // Si tiene tienda asignada, mostrar solo si coincide con la seleccionada
-      return product.Tienda === selectedStoreId
-    })
+    // Filtro por tienda: considera Tienda, stocks.tienda y stocks.tiendas (JSONB con varias tiendas)
+    if (selectedStoreId > 0) {
+      filteredProducts = filteredProducts.filter((product) =>
+        productAvailableInStore(product, selectedStoreId)
+      )
+    }
 
     // Filtro por rango de precio
     if (priceRange[0] !== priceBounds.min || priceRange[1] !== priceBounds.max) {
@@ -706,6 +704,11 @@ function TiendaPageContent() {
 
     // Aplicar ordenamiento
     result = sortProducts(result)
+
+    // Filtrar tamano, precios y stocks por tienda seleccionada para evitar info mezclada
+    if (selectedStoreId > 0) {
+      result = result.map((p) => filterProductDataByStore(p, selectedStoreId))
+    }
 
     return result
   }, [
@@ -1151,20 +1154,24 @@ function TiendaPageContent() {
                     <div className="space-y-5">
                       {/* Selector de tienda */}
                       <div>
-                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Selecciona tu ciudad</h3>
+                        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Selecciona tu tienda</h3>
                         <select
                           value={selectedStoreId}
                           onChange={(e) => setSelectedStoreId(Number(e.target.value))}
                           className="w-full text-xs py-1.5 px-2.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] transition-all cursor-pointer"
+                          aria-label="Selecciona la tienda para ver productos disponibles"
                         >
                           {tiendas.length === 0 ? (
-                            <option value={1}>Cargando tiendas...</option>
+                            <option value={0}>Cargando tiendas...</option>
                           ) : (
-                            tiendas.map((tienda) => (
-                              <option key={tienda.id} value={tienda.id}>
-                                {tienda.city} — {tienda.address}
-                              </option>
-                            ))
+                            <>
+                              <option value={0}>Todas las tiendas</option>
+                              {tiendas.map((tienda) => (
+                                <option key={tienda.id} value={tienda.id}>
+                                  {tienda.name} — {tienda.city}
+                                </option>
+                              ))}
+                            </>
                           )}
                         </select>
                       </div>
@@ -1853,8 +1860,11 @@ function TiendaPageContent() {
                         }
 
                         const currentSubcategoryId = getCurrentSubcategoryForProduct()
-                        const productUrl = currentSubcategoryId 
-                          ? `/producto/${product.id}?subcategoria=${currentSubcategoryId}`
+                        const queryParams = new URLSearchParams()
+                        if (currentSubcategoryId) queryParams.set('subcategoria', String(currentSubcategoryId))
+                        if (selectedStoreId > 0) queryParams.set('tienda', String(selectedStoreId))
+                        const productUrl = queryParams.toString()
+                          ? `/producto/${product.id}?${queryParams}`
                           : `/producto/${product.id}`
 
                         return (
@@ -2054,20 +2064,24 @@ function TiendaPageContent() {
             <div className="space-y-4">
               {/* Selector de tienda */}
               <div>
-                <h3 className="text-base font-semibold text-gray-700 mb-2">Selecciona tu ciudad</h3>
+                <h3 className="text-base font-semibold text-gray-700 mb-2">Selecciona tu tienda</h3>
                 <select
                   value={selectedStoreId}
                   onChange={(e) => setSelectedStoreId(Number(e.target.value))}
                   className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] transition-all cursor-pointer"
+                  aria-label="Selecciona la tienda para ver productos disponibles"
                 >
                   {tiendas.length === 0 ? (
-                    <option value={1}>Cargando tiendas...</option>
+                    <option value={0}>Cargando tiendas...</option>
                   ) : (
-                    tiendas.map((tienda) => (
-                      <option key={tienda.id} value={tienda.id}>
-                        {tienda.city} — {tienda.address}
-                      </option>
-                    ))
+                    <>
+                      <option value={0}>Todas las tiendas</option>
+                      {tiendas.map((tienda) => (
+                        <option key={tienda.id} value={tienda.id}>
+                          {tienda.name} — {tienda.city}
+                        </option>
+                      ))}
+                    </>
                   )}
                 </select>
               </div>
