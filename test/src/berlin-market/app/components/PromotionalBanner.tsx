@@ -21,20 +21,37 @@ export default function PromotionalBanner() {
           return
         }
 
-        if (data) {
-          // Obtener las líneas que no estén vacías
-          const validLines: string[] = []
-          if (data.line1 && data.line1.trim() !== '') validLines.push(data.line1)
-          if (data.line2 && data.line2.trim() !== '') validLines.push(data.line2)
-          if (data.line3 && data.line3.trim() !== '') validLines.push(data.line3)
-          setLines(validLines)
+        if (!data) {
+          setLines([])
+          return
         }
+
+        const rawLines = [
+          data.line1?.trim() ?? '',
+          data.line2?.trim() ?? '',
+          data.line3?.trim() ?? '',
+        ]
+
+        // Consideramos "vacío" cuando no hay ningún carácter alfanumérico real
+        const hasRealContent = rawLines.some((line) =>
+          /[a-zA-Z0-9ÁÉÍÓÚáéíóúÑñ]/.test(line)
+        )
+
+        if (!hasRealContent) {
+          setLines([])
+          return
+        }
+
+        const validLines = rawLines.filter((line) => line !== '')
+
+        setLines(validLines)
       } catch (error) {
         console.error('Error inesperado cargando líneas del banner:', error)
+        setLines([])
       }
     }
 
-    fetchBannerLines()
+    void fetchBannerLines()
   }, [])
 
   // Si no hay líneas, no mostrar el banner

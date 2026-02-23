@@ -128,7 +128,7 @@ const Footer = () => {
             </div>
           </div>
           {/* Footer Rabbit and Social Media */}
-          <div className="md:col-span-1 lg:col-span-3 flex flex-col items-center md:items-start">
+          <div className="md:col-span-1 lg:col-span-3 flex flex-col items-center">
                 {/* Footer Rabbit Image - responsive size */}
                 <div className="relative w-full max-w-[200px] h-[120px] sm:max-w-[250px] sm:h-[150px] lg:max-w-[300px] lg:h-[200px]">
                   <Image
@@ -144,39 +144,22 @@ const Footer = () => {
                 {/* Social Media Icons - responsive spacing and touch targets */}
                 <div className="flex flex-wrap justify-center gap-4 sm:gap-6 lg:gap-8 mt-4 mb-0">
                   <Link
-                    href="#"
+                    href="https://www.facebook.com/profile.php?id=61579888082825&notif_id=1766082992571868&notif_t=page_user_activity&ref=notif#"
+                    target="_blank"
+                    rel="noreferrer"
                     className="text-white hover:text-gray-200 p-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                     aria-label="Facebook"
                   >
                     <Image src="/icons/facebook.png" alt="" width={30} height={30} className="w-7 h-7 sm:w-8 sm:h-8" />
                   </Link>
                   <Link
-                    href="#"
+                    href="https://www.instagram.com/unisantander_s.a.s/"
+                    target="_blank"
+                    rel="noreferrer"
                     className="text-white hover:text-gray-200 p-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                     aria-label="Instagram"
                   >
                     <Image src="/icons/instagram.png" alt="" width={30} height={30} className="w-7 h-7 sm:w-8 sm:h-8" />
-                  </Link>
-                  <Link
-                    href="#"
-                    className="text-white hover:text-gray-200 p-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                    aria-label="YouTube"
-                  >
-                    <Image src="/icons/youtube.png" alt="" width={30} height={30} className="w-7 h-7 sm:w-8 sm:h-8" />
-                  </Link>
-                  <Link
-                    href="#"
-                    className="text-white hover:text-gray-200 p-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                    aria-label="TikTok"
-                  >
-                    <Image src="/icons/tiktok.png" alt="" width={30} height={30} className="w-7 h-7 sm:w-8 sm:h-8" />
-                  </Link>
-                  <Link
-                    href="#"
-                    className="text-white hover:text-gray-200 p-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                    aria-label="WhatsApp"
-                  >
-                    <Image src="/icons/whatsapp.png" alt="" width={30} height={30} className="w-7 h-7 sm:w-8 sm:h-8" />
                   </Link>
                 </div>
               </div>
