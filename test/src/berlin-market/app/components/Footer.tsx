@@ -161,6 +161,15 @@ const Footer = () => {
                   >
                     <Image src="/icons/instagram.png" alt="" width={30} height={30} className="w-7 h-7 sm:w-8 sm:h-8" />
                   </Link>
+                  <Link
+                    href="https://www.tiktok.com/@unisantander.s.a"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-white hover:text-gray-200 p-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                    aria-label="TikTok"
+                  >
+                    <Image src="/icons/tiktok.png" alt="" width={30} height={30} className="w-7 h-7 sm:w-8 sm:h-8" />
+                  </Link>
                 </div>
               </div>
         </div>

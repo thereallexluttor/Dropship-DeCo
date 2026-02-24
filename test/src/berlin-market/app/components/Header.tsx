@@ -15,6 +15,7 @@ import {
   Briefcase,
 } from "lucide-react"
 import { useState } from "react"
+import type { ProductWithDetails } from "../hooks/useProducts"
 import {
   Sheet,
   SheetContent,
@@ -37,9 +38,26 @@ interface HeaderProps {
   onSearchChange?: (query: string) => void
   onSearchSubmit?: (e: React.FormEvent) => void
   onAccountClick?: () => void
+  onSearchInputFocus?: () => void
+  onSearchInputBlur?: () => void
+  autocompleteResults?: ProductWithDetails[]
+  isAutocompleteOpen?: boolean
+  isLiveSearching?: boolean
+  onSelectAutocompleteProduct?: (product: ProductWithDetails) => void
 }
 
-export default function Header({ searchQuery = "", onSearchChange, onSearchSubmit, onAccountClick }: HeaderProps) {
+export default function Header({
+  searchQuery = "",
+  onSearchChange,
+  onSearchSubmit,
+  onAccountClick,
+  onSearchInputFocus,
+  onSearchInputBlur,
+  autocompleteResults = [],
+  isAutocompleteOpen = false,
+  isLiveSearching = false,
+  onSelectAutocompleteProduct,
+}: HeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -102,6 +120,8 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   type="text"
                   value={searchQuery}
                   onChange={(e) => onSearchChange?.(e.target.value)}
+                  onFocus={onSearchInputFocus}
+                  onBlur={onSearchInputBlur}
                   placeholder="Buscar..."
                   className="w-full h-9 px-3 pr-8 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                 />
@@ -111,6 +131,33 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                 >
                   <Search className="h-4 w-4" />
                 </button>
+
+                {isAutocompleteOpen && (isLiveSearching || autocompleteResults.length > 0) && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white text-black rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto z-50">
+                    {isLiveSearching && (
+                      <div className="px-4 py-2 text-sm text-gray-500">Buscando...</div>
+                    )}
+                    {!isLiveSearching &&
+                      autocompleteResults.map((product) => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            onSelectAutocompleteProduct?.(product)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex flex-col"
+                        >
+                          <span className="font-medium line-clamp-1">{product.nombre}</span>
+                          {product.descripcion && (
+                            <span className="text-xs text-gray-500 line-clamp-1">
+                              {product.descripcion}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </form>
             </div>
 
@@ -221,6 +268,8 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   type="text"
                   value={searchQuery}
                   onChange={(e) => onSearchChange?.(e.target.value)}
+                  onFocus={onSearchInputFocus}
+                  onBlur={onSearchInputBlur}
                   placeholder="Buscar productos..."
                   className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                 />
@@ -230,6 +279,33 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                 >
                   <Search className="h-5 w-5" />
                 </button>
+
+                {isAutocompleteOpen && (isLiveSearching || autocompleteResults.length > 0) && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white text-black rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto z-50">
+                    {isLiveSearching && (
+                      <div className="px-4 py-2 text-sm text-gray-500">Buscando...</div>
+                    )}
+                    {!isLiveSearching &&
+                      autocompleteResults.map((product) => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            onSelectAutocompleteProduct?.(product)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex flex-col"
+                        >
+                          <span className="font-medium line-clamp-1">{product.nombre}</span>
+                          {product.descripcion && (
+                            <span className="text-xs text-gray-500 line-clamp-1">
+                              {product.descripcion}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </form>
             </div>
 
@@ -310,6 +386,8 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   type="text"
                   value={searchQuery}
                   onChange={(e) => onSearchChange?.(e.target.value)}
+                  onFocus={onSearchInputFocus}
+                  onBlur={onSearchInputBlur}
                   placeholder="Buscar productos..."
                   className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                 />
@@ -319,6 +397,33 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                 >
                   <Search className="h-6 w-6" />
                 </button>
+
+                {isAutocompleteOpen && (isLiveSearching || autocompleteResults.length > 0) && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white text-black rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto z-50">
+                    {isLiveSearching && (
+                      <div className="px-4 py-2 text-sm text-gray-500">Buscando...</div>
+                    )}
+                    {!isLiveSearching &&
+                      autocompleteResults.map((product) => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            onSelectAutocompleteProduct?.(product)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex flex-col"
+                        >
+                          <span className="font-medium line-clamp-1">{product.nombre}</span>
+                          {product.descripcion && (
+                            <span className="text-xs text-gray-500 line-clamp-1">
+                              {product.descripcion}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </form>
             </div>
 
@@ -399,6 +504,8 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                   type="text"
                   value={searchQuery}
                   onChange={(e) => onSearchChange?.(e.target.value)}
+                  onFocus={onSearchInputFocus}
+                  onBlur={onSearchInputBlur}
                   placeholder="Busca el producto o categoria de tu preferencia..."
                   className="w-full h-10 px-4 pr-10 rounded-[15px] bg-gray-100 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#196428] text-sm border-2 border-gray-200"
                 />
@@ -408,6 +515,33 @@ export default function Header({ searchQuery = "", onSearchChange, onSearchSubmi
                 >
                   <Search className="h-7 w-7" />
                 </button>
+
+                {isAutocompleteOpen && (isLiveSearching || autocompleteResults.length > 0) && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white text-black rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto z-50">
+                    {isLiveSearching && (
+                      <div className="px-4 py-2 text-sm text-gray-500">Buscando...</div>
+                    )}
+                    {!isLiveSearching &&
+                      autocompleteResults.map((product) => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            onSelectAutocompleteProduct?.(product)
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex flex-col"
+                        >
+                          <span className="font-medium line-clamp-1">{product.nombre}</span>
+                          {product.descripcion && (
+                            <span className="text-xs text-gray-500 line-clamp-1">
+                              {product.descripcion}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </form>
             </div>
 

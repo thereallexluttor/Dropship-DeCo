@@ -931,28 +931,28 @@ function TiendaPageContent() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      try {
-        await searchProducts(searchQuery.trim())
-        // Si estamos en la página de tienda, la búsqueda se maneja internamente
-        // No necesitamos navegar a una nueva página
-      } catch (error) {
-        console.error("Error en la búsqueda:", error)
-      }
+    if (!searchQuery.trim()) {
+      return
+    }
+    try {
+      await searchProducts(searchQuery.trim())
+      setIsAutocompleteOpen(false)
+      clearLiveSearchResults()
+    } catch (error) {
+      console.error("Error en la búsqueda:", error)
     }
   }
 
-  // Funciones para manejar el autocompletado
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+  // Funciones para manejar el autocompletado del buscador del header
+  const handleSearchInputChange = (value: string) => {
     setSearchQuery(value)
     updateLiveSearchQuery(value)
 
-    // Mostrar autocompletado si hay texto
     if (value.trim()) {
       setIsAutocompleteOpen(true)
     } else {
       setIsAutocompleteOpen(false)
+      clearLiveSearchResults()
     }
   }
 
@@ -969,16 +969,12 @@ function TiendaPageContent() {
     }, 200)
   }
 
-  const handleCloseAutocomplete = () => {
-    setIsAutocompleteOpen(false)
-  }
-
   const handleSelectProduct = (product: ProductWithDetails) => {
     setSearchQuery(product.nombre)
     updateLiveSearchQuery(product.nombre)
-    // En la página de tienda, buscar el producto internamente
     searchProducts(product.nombre)
     setIsAutocompleteOpen(false)
+    clearLiveSearchResults()
   }
 
   // Crear categorías con datos reales de Supabase
@@ -1136,9 +1132,15 @@ function TiendaPageContent() {
       <div className="min-h-screen" style={{ backgroundColor: '#ffffff' }}>
         <Header
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchInputChange}
           onSearchSubmit={handleSearch}
           onAccountClick={() => setIsAccountDrawerOpen(true)}
+          onSearchInputFocus={handleSearchInputFocus}
+          onSearchInputBlur={handleSearchInputBlur}
+          autocompleteResults={liveSearchResults}
+          isAutocompleteOpen={isAutocompleteOpen}
+          isLiveSearching={isLiveSearching}
+          onSelectAutocompleteProduct={handleSelectProduct}
         />
 
         <main>
