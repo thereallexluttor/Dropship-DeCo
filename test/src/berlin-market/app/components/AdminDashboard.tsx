@@ -1675,10 +1675,10 @@ const AdminDashboard = () => {
         });
       });
       
-      stocksValidos = stocksExpandidos.filter(stock => stock.cantidad > 0 && stock.precio > 0);
+      stocksValidos = stocksExpandidos.filter(stock => stock.cantidad > 0 && stock.precio >= 0);
 
       if (stocksValidos.length === 0) {
-        alert('Debe haber al menos un tamaño con cantidad y precio mayores a 0');
+        alert('Debe haber al menos un tamaño con cantidad y precio mayores o iguales a 0');
         return;
       }
 
@@ -1707,8 +1707,8 @@ const AdminDashboard = () => {
         typeof p === 'string' ? parseFloat(p) || 0 : p
       );
 
-      if (preciosValidos.some(p => p <= 0)) {
-        alert('Todos los precios deben ser mayores a 0');
+      if (preciosValidos.some(p => p < 0)) {
+        alert('Todos los precios deben ser mayores o iguales a 0');
         return;
       }
 
@@ -1858,10 +1858,10 @@ const AdminDashboard = () => {
         });
       });
 
-      stocksValidos = stocksExpandidos.filter((s) => s.cantidad > 0 && s.precio > 0);
+      stocksValidos = stocksExpandidos.filter((s) => s.cantidad > 0 && s.precio >= 0);
 
       if (stocksValidos.length === 0) {
-        alert('Debe haber al menos un tamaño con cantidad y precio mayores a 0');
+        alert('Debe haber al menos un tamaño con cantidad y precio mayores o iguales a 0');
         return;
       }
     } else if (producto.tamano && producto.tamano.length > 0) {
@@ -1883,8 +1883,8 @@ const AdminDashboard = () => {
       }
 
       const preciosNumeros = producto.precios.map((p) => (typeof p === 'string' ? parseFloat(p) || 0 : p));
-      if (preciosNumeros.some((p) => p <= 0)) {
-        alert('Todos los precios deben ser mayores a 0');
+      if (preciosNumeros.some((p) => p < 0)) {
+        alert('Todos los precios deben ser mayores o iguales a 0');
         return;
       }
 

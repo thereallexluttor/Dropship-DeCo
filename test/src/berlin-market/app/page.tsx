@@ -752,16 +752,18 @@ export default function Home() {
                             </div>
                           )}
                           {/* Botón de carrito flotante */}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleAddToCart(producto)
-                            }}
-                            className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
-                          >
-                            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                          </button>
+                          {hasPrices && currentPrice > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleAddToCart(producto)
+                              }}
+                              className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+                            >
+                              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                            </button>
+                          )}
                         </div>
                         
                         {/* Contenido de la card */}
@@ -826,12 +828,20 @@ export default function Home() {
                                     -{producto.descuento_valor}%
                                   </span>
                                 </div>
+                              ) : currentPrice === 0 ? (
+                                <span className="text-lg sm:text-xl font-black text-gray-900">
+                                  Preguntar en tienda
+                                </span>
                               ) : (
                                 <span className="text-lg sm:text-xl font-black text-gray-900">
                                   ${currentPrice.toLocaleString('es-CO')}
                                 </span>
                               )}
                             </div>
+                          ) : hasPrices && currentPrice === 0 ? (
+                            <span className="text-lg sm:text-xl font-black text-gray-900">
+                              Preguntar en tienda
+                            </span>
                           ) : (
                             <p className="mt-auto text-gray-400 text-xs italic">Precio no disponible</p>
                           )}

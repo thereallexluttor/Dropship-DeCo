@@ -71,6 +71,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
+import { stores, type Store } from "../../lib/stores"
 
 // Styles for the header
 const headerStyles = `
@@ -500,6 +501,40 @@ function ProductPageContent() {
       const storeId = p.stocks?.[selectedSizeIndex]?.tienda ?? p.Tienda ?? selectedStoreIdFromUrl ?? 0
       addToCart(p, quantity, selectedSizeIndex, storeId)
     }
+  }
+
+  const handleAskStore = () => {
+    const p = displayProduct || product
+    if (!p) return
+
+    const storeId = p.stocks?.[selectedSizeIndex]?.tienda ?? p.Tienda ?? selectedStoreIdFromUrl ?? 0
+    const store = stores.find((s: Store) => s.id === storeId)
+
+    const sizeInfo = (displayProduct || product)?.tamano?.[selectedSizeIndex]
+    const sizeText = sizeInfo ? `, tamaño ${sizeInfo.cantidad} ${sizeInfo.unidad}` : ''
+    const storeText = store ? ` en la tienda ${store.name} (${store.city})` : ''
+
+    let productUrl = ''
+    if (typeof window !== 'undefined' && p.id) {
+      try {
+        const url = new URL(window.location.href)
+        productUrl = `${url.origin}/producto/${p.id}${selectedStoreIdFromUrl ? `?tienda=${selectedStoreIdFromUrl}` : ''}`
+      } catch {
+        productUrl = ''
+      }
+    }
+
+    const message =
+      `¡Hola! Me gustaría más información sobre el producto "${p.nombre}"${sizeText}${storeText}.` +
+      (productUrl ? `\n\nLink del producto: ${productUrl}` : '')
+
+    if (store?.phone) {
+      const whatsappUrl = `https://wa.me/${store.phone}?text=${encodeURIComponent(message)}`
+      window.open(whatsappUrl, '_blank')
+      return
+    }
+
+    alert('No se encontró el teléfono de la tienda para este producto. Por favor contáctanos por los otros medios disponibles.')
   }
 
   // Cambiar cantidad
@@ -1180,20 +1215,28 @@ function ProductPageContent() {
                    {product.descripcion || "Descripción detallada del producto. Fabricado con los mejores materiales para garantizar calidad y durabilidad."}
                </p>
 
-               {/* Price */}
-               <div className="mb-8">
-                   <div className="flex items-baseline gap-3">
-                       <span className="text-4xl font-bold text-gray-900">
-                           ${finalPrice.toLocaleString('es-CO')}
-                       </span>
-                       {hasDiscount && (
-                          <span className="text-lg text-gray-400 line-through decoration-2 font-medium">
-                              ${currentPrice.toLocaleString('es-CO')}
+              {/* Price */}
+              <div className="mb-8">
+                  <div className="flex items-baseline gap-3">
+                      {finalPrice > 0 ? (
+                        <>
+                          <span className="text-4xl font-bold text-gray-900">
+                              ${finalPrice.toLocaleString('es-CO')}
                           </span>
-                       )}
-                   </div>
-                   <span className="text-xs text-gray-400 font-medium mt-1 block">Price includes VAT</span>
-               </div>
+                          {hasDiscount && (
+                             <span className="text-lg text-gray-400 line-through decoration-2 font-medium">
+                                 ${currentPrice.toLocaleString('es-CO')}
+                             </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-4xl font-bold text-gray-900">
+                          Preguntar en tienda
+                        </span>
+                      )}
+                  </div>
+                  <span className="text-xs text-gray-400 font-medium mt-1 block">Price includes VAT</span>
+              </div>
 
                {/* Stock Info */}
                <div className="mb-8">
@@ -1235,34 +1278,45 @@ function ProductPageContent() {
                    </div>
                )}
 
-               {/* Actions */}
-               <div className="mt-auto flex flex-col gap-4">
-                   <div className="flex items-center gap-4">
-                       {/* Quantity */}
-                       <div className="flex items-center border border-gray-200 rounded-xl h-14 w-32 px-2 bg-white">
-                           <button 
-                               onClick={decrementQuantity}
-                               disabled={quantity <= 1}
-                               className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors text-xl disabled:opacity-30"
-                           >−</button>
-                           <span className="flex-1 text-center font-bold text-gray-900 text-lg">{quantity}</span>
-                           <button 
-                               onClick={incrementQuantity}
-                               disabled={quantity >= currentStock}
-                               className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors text-xl disabled:opacity-30"
-                           >+</button>
-                       </div>
-                       
-                       {/* Add to Cart Button */}
-                       <button
-                           onClick={handleAddToCart}
-                           disabled={currentStock === 0}
-                           className="flex-1 h-14 bg-[#196428] hover:bg-[#145020] text-white rounded-xl font-normal text-sm tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                       >
-                           Agregar al carrito
-                       </button>
-                   </div>
-               </div>
+              {/* Actions */}
+              <div className="mt-auto flex flex-col gap-4">
+                  {finalPrice > 0 ? (
+                    <div className="flex items-center gap-4">
+                        {/* Quantity */}
+                        <div className="flex items-center border border-gray-200 rounded-xl h-14 w-32 px-2 bg-white">
+                            <button 
+                                onClick={decrementQuantity}
+                                disabled={quantity <= 1}
+                                className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors text-xl disabled:opacity-30"
+                            >−</button>
+                            <span className="flex-1 text-center font-bold text-gray-900 text-lg">{quantity}</span>
+                            <button 
+                                onClick={incrementQuantity}
+                                disabled={quantity >= currentStock}
+                                className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors text-xl disabled:opacity-30"
+                            >+</button>
+                        </div>
+                        
+                        {/* Add to Cart Button */}
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={currentStock === 0}
+                            className="flex-1 h-14 bg-[#196428] hover:bg-[#145020] text-white rounded-xl font-normal text-sm tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                        >
+                            Agregar al carrito
+                        </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={handleAskStore}
+                        className="flex-1 h-14 bg-[#196428] hover:bg-[#145020] text-white rounded-xl font-normal text-sm tracking-wider transition-all shadow-sm hover:shadow-md"
+                      >
+                        Preguntar
+                      </button>
+                    </div>
+                  )}
+              </div>
             </div>
           </div>
 
@@ -1396,12 +1450,20 @@ function ProductPageContent() {
                                     -{relatedProduct.descuento_valor}%
                                   </span>
                                 </div>
+                              ) : currentPrice === 0 ? (
+                                <span className="text-lg sm:text-xl font-black text-gray-900">
+                                  Preguntar en tienda
+                                </span>
                               ) : (
                                 <span className="text-lg sm:text-xl font-black text-gray-900">
                                   ${currentPrice.toLocaleString('es-CO')}
                                 </span>
                               )}
                             </div>
+                          ) : hasPrices && currentPrice === 0 ? (
+                            <span className="text-lg sm:text-xl font-black text-gray-900">
+                              Preguntar en tienda
+                            </span>
                           ) : (
                             <p className="mt-auto text-gray-400 text-xs italic">Precio no disponible</p>
                           )}

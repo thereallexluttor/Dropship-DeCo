@@ -1899,16 +1899,18 @@ function TiendaPageContent() {
                                   NUEVO
                                 </div>
                               )}
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  handleAddToCart(product)
-                                }}
-                                className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
-                              >
-                                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                              </button>
+                              {hasPrices && currentPrice > 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    handleAddToCart(product)
+                                  }}
+                                  className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+                                >
+                                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                                </button>
+                              )}
                             </div>
                             <div className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5">
                               <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-[#196428] transition-colors">{product.nombre}</h3>
@@ -1965,6 +1967,10 @@ function TiendaPageContent() {
                                     </span>
                                   )}
                                 </div>
+                          ) : hasPrices && currentPrice === 0 ? (
+                                <span className="text-lg sm:text-xl font-black text-gray-900">
+                                  Preguntar en tienda
+                                </span>
                               ) : (
                                 <p className="mt-auto text-gray-400 text-xs italic">Precio no disponible</p>
                               )}
