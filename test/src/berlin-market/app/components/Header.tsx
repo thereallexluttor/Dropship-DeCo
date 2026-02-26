@@ -146,14 +146,30 @@ export default function Header({
                             e.preventDefault()
                             onSelectAutocompleteProduct?.(product)
                           }}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex flex-col"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-3"
                         >
-                          <span className="font-medium line-clamp-1">{product.nombre}</span>
-                          {product.descripcion && (
-                            <span className="text-xs text-gray-500 line-clamp-1">
-                              {product.descripcion}
-                            </span>
-                          )}
+                          <div className="relative w-10 h-10 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+                            {product.imagen_url ? (
+                              <Image
+                                src={product.imagen_url}
+                                alt={product.nombre}
+                                fill
+                                className="object-contain"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
+                                Sin foto
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium line-clamp-1">{product.nombre}</span>
+                            {product.descripcion && (
+                              <span className="text-xs text-gray-500 line-clamp-1">
+                                {product.descripcion}
+                              </span>
+                            )}
+                          </div>
                         </button>
                       ))}
                   </div>
@@ -294,14 +310,30 @@ export default function Header({
                             e.preventDefault()
                             onSelectAutocompleteProduct?.(product)
                           }}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex flex-col"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-3"
                         >
-                          <span className="font-medium line-clamp-1">{product.nombre}</span>
-                          {product.descripcion && (
-                            <span className="text-xs text-gray-500 line-clamp-1">
-                              {product.descripcion}
-                            </span>
-                          )}
+                          <div className="relative w-10 h-10 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+                            {product.imagen_url ? (
+                              <Image
+                                src={product.imagen_url}
+                                alt={product.nombre}
+                                fill
+                                className="object-contain"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                Sin foto
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium line-clamp-1">{product.nombre}</span>
+                            {product.descripcion && (
+                              <span className="text-xs text-gray-500 line-clamp-1">
+                                {product.descripcion}
+                              </span>
+                            )}
+                          </div>
                         </button>
                       ))}
                   </div>
@@ -412,14 +444,30 @@ export default function Header({
                             e.preventDefault()
                             onSelectAutocompleteProduct?.(product)
                           }}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex flex-col"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-3"
                         >
-                          <span className="font-medium line-clamp-1">{product.nombre}</span>
-                          {product.descripcion && (
-                            <span className="text-xs text-gray-500 line-clamp-1">
-                              {product.descripcion}
-                            </span>
-                          )}
+                          <div className="relative w-10 h-10 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+                            {product.imagen_url ? (
+                              <Image
+                                src={product.imagen_url}
+                                alt={product.nombre}
+                                fill
+                                className="object-contain"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                Sin foto
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium line-clamp-1">{product.nombre}</span>
+                            {product.descripcion && (
+                              <span className="text-xs text-gray-500 line-clamp-1">
+                                {product.descripcion}
+                              </span>
+                            )}
+                          </div>
                         </button>
                       ))}
                   </div>
@@ -530,14 +578,30 @@ export default function Header({
                             e.preventDefault()
                             onSelectAutocompleteProduct?.(product)
                           }}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex flex-col"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-3"
                         >
-                          <span className="font-medium line-clamp-1">{product.nombre}</span>
-                          {product.descripcion && (
-                            <span className="text-xs text-gray-500 line-clamp-1">
-                              {product.descripcion}
-                            </span>
-                          )}
+                          <div className="relative w-10 h-10 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
+                            {product.imagen_url ? (
+                              <Image
+                                src={product.imagen_url}
+                                alt={product.nombre}
+                                fill
+                                className="object-contain"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                Sin foto
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium line-clamp-1">{product.nombre}</span>
+                            {product.descripcion && (
+                              <span className="text-xs text-gray-500 line-clamp-1">
+                                {product.descripcion}
+                              </span>
+                            )}
+                          </div>
                         </button>
                       ))}
                   </div>

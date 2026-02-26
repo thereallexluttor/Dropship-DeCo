@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-
-// Configuración desde variables de entorno
-// Para producción, configurar en .env.local o variables de entorno del servidor
-const AVAL_BASE_URL = process.env.AVAL_BASE_URL || 'https://checkout.test.avalpaycenter.com'
-const AVAL_LOGIN = process.env.AVAL_LOGIN || '4e0401c7a15ab65aee70b3eadfac901d'
-const AVAL_SECRET_KEY = process.env.AVAL_SECRET_KEY || 'AxVOBpgS6E4jWv4t'
+import { AVAL_BASE_URL, AVAL_LOGIN, AVAL_SECRET_KEY } from '@/lib/avalpay'
 
 // Genera la estructura de autenticación requerida por la pasarela
 function buildAuth() {

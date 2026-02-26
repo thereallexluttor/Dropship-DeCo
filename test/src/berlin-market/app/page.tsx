@@ -28,7 +28,7 @@ import {
 import { useState, useEffect, useRef, useMemo } from "react"
 import { supabase, Producto, UI } from '@/lib/supabase'
 import { useCategories } from './hooks/useCategories'
-import { useProducts } from './hooks/useProducts'
+import { useProducts, type ProductWithDetails } from './hooks/useProducts'
 import { useCart } from './contexts/CartContext'
 import { loadStoresFromSupabase, type Store } from './lib/stores'
 import { productAvailableInStore } from '@/lib/productStoreUtils'
@@ -323,24 +323,22 @@ export default function Home() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      try {
-        const results = await searchProducts(searchQuery.trim())
-        if (results.length > 0) {
-          // Navegar a la página de tienda con los resultados de búsqueda
-          window.location.href = `/tienda?search=${encodeURIComponent(searchQuery.trim())}`
-        } else {
-          console.log("No se encontraron productos para:", searchQuery)
-        }
-      } catch (error) {
-        console.error("Error en la búsqueda:", error)
-      }
+    if (!searchQuery.trim()) {
+      return
+    }
+
+    try {
+      await searchProducts(searchQuery.trim())
+      setIsAutocompleteOpen(false)
+      clearLiveSearchResults()
+      window.location.href = `/tienda?search=${encodeURIComponent(searchQuery.trim())}`
+    } catch (error) {
+      console.error("Error en la búsqueda:", error)
     }
   }
 
   // Funciones para manejar el autocompletado
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+  const handleSearchInputChange = (value: string) => {
     setSearchQuery(value)
     updateLiveSearchQuery(value)
 
@@ -349,6 +347,7 @@ export default function Home() {
       setIsAutocompleteOpen(true)
     } else {
       setIsAutocompleteOpen(false)
+      clearLiveSearchResults()
     }
   }
 
@@ -365,13 +364,11 @@ export default function Home() {
     }, 200)
   }
 
-  const handleCloseAutocomplete = () => {
-    setIsAutocompleteOpen(false)
-  }
-
-  const handleSelectProduct = (product: any) => {
+  const handleSelectProduct = (product: ProductWithDetails) => {
     setSearchQuery(product.nombre)
     updateLiveSearchQuery(product.nombre)
+    setIsAutocompleteOpen(false)
+    clearLiveSearchResults()
     window.location.href = `/tienda?search=${encodeURIComponent(product.nombre)}`
   }
 
@@ -605,9 +602,15 @@ export default function Home() {
       <div className="flex flex-col flex-1" style={{ backgroundColor: '#ffffff', marginBottom: 0, paddingBottom: 0, minHeight: 0 }}>
         <Header
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchInputChange}
           onSearchSubmit={handleSearch}
           onAccountClick={() => setIsAccountDrawerOpen(true)}
+          onSearchInputFocus={handleSearchInputFocus}
+          onSearchInputBlur={handleSearchInputBlur}
+          autocompleteResults={liveSearchResults}
+          isAutocompleteOpen={isAutocompleteOpen}
+          isLiveSearching={isLiveSearching}
+          onSelectAutocompleteProduct={handleSelectProduct}
         />
 
         <main className="flex-1">

@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabase } from '@/lib/supabase'
-
-// Configuración desde variables de entorno
-const AVAL_BASE_URL = process.env.AVAL_BASE_URL || 'https://checkout.test.avalpaycenter.com'
-const AVAL_LOGIN = process.env.AVAL_LOGIN || '4e0401c7a15ab65aee70b3eadfac901d'
-const AVAL_SECRET_KEY = process.env.AVAL_SECRET_KEY || 'AxVOBpgS6E4jWv4t'
+import { AVAL_BASE_URL, AVAL_LOGIN, AVAL_SECRET_KEY, AVAL_SITE_URL } from '@/lib/avalpay'
 
 // Clave secreta para proteger el endpoint del cronjob
 const CRON_SECRET = process.env.CRON_SECRET || 'change-this-secret-key'
@@ -39,9 +35,9 @@ function buildAuth() {
  * Este endpoint se ejecuta periódicamente para verificar el estado de pagos pendientes
  * que no han recibido notificación del webhook.
  * 
- * Configuración en Vercel:
- * - Frecuencia configurada: Cada 20 minutos
- * - URL: https://tu-dominio.com/api/verify-pending-payments?secret=CRON_SECRET
+ * Configuración en producción:
+ * - Dominio: https://unisantander.co
+ * - URL: https://unisantander.co/api/verify-pending-payments?secret=CRON_SECRET
  */
 export async function GET(request: NextRequest) {
   try {

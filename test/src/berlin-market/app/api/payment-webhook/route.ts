@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabase } from '@/lib/supabase'
+import { AVAL_LOGIN, AVAL_SECRET_KEY } from '@/lib/avalpay'
 
 // Función para validar la autenticación del webhook
 function buildAuth() {
@@ -8,19 +9,17 @@ function buildAuth() {
   const nonceBuffer = crypto.randomBytes(16)
   const nonce = nonceBuffer.toString('base64')
 
-  const secretKey = process.env.AVAL_SECRET_KEY || ''
-  
   // tranKey = base64( sha1( nonce + seed + secretKey ) )
   const sha1 = crypto.createHash('sha1')
   sha1.update(Buffer.concat([
     nonceBuffer,
     Buffer.from(seed, 'utf8'),
-    Buffer.from(secretKey, 'utf8'),
+    Buffer.from(AVAL_SECRET_KEY, 'utf8'),
   ]))
   const tranKey = sha1.digest('base64')
 
   return {
-    login: process.env.AVAL_LOGIN || '',
+    login: AVAL_LOGIN,
     tranKey,
     nonce,
     seed,

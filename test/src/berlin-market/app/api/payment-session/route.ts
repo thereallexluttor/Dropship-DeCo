@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabase } from '@/lib/supabase'
-
-// Configuración desde variables de entorno
-// Para producción, configurar en .env.local o variables de entorno del servidor
-const AVAL_BASE_URL = process.env.AVAL_BASE_URL || 'https://checkout.test.avalpaycenter.com'
-const AVAL_LOGIN = process.env.AVAL_LOGIN || '4e0401c7a15ab65aee70b3eadfac901d'
-const AVAL_SECRET_KEY = process.env.AVAL_SECRET_KEY || 'AxVOBpgS6E4jWv4t'
+import {
+  AVAL_BASE_URL,
+  AVAL_LOGIN,
+  AVAL_SECRET_KEY,
+  AVAL_RETURN_URL,
+  AVAL_NOTIFICATION_URL,
+} from '@/lib/avalpay'
 
 // Genera la estructura de autenticación requerida por la pasarela
 function buildAuth() {
@@ -55,12 +56,9 @@ export async function POST(request: NextRequest) {
 
     const expiration = new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutos
 
-    const origin = request.nextUrl.origin
-    // El returnUrl incluirá el requestId después de crear la sesión
-    const returnUrl = `${origin}/carrito?payment_return=true`
-    
-    // URL de notificación (webhook) - configurada desde variables de entorno o usando el origin
-    const notificationUrl = process.env.AVAL_NOTIFICATION_URL || `${origin}/api/payment-webhook`
+    // URLs fijas para el entorno productivo en unisantander.co
+    const returnUrl = AVAL_RETURN_URL
+    const notificationUrl = AVAL_NOTIFICATION_URL
 
     const sessionPayload = {
       locale: 'es_CO',
@@ -76,8 +74,6 @@ export async function POST(request: NextRequest) {
       expiration,
       returnUrl,
       // Incluir URL de notificación si la API de Evertec la soporta
-      // Algunas pasarelas usan 'notificationUrl', otras 'notifyUrl' o 'webhookUrl'
-      // Consultar documentación de Evertec para el nombre exacto del campo
       ...(notificationUrl && { notificationUrl }),
       ipAddress: ipAddress || '127.0.0.1',
       userAgent: userAgent || 'Unisantander WC',
