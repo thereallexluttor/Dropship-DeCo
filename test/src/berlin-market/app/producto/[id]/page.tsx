@@ -1278,45 +1278,62 @@ function ProductPageContent() {
                    </div>
                )}
 
-              {/* Actions */}
-              <div className="mt-auto flex flex-col gap-4">
-                  {finalPrice > 0 ? (
-                    <div className="flex items-center gap-4">
-                        {/* Quantity */}
-                        <div className="flex items-center border border-gray-200 rounded-xl h-14 w-32 px-2 bg-white">
-                            <button 
-                                onClick={decrementQuantity}
-                                disabled={quantity <= 1}
-                                className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors text-xl disabled:opacity-30"
-                            >−</button>
-                            <span className="flex-1 text-center font-bold text-gray-900 text-lg">{quantity}</span>
-                            <button 
-                                onClick={incrementQuantity}
-                                disabled={quantity >= currentStock}
-                                className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors text-xl disabled:opacity-30"
-                            >+</button>
-                        </div>
-                        
-                        {/* Add to Cart Button */}
-                        <button
-                            onClick={handleAddToCart}
-                            disabled={currentStock === 0}
-                            className="flex-1 h-14 bg-[#196428] hover:bg-[#145020] text-white rounded-xl font-normal text-sm tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                        >
-                            Agregar al carrito
-                        </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={handleAskStore}
-                        className="flex-1 h-14 bg-[#196428] hover:bg-[#145020] text-white rounded-xl font-normal text-sm tracking-wider transition-all shadow-sm hover:shadow-md"
-                      >
-                        Preguntar
-                      </button>
-                    </div>
-                  )}
-              </div>
+             {/* Actions */}
+             <div className="mt-auto flex flex-col gap-4">
+                 {finalPrice > 0 ? (
+                   <>
+                     <div className="flex items-center gap-4">
+                         {/* Quantity */}
+                         <div className="flex items-center border border-gray-200 rounded-xl h-14 w-32 px-2 bg-white">
+                             <button 
+                                 onClick={decrementQuantity}
+                                 disabled={quantity <= 1}
+                                 className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors text-xl disabled:opacity-30"
+                             >−</button>
+                             <span className="flex-1 text-center font-bold text-gray-900 text-lg">{quantity}</span>
+                             <button 
+                                 onClick={incrementQuantity}
+                                 disabled={quantity >= currentStock}
+                                 className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-black transition-colors text-xl disabled:opacity-30"
+                             >+</button>
+                         </div>
+                         
+                         {/* Add to Cart Button */}
+                         <button
+                             onClick={handleAddToCart}
+                             disabled={currentStock === 0}
+                             className="flex-1 h-14 bg-[#196428] hover:bg-[#145020] text-white rounded-xl font-normal text-sm tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                         >
+                             Agregar al carrito
+                         </button>
+                     </div>
+                     <div className="flex items-center gap-3 text-xs text-gray-600 mt-1">
+                       <Link
+                         href="/carrito"
+                         className="text-[#196428] font-medium hover:underline"
+                       >
+                         Ver carrito
+                       </Link>
+                       <span className="text-gray-300">|</span>
+                       <Link
+                         href="/tienda"
+                         className="hover:text-[#196428] hover:underline"
+                       >
+                         Seguir comprando
+                       </Link>
+                     </div>
+                   </>
+                 ) : (
+                   <div className="flex items-center gap-4">
+                     <button
+                       onClick={handleAskStore}
+                       className="flex-1 h-14 bg-[#196428] hover:bg-[#145020] text-white rounded-xl font-normal text-sm tracking-wider transition-all shadow-sm hover:shadow-md"
+                     >
+                       Preguntar
+                     </button>
+                   </div>
+                 )}
+             </div>
             </div>
           </div>
 

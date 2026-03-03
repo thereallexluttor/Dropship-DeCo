@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import fs from 'fs'
-import path from 'path'
 
 // Inicializar Resend con la API key
 const resend = new Resend('re_GJUqDTzA_7ebg7BLvry5HDYpsB4bfNCSg')
@@ -17,7 +15,8 @@ export async function POST(request: NextRequest) {
       totalAmount, 
       items, 
       orderStatus, 
-      address 
+      address,
+      userPhone
     } = body
 
     // Validar que tenemos todos los datos necesarios
@@ -103,6 +102,11 @@ export async function POST(request: NextRequest) {
                 <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">Dirección de entrega:</td>
                 <td style="padding: 8px 0; text-align: right;">${address}</td>
               </tr>` : ''}
+              ${userPhone ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; vertical-align: top;">Teléfono de contacto:</td>
+                <td style="padding: 8px 0; text-align: right;">${userPhone}</td>
+              </tr>` : ''}
             </table>
           </div>
 
@@ -127,40 +131,20 @@ export async function POST(request: NextRequest) {
           <!-- Total -->
           <div style="background-color: #196428; border-radius: 8px; padding: 20px; margin-bottom: 20px; color: #ffffff;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 20px; font-weight: 600;">Total:</span>
+              <span style="font-size: 20px; font-weight: 600;">Total pagado:</span>
               <span style="font-size: 28px; font-weight: bold;">$${totalAmount.toLocaleString('es-CO')}</span>
             </div>
           </div>
 
-          <!-- Payment Instructions -->
-          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
-            <h4 style="color: #92400e; margin: 0 0 15px 0; font-size: 18px; font-weight: bold;">📋 Pasos para completar tu compra</h4>
-
-            <div style="margin-bottom: 15px;">
-              <div style="margin-bottom: 12px;">
-                <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.6;"><strong>1. Escanea el código QR</strong> con tu aplicación bancaria o app de pagos para realizar el pago de <strong>$${totalAmount.toLocaleString('es-CO')}</strong></p>
-              </div>
-
-              <div style="margin-bottom: 12px;">
-                <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.6;"><strong>2. Toma una captura de pantalla</strong> o foto del comprobante de pago realizado</p>
-              </div>
-
-              <div style="margin-bottom: 15px;">
-                <p style="color: #78350f; margin: 0; font-size: 14px; line-height: 1.6;"><strong>3. Envíanos por WhatsApp</strong> la captura del comprobante junto con el <strong style="color: #196428; font-size: 16px;">#${orderId}</strong> a nuestro número: <strong style="font-size: 16px;">3112777907</strong></p>
-              </div>
-            </div>
-
-            <div style="text-align: center; margin: 20px 0; padding: 15px; background-color: #ffffff; border-radius: 8px; border: 2px solid #e5e7eb;">
-              <img src="https://ecwotusxxggwogzuzoup.supabase.co/storage/v1/object/public/images/QR/qr_pagos.jpg" alt="Código QR para pagos" style="max-width: 300px; width: 300px; height: 300px; border: 3px solid #e5e7eb; border-radius: 12px; padding: 15px; background-color: #ffffff; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
-              <p style="color: #196428; font-size: 16px; margin: 15px 0 0 0; font-weight: bold;">💰 Código QR para procesar el pago</p>
-              <p style="color: #6b7280; font-size: 14px; margin: 5px 0 0 0;">Total a pagar: <strong style="font-size: 18px; color: #196428;">$${totalAmount.toLocaleString('es-CO')}</strong></p>
-            </div>
-
-            <div style="background-color: #196428; color: white; padding: 12px; border-radius: 6px; margin-top: 15px;">
-              <p style="margin: 0; font-size: 14px; text-align: center;">
-                <strong>⏰ Una vez confirmado el pago por WhatsApp, procesaremos tu pedido y te mantendremos informado del estado de entrega.</strong>
-              </p>
-            </div>
+          <!-- Payment Info (Availpay) -->
+          <div style="background-color: #ecfdf3; border-left: 4px solid #16a34a; padding: 16px; margin-bottom: 20px; border-radius: 8px;">
+            <h4 style="color: #166534; margin: 0 0 10px 0; font-size: 18px; font-weight: bold;">✅ Pago recibido correctamente</h4>
+            <p style="color: #14532d; margin: 0 0 8px 0; font-size: 14px; line-height: 1.6;">
+              Hemos procesado tu pago a través de nuestra pasarela de pagos y tu pedido <strong>#${orderId}</strong> ha quedado registrado con éxito.
+            </p>
+            <p style="color: #166534; margin: 0 0 8px 0; font-size: 14px; line-height: 1.6;">
+              No necesitas realizar ningún paso adicional de pago. Te enviaremos actualizaciones cuando tu pedido cambie de estado y esté listo para despacho o recogida.
+            </p>
           </div>
 
           <!-- Contact Info -->
@@ -185,54 +169,20 @@ export async function POST(request: NextRequest) {
       </html>
     `
 
-    // Descargar la imagen QR desde Supabase como base64
-    let attachments: Array<{
-      filename: string;
-      content: string;
-      type: string;
-      disposition: string;
-      content_id: string;
-    }> = []
-
-    try {
-      const qrImageUrl = 'https://ecwotusxxggwogzuzoup.supabase.co/storage/v1/object/public/images/QR/qr_pagos.jpg'
-      const response = await fetch(qrImageUrl)
-
-      if (!response.ok) {
-        throw new Error(`Error al descargar la imagen QR: ${response.status}`)
-      }
-
-      const qrImageBuffer = await response.arrayBuffer()
-      const qrImageBase64 = Buffer.from(qrImageBuffer).toString('base64')
-
-      attachments = [{
-        filename: 'qr_pagos.jpg',
-        content: qrImageBase64,
-        type: 'image/jpeg',
-        disposition: 'inline',
-        content_id: 'qr_pagos'
-      }]
-    } catch (error) {
-      console.error('Error al descargar la imagen QR:', error)
-      // Continuar sin el attachment si hay error
-    }
-
     // Enviar correo al cliente
     const data = await resend.emails.send({
       from: 'noreply@unisantander.co',
       to: userEmail,
       subject: `🎯 Confirmación de Pedido #${orderId} - Unisantander`,
-      html: htmlContent,
-      attachments: attachments
+      html: htmlContent
     })
 
     // Enviar copia para registro interno
     const internalEmailData = await resend.emails.send({
       from: 'noreply@unisantander.co',
       to: 'distribuidora@unisander.com', //'distribuidora@unisander.com',
-      subject: `📋 Registro - Pedido #${orderId} - ${userName || 'Cliente'} - $${totalAmount.toLocaleString('es-CO')}`,
-      html: htmlContent,
-      attachments: attachments
+      subject: `📋 Registro - Pedido #${orderId} - ${userName || 'Cliente'} - $${totalAmount.toLocaleString('es-CO')}${userPhone ? ' - Tel: ' + userPhone : ''}`,
+      html: htmlContent
     })
 
     return NextResponse.json({

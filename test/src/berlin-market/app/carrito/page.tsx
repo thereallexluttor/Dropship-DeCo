@@ -98,6 +98,13 @@ export default function CarritoPage() {
   const [modalTelefono, setModalTelefono] = useState("")
   const [modalDireccion, setModalDireccion] = useState("")
 
+  // Estado para checkout como invitado
+  const [isGuestCheckout, setIsGuestCheckout] = useState(false)
+  const [isGuestModalOpen, setIsGuestModalOpen] = useState(false)
+  const [guestName, setGuestName] = useState("")
+  const [guestPhone, setGuestPhone] = useState("")
+  const [guestEmail, setGuestEmail] = useState("")
+
   // Estado para mostrar carga durante el procesamiento del pago
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
@@ -861,191 +868,234 @@ export default function CarritoPage() {
     debugCartState('INICIO_HANDLE_PAYMENT')
 
     if (!user) {
-      // Si no está autenticado, mostrar modal de autenticación
-      console.log('🔐 Usuario no autenticado - mostrando modal de login')
+      // Si no está autenticado, mostrar modal de autenticación / invitado
+      console.log('🔐 Usuario no autenticado - mostrando modal de login / invitado')
       setIsAuthModalOpen(true)
-    } else {
-      // Verificar si hay un pago pendiente antes de permitir crear uno nuevo
-      const pendingOrder = await checkPendingPayment()
+      return
+    }
+
+    // Usuario autenticado: verificar si hay un pago pendiente antes de permitir crear uno nuevo
+    const pendingOrder = await checkPendingPayment()
+    
+    if (pendingOrder) {
+      const orderAge = Math.round((Date.now() - new Date(pendingOrder.fecha).getTime()) / 1000 / 60)
+      const message = `⚠️ Tienes un pedido pendiente de pago.\n\n` +
+        `📦 Pedido #${pendingOrder.id}\n` +
+        `💰 Total: $${pendingOrder.total.toLocaleString('es-CO')}\n` +
+        `⏰ Creado hace ${orderAge} minuto(s)\n\n` +
+        `Por favor, completa el pago de este pedido antes de crear uno nuevo para evitar pagos duplicados.\n\n` +
+        `Si ya realizaste el pago, espera unos momentos y verifica tu historial de compras.`
       
-      if (pendingOrder) {
-        const orderAge = Math.round((Date.now() - new Date(pendingOrder.fecha).getTime()) / 1000 / 60)
-        const message = `⚠️ Tienes un pedido pendiente de pago.\n\n` +
-          `📦 Pedido #${pendingOrder.id}\n` +
-          `💰 Total: $${pendingOrder.total.toLocaleString('es-CO')}\n` +
-          `⏰ Creado hace ${orderAge} minuto(s)\n\n` +
-          `Por favor, completa el pago de este pedido antes de crear uno nuevo para evitar pagos duplicados.\n\n` +
-          `Si ya realizaste el pago, espera unos momentos y verifica tu historial de compras.`
-        
-        alert(message)
+      alert(message)
+      return
+    }
+
+    try {
+      // Obtener información del usuario desde la tabla usuarios
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('id, nombre, telefono')
+        .eq('correo', user.email)
+        .single() as { data: { id: number; nombre: string; telefono?: string } | null; error: any }
+
+      if (userError || !userData) {
+        alert('Error: No se pudo encontrar la información del usuario')
         return
       }
 
-      // Validar que el carrito no esté vacío
-      if (items.length === 0) {
-        alert('Tu carrito está vacío. Agrega algunos productos antes de proceder al pago.')
-        return
+      await processPaymentForUser(
+        userData.id,
+        user.email,
+        (userData as any).nombre || '',
+        (userData as any).telefono || ''
+      )
+    } catch (error) {
+      console.error('Error en el proceso de pago:', error)
+      alert('Error inesperado al procesar el pedido. Por favor, inténtalo de nuevo.')
+      setIsProcessingPayment(false)
+    }
+  }
+
+  // Función reutilizable para procesar el pago (usuario registrado o invitado)
+  const processPaymentForUser = async (userId: number, userEmail: string, userName: string, userPhone?: string) => {
+    // Validar que el carrito no esté vacío
+    if (items.length === 0) {
+      alert('Tu carrito está vacío. Agrega algunos productos antes de proceder al pago.')
+      return
+    }
+
+    // Validar dirección y zona de entrega
+    if (!pickupInStore && !deliveryAddress.trim()) {
+      alert('Por favor ingresa la dirección de entrega y detalles antes de confirmar el pedido.')
+      return
+    }
+    if (!pickupInStore && !deliveryZone) {
+      alert('Por favor selecciona la ciudad/zona de entrega para calcular el envío.')
+      return
+    }
+
+    // Mostrar indicador de carga
+    setIsProcessingPayment(true)
+
+    try {
+      // Validar que todos los productos tienen IDs válidos
+      for (const item of items) {
+        if (!item.id || item.id <= 0) {
+          alert('Error: Uno o más productos en el carrito no tienen ID válido.')
+          setIsProcessingPayment(false)
+          return
+        }
+        if (!item.unitPrice || item.unitPrice <= 0) {
+          alert('Error: Uno o más productos en el carrito no tienen precio válido.')
+          setIsProcessingPayment(false)
+          return
+        }
+        if (!item.quantity || item.quantity <= 0) {
+          alert('Error: Uno o más productos en el carrito no tienen cantidad válida.')
+          setIsProcessingPayment(false)
+          return
+        }
       }
 
-      // Validar dirección y zona de entrega
-      if (!pickupInStore && !deliveryAddress.trim()) {
-        alert('Por favor ingresa la dirección de entrega y detalles antes de confirmar el pedido.')
-        return
-      }
-      if (!pickupInStore && !deliveryZone) {
-        alert('Por favor selecciona la ciudad/zona de entrega para calcular el envío.')
-        return
+      // Preparar los items del carrito para el detalle del pedido
+      const orderItems = items.map(item => ({
+        producto_id: item.id!,
+        cantidad: item.quantity,
+        subtotal: item.unitPrice * item.quantity,
+        tamano_index: item.selectedSizeIndex || 0,
+        tienda_id: item.selectedStoreId ?? item.stocks?.[item.selectedSizeIndex ?? 0]?.tienda ?? item.Tienda ?? 0
+      }))
+
+      // Calcular envío y total del pedido (según reglas)
+      const cartSubtotal = getTotalPrice()
+      const currentShipping = pickupInStore ? 0 : (deliveryZone === 'bucaramanga_am'
+        ? (cartSubtotal < 100000 ? 4000 : 0)
+        : (deliveryZone === 'piedecuesta' ? (cartSubtotal < 150000 ? 8000 : 0) : 0))
+      const totalAmount = cartSubtotal + currentShipping
+
+      // Preparar datos del pedido y estado completo del carrito para guardar en localStorage
+      const orderData = {
+        userId,
+        userEmail,
+        userName,
+        userPhone: userPhone || '',
+        totalAmount,
+        address: pickupInStore ? 'Recoger en tienda' : `${deliveryAddress} | Zona: ${deliveryZone === 'bucaramanga_am' ? 'Bucaramanga / Área Metropolitana' : 'Piedecuesta'}`,
+        orderItems,
+        items: items.map(item => ({
+          id: item.id,
+          nombre: item.nombre,
+          descripcion: item.descripcion,
+          imagen_url: item.imagen_url,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          selectedSizeIndex: item.selectedSizeIndex,
+          selectedStoreId: item.selectedStoreId,
+          tamano: item.tamano
+        }))
       }
 
-      // Mostrar indicador de carga
-      setIsProcessingPayment(true)
+      // Guardar también el estado completo del carrito para restauración
+      const cartState = {
+        items,
+        pickupInStore,
+        deliveryAddress,
+        deliveryZone,
+        shippingFee,
+        userId,
+        contactPhone: userPhone || '',
+        timestamp: Date.now()
+      }
 
+      // Crear sesión de pago con AvalPayCenter / PlacetoPay
       try {
-        // Obtener información del usuario desde la tabla usuarios
-        const { data: userData, error: userError } = await supabase
-          .from('usuarios')
-          .select('id, nombre')
-          .eq('correo', user.email)
-          .single() as { data: { id: number; nombre: string } | null; error: any }
+        // Generar un ID temporal para la referencia del pago
+        const tempOrderId = `TEMP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        
+        const sessionResponse = await fetch('/api/payment-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: tempOrderId,
+            totalAmount,
+            buyerEmail: userEmail,
+            buyerName: userName,
+            // En un entorno real deberías obtener la IP real desde el backend/proxy
+            ipAddress: '127.0.0.1',
+            userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unisantander WC',
+          }),
+        })
 
-        if (userError || !userData) {
-          alert('Error: No se pudo encontrar la información del usuario')
+        if (!sessionResponse.ok) {
+          console.error('Error al crear sesión de pago:', await sessionResponse.json())
+          alert('Error al iniciar la sesión de pago. Por favor, inténtalo nuevamente.')
           setIsProcessingPayment(false)
           return
         }
 
-        // Validar que todos los productos tienen IDs válidos
-        for (const item of items) {
-          if (!item.id || item.id <= 0) {
-            alert('Error: Uno o más productos en el carrito no tienen ID válido.')
-            setIsProcessingPayment(false)
-            return
-          }
-          if (!item.unitPrice || item.unitPrice <= 0) {
-            alert('Error: Uno o más productos en el carrito no tienen precio válido.')
-            setIsProcessingPayment(false)
-            return
-          }
-          if (!item.quantity || item.quantity <= 0) {
-            alert('Error: Uno o más productos en el carrito no tienen cantidad válida.')
-            setIsProcessingPayment(false)
-            return
-          }
+        const sessionData = await sessionResponse.json()
+
+        if (!sessionData.processUrl || !sessionData.requestId) {
+          console.error('Respuesta de sesión de pago sin processUrl o requestId:', sessionData)
+          alert('No se recibió la URL de procesamiento de pago. Intenta de nuevo más tarde.')
+          setIsProcessingPayment(false)
+          return
         }
 
-        // Preparar los items del carrito para el detalle del pedido
-        const orderItems = items.map(item => ({
-          producto_id: item.id!,
-          cantidad: item.quantity,
-          subtotal: item.unitPrice * item.quantity,
-          tamano_index: item.selectedSizeIndex || 0,
-          tienda_id: item.selectedStoreId ?? item.stocks?.[item.selectedSizeIndex ?? 0]?.tienda ?? item.Tienda ?? 0
+        // Guardar los datos del pedido, estado del carrito y requestId en localStorage para verificar después
+        // Incluir timestamp para poder limpiar datos antiguos
+        localStorage.setItem('pendingPayment', JSON.stringify({
+          requestId: sessionData.requestId,
+          orderData,
+          cartState,
+          timestamp: Date.now()
         }))
 
-        // Calcular envío y total del pedido (según reglas)
-        const cartSubtotal = getTotalPrice()
-        const currentShipping = pickupInStore ? 0 : (deliveryZone === 'bucaramanga_am'
-          ? (cartSubtotal < 100000 ? 4000 : 0)
-          : (deliveryZone === 'piedecuesta' ? (cartSubtotal < 150000 ? 8000 : 0) : 0))
-        const totalAmount = cartSubtotal + currentShipping
+        // Redirigir al usuario a la pasarela de pago
+        console.log('🔗 Redirigiendo a pasarela de pago:', sessionData.processUrl)
+        debugCartState('ANTES_REDIRECCION_PASARELA')
 
-        // Preparar datos del pedido y estado completo del carrito para guardar en localStorage
-        const orderData = {
-          userId: userData.id,
-          userEmail: user.email,
-          userName: (userData as any).nombre || '',
-          totalAmount,
-          address: pickupInStore ? 'Recoger en tienda' : `${deliveryAddress} | Zona: ${deliveryZone === 'bucaramanga_am' ? 'Bucaramanga / Área Metropolitana' : 'Piedecuesta'}`,
-          orderItems,
-          items: items.map(item => ({
-            id: item.id,
-            nombre: item.nombre,
-            descripcion: item.descripcion,
-            imagen_url: item.imagen_url,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            selectedSizeIndex: item.selectedSizeIndex,
-            selectedStoreId: item.selectedStoreId,
-            tamano: item.tamano
-          }))
-        }
-
-        // Guardar también el estado completo del carrito para restauración
-        const cartState = {
-          items,
-          pickupInStore,
-          deliveryAddress,
-          deliveryZone,
-          shippingFee,
-          userId: userData.id,
-          timestamp: Date.now()
-        }
-
-        // Crear sesión de pago con AvalPayCenter / PlacetoPay
-        try {
-          // Generar un ID temporal para la referencia del pago
-          const tempOrderId = `TEMP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-          
-          const sessionResponse = await fetch('/api/payment-session', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              orderId: tempOrderId,
-              totalAmount,
-              buyerEmail: user.email,
-              buyerName: (userData as any).nombre || '',
-              // En un entorno real deberías obtener la IP real desde el backend/proxy
-              ipAddress: '127.0.0.1',
-              userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unisantander WC',
-            }),
-          })
-
-          if (!sessionResponse.ok) {
-            console.error('Error al crear sesión de pago:', await sessionResponse.json())
-            alert('Error al iniciar la sesión de pago. Por favor, inténtalo nuevamente.')
-            setIsProcessingPayment(false)
-            return
-          }
-
-          const sessionData = await sessionResponse.json()
-
-          if (!sessionData.processUrl || !sessionData.requestId) {
-            console.error('Respuesta de sesión de pago sin processUrl o requestId:', sessionData)
-            alert('No se recibió la URL de procesamiento de pago. Intenta de nuevo más tarde.')
-            setIsProcessingPayment(false)
-            return
-          }
-
-          // Guardar los datos del pedido, estado del carrito y requestId en localStorage para verificar después
-          // Incluir timestamp para poder limpiar datos antiguos
-          localStorage.setItem('pendingPayment', JSON.stringify({
-            requestId: sessionData.requestId,
-            orderData,
-            cartState,
-            timestamp: Date.now()
-          }))
-
-          // Redirigir al usuario a la pasarela de pago
-          console.log('🔗 Redirigiendo a pasarela de pago:', sessionData.processUrl)
-          debugCartState('ANTES_REDIRECCION_PASARELA')
-
-          window.location.href = sessionData.processUrl
-          return
-        } catch (paymentSessionError) {
-          console.error('Error inesperado al crear la sesión de pago:', paymentSessionError)
-          alert('Ocurrió un error al conectar con la pasarela de pago. Inténtalo nuevamente.')
-          setIsProcessingPayment(false)
-          return
-        }
-
-      } catch (error) {
-        console.error('Error en el proceso de pago:', error)
-        alert('Error inesperado al procesar el pedido. Por favor, inténtalo de nuevo.')
+        window.location.href = sessionData.processUrl
+        return
+      } catch (paymentSessionError) {
+        console.error('Error inesperado al crear la sesión de pago:', paymentSessionError)
+        alert('Ocurrió un error al conectar con la pasarela de pago. Inténtalo nuevamente.')
         setIsProcessingPayment(false)
+        return
       }
+    } catch (error) {
+      console.error('Error en el proceso de pago:', error)
+      alert('Error inesperado al procesar el pedido. Por favor, inténtalo de nuevo.')
+      setIsProcessingPayment(false)
     }
+  }
+
+  // Manejar pago como invitado desde el modal
+  const handleGuestPayment = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    debugCartState('INICIO_PAGO_INVITADO')
+
+    if (!guestName.trim() || !guestPhone.trim() || !guestEmail.trim()) {
+      alert('Por favor completa nombre, celular y correo electrónico para continuar como invitado.')
+      return
+    }
+
+    // Validación básica de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(guestEmail.trim())) {
+      alert('Por favor ingresa un correo electrónico válido.')
+      return
+    }
+
+    // ID de usuario invitado (configuración del cliente)
+    const guestUserId = 35
+
+    // Cerrar modal de invitado y proceder al flujo de pago reutilizable
+    setIsGuestModalOpen(false)
+    await processPaymentForUser(guestUserId, guestEmail.trim(), guestName.trim(), guestPhone.trim())
   }
 
   // Función para manejar registro en el modal
@@ -1602,7 +1652,7 @@ export default function CarritoPage() {
           <DialogHeader className="text-center border-b border-gray-200 pb-3 sm:pb-4 pt-2 flex-shrink-0">
             <DialogTitle className="text-lg sm:text-xl font-bold text-gray-800">Iniciar Sesión o Registrarse</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm text-gray-600 mt-1">
-              Para proceder con el pago, necesitas tener una cuenta
+              Para proceder con el pago, puedes iniciar sesión, registrarte o continuar como invitado.
             </DialogDescription>
           </DialogHeader>
           <div className="px-3 sm:px-4 py-3 sm:py-4 overflow-y-auto flex-1">
@@ -1821,7 +1871,80 @@ export default function CarritoPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Continuar como invitado */}
+                <div className="mt-4 pt-3 border-t border-dashed border-gray-300 space-y-3">
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-700 text-center">
+                      ¿Prefieres comprar sin registrarte?
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAuthModalOpen(false)
+                        setGuestName("")
+                        setGuestPhone("")
+                        setGuestEmail("")
+                        setIsGuestCheckout(false)
+                        setIsGuestModalOpen(true)
+                      }}
+                      className="w-full bg-white hover:bg-gray-50 text-[#196428] font-semibold py-2 rounded-lg border border-[#196428]/40 hover:border-[#196428] transition-all duration-200 text-sm hover:shadow-md"
+                    >
+                      Continuar como invitado
+                    </button>
+                  </div>
+                </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Checkout como Invitado */}
+      <Dialog open={isGuestModalOpen} onOpenChange={setIsGuestModalOpen}>
+        <DialogContent className="w-[95vw] max-w-sm mx-auto bg-[#FBFFE6] border-2 border-gray-200 shadow-2xl rounded-xl sm:rounded-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="text-center border-b border-gray-200 pb-3 sm:pb-4 pt-2 flex-shrink-0">
+            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-800">Comprar como invitado</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-gray-600 mt-1">
+              Ingresa tus datos para enviarte la confirmación de tu pedido.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-3 sm:px-4 py-3 sm:py-4 overflow-y-auto flex-1">
+            <form className="space-y-3" onSubmit={handleGuestPayment}>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Nombre completo"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
+                />
+              </div>
+              <div>
+                <input
+                  type="tel"
+                  placeholder="Celular"
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                  className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
+                />
+              </div>
+              <div>
+                <input
+                  type="email"
+                  placeholder="Correo electrónico"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                  className="w-full px-3 py-2.5 sm:py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm transition-all duration-200 touch-manipulation"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isProcessingPayment}
+                className="w-full bg-[#196428] hover:bg-[#145020] active:bg-[#0f3a15] text-white font-semibold py-2.5 sm:py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg touch-manipulation"
+              >
+                {isProcessingPayment ? 'Procesando...' : 'Ir a la pasarela de pago'}
+              </button>
+            </form>
           </div>
         </DialogContent>
       </Dialog>

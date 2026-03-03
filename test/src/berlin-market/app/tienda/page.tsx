@@ -851,7 +851,7 @@ function TiendaPageContent() {
                           : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                       }`}
                     >
-                      <span className="lowercase">{group.displayName}</span>
+                      <span className="uppercase">{group.displayName}</span>
                     </button>
                   )
                 })
@@ -865,7 +865,7 @@ function TiendaPageContent() {
                       : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                   }`}
                 >
-                  <span className="lowercase">{subcategory.subcategoryName}</span>
+                  <span className="uppercase">{subcategory.subcategoryName}</span>
                 </button>
               ))}
             {/* Subcategorías especiales por categoría: Ofertas y Novedades (excluye Tienda, Ofertas, Especiales) */}
@@ -883,7 +883,7 @@ function TiendaPageContent() {
                         : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                     }`}
                   >
-                    <span className="lowercase">Ofertas</span>
+                    <span className="uppercase">Ofertas</span>
                   </button>
                   <button
                     onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
@@ -893,7 +893,7 @@ function TiendaPageContent() {
                         : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                     }`}
                   >
-                    <span className="lowercase">Novedades</span>
+                    <span className="uppercase">Novedades</span>
                   </button>
                 </>
               );
@@ -1189,7 +1189,7 @@ function TiendaPageContent() {
                               : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                           }`}
                         >
-                          <span className="lowercase">Todos los productos</span>
+                          <span className="uppercase">Todos los productos</span>
                         </button>
                       </div>
 
@@ -1204,7 +1204,7 @@ function TiendaPageContent() {
                               : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                           }`}
                         >
-                          <span className="lowercase">Productos con descuento</span>
+                          <span className="uppercase">Productos con descuento</span>
                         </button>
                       </div>
 
@@ -1223,7 +1223,7 @@ function TiendaPageContent() {
                                 : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                             }`}
                           >
-                            <span className="lowercase">Ofertas</span>
+                            <span className="uppercase">Ofertas</span>
                           </button>
                           <button
                             onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
@@ -1233,7 +1233,7 @@ function TiendaPageContent() {
                                 : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                             }`}
                           >
-                            <span className="lowercase">Novedades</span>
+                            <span className="uppercase">Novedades</span>
                           </button>
                         </div>
                       </div>
