@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { supabase } from '@/lib/supabase'
 import {
   AVAL_BASE_URL,
   AVAL_LOGIN,
@@ -32,6 +31,19 @@ function buildAuth() {
   }
 }
 
+// Obtener la IP real del cliente desde headers (requerido por la pasarela en producción)
+function getClientIp(request: NextRequest, bodyIp?: string): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) {
+    return forwarded.split(',')[0].trim()
+  }
+  const realIp = request.headers.get('x-real-ip')
+  if (realIp) return realIp
+  const cfIp = request.headers.get('cf-connecting-ip')
+  if (cfIp) return cfIp
+  return bodyIp || '127.0.0.1'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -41,16 +53,27 @@ export async function POST(request: NextRequest) {
       totalAmount,
       buyerEmail,
       buyerName,
-      ipAddress,
+      ipAddress: bodyIp,
       userAgent,
     } = body || {}
 
-    if (!orderId || !totalAmount || !buyerEmail) {
+    if (!orderId || totalAmount == null || totalAmount === '' || !buyerEmail) {
       return NextResponse.json(
         { error: 'orderId, totalAmount y buyerEmail son requeridos' },
         { status: 400 }
       )
     }
+
+    // La API de Aval/PlacetoPay espera el monto en centavos (unidad mínima de COP)
+    // Fórmula: pesos × 100 = centavos (ej: 10.000 COP → 1.000.000)
+    const amountInPesos = Math.round(Number(totalAmount))
+    if (amountInPesos <= 0) {
+      return NextResponse.json(
+        { error: 'El monto total debe ser mayor a 0' },
+        { status: 400 }
+      )
+    }
+    const amountInCentavos = amountInPesos * 100
 
     const auth = buildAuth()
 
@@ -60,6 +83,8 @@ export async function POST(request: NextRequest) {
     const returnUrl = AVAL_RETURN_URL
     const notificationUrl = AVAL_NOTIFICATION_URL
 
+    const clientIp = getClientIp(request, bodyIp)
+
     const sessionPayload = {
       locale: 'es_CO',
       auth,
@@ -68,14 +93,14 @@ export async function POST(request: NextRequest) {
         description: `Pedido #${orderId}`,
         amount: {
           currency: 'COP',
-          total: totalAmount,
+          total: amountInCentavos,
         },
       },
       expiration,
       returnUrl,
       // Incluir URL de notificación si la API de Evertec la soporta
       ...(notificationUrl && { notificationUrl }),
-      ipAddress: ipAddress || '127.0.0.1',
+      ipAddress: clientIp,
       userAgent: userAgent || 'Unisantander WC',
       buyer: {
         email: buyerEmail,
@@ -95,9 +120,11 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       console.error('Error creando sesión de pago Aval:', data)
+      const avalMessage = data?.status?.message ?? data?.message
+      const errorMessage = typeof avalMessage === 'string' ? avalMessage : 'Error al crear la sesión de pago'
       return NextResponse.json(
         {
-          error: 'Error al crear la sesión de pago',
+          error: errorMessage,
           details: data,
         },
         { status: response.status }

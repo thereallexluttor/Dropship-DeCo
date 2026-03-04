@@ -971,7 +971,15 @@ export default function CarritoPage() {
       const currentShipping = pickupInStore ? 0 : (deliveryZone === 'bucaramanga_am'
         ? (cartSubtotal < 100000 ? 4000 : 0)
         : (deliveryZone === 'piedecuesta' ? (cartSubtotal < 150000 ? 8000 : 0) : 0))
-      const totalAmount = cartSubtotal + currentShipping
+
+      // Normalizar el total a un valor entero para la pasarela de pago
+      const totalAmount = Math.round(cartSubtotal + currentShipping)
+
+      if (totalAmount <= 0) {
+        alert('El total del pedido debe ser mayor a 0.')
+        setIsProcessingPayment(false)
+        return
+      }
 
       // Preparar datos del pedido y estado completo del carrito para guardar en localStorage
       const orderData = {
@@ -1029,8 +1037,13 @@ export default function CarritoPage() {
         })
 
         if (!sessionResponse.ok) {
-          console.error('Error al crear sesión de pago:', await sessionResponse.json())
-          alert('Error al iniciar la sesión de pago. Por favor, inténtalo nuevamente.')
+          const errorData = await sessionResponse.json().catch(() => ({}))
+          console.error('Error al crear sesión de pago:', errorData)
+          const detailMsg = errorData?.details?.status?.message ?? errorData?.details?.message ?? errorData?.error
+          const userMsg = typeof detailMsg === 'string'
+            ? detailMsg
+            : 'Error al iniciar la sesión de pago. Por favor, inténtalo nuevamente.'
+          alert(userMsg)
           setIsProcessingPayment(false)
           return
         }

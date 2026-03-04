@@ -1,4 +1,5 @@
-export const AVAL_BASE_URL = 'https://checkout.avalpaycenter.com'
+// Usar variables de entorno para poder cambiar a entorno de pruebas si es necesario
+export const AVAL_BASE_URL = process.env.AVAL_BASE_URL || process.env.NEXT_PUBLIC_AVAL_BASE_URL || 'https://checkout.avalpaycenter.com'
 
 export const AVAL_LOGIN = '885bd34a2bf2171d706ac811dbd4833a'
 
