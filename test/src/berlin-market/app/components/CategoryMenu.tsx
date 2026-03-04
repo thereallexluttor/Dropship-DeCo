@@ -194,7 +194,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
                       href={subcategory.href}
                       className="flex items-center justify-between py-1.5 sm:py-2 px-2 sm:px-3 text-[10px] sm:text-[11px] lg:text-xs text-gray-600 hover:bg-gray-50 hover:text-[#196428] rounded-md transition-colors"
                     >
-                      <span className="lowercase">{subcategory.name}</span>
+                      <span className="uppercase tracking-wide">{subcategory.name}</span>
                       <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                     </Link>
                   ))}
