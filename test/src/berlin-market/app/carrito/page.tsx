@@ -974,9 +974,15 @@ export default function CarritoPage() {
 
       // Normalizar el total a un valor entero para la pasarela de pago
       const totalAmount = Math.round(cartSubtotal + currentShipping)
+      const MIN_PAYMENT_AMOUNT = 10000
 
       if (totalAmount <= 0) {
         alert('El total del pedido debe ser mayor a 0.')
+        setIsProcessingPayment(false)
+        return
+      }
+      if (totalAmount < MIN_PAYMENT_AMOUNT) {
+        alert(`El pedido mínimo es de $${MIN_PAYMENT_AMOUNT.toLocaleString('es-CO')} COP. Agrega más productos para continuar.`)
         setIsProcessingPayment(false)
         return
       }
@@ -1603,13 +1609,18 @@ export default function CarritoPage() {
                           <span className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">Total</span>
                           <span className="text-2xl sm:text-3xl font-black text-[#196428] tracking-tight">$ {formatPrice(getTotalPrice() + shippingFee)}</span>
                         </div>
+                        {(getTotalPrice() + shippingFee) > 0 && (getTotalPrice() + shippingFee) < 10000 && (
+                          <p className="text-xs text-amber-600 mt-2 font-medium">
+                            Pedido mínimo: $10.000 — Agrega más productos para continuar
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     <div className="space-y-3 sm:space-y-4">
                       <button
                         onClick={handlePayment}
-                        disabled={isProcessingPayment || paymentStatusModalOpen || isProcessingPaymentRef.current}
+                        disabled={isProcessingPayment || paymentStatusModalOpen || isProcessingPaymentRef.current || (getTotalPrice() + shippingFee) < 10000}
                         className="group relative w-full bg-gradient-to-r from-[#196428] to-[#2d7a3d] hover:from-[#145020] hover:to-[#196428] active:from-[#0f3a15] active:to-[#145020] disabled:from-gray-400 disabled:to-gray-500 text-white py-4 sm:py-4 px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 disabled:cursor-not-allowed touch-manipulation shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2">

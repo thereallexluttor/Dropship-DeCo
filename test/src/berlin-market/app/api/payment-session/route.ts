@@ -64,16 +64,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // La API de Aval/PlacetoPay espera el monto en centavos (unidad mínima de COP)
-    // Fórmula: pesos × 100 = centavos (ej: 10.000 COP → 1.000.000)
-    const amountInPesos = Math.round(Number(totalAmount))
-    if (amountInPesos <= 0) {
+    // Garantizar que el monto sea un entero en pesos (la pasarela espera COP sin decimales)
+    const amountAsInteger = Math.round(Number(totalAmount))
+    if (amountAsInteger <= 0) {
       return NextResponse.json(
         { error: 'El monto total debe ser mayor a 0' },
         { status: 400 }
       )
     }
-    const amountInCentavos = amountInPesos * 100
+    // La pasarela Aval tiene un monto mínimo de 10.000 COP
+    const AVAL_MIN_AMOUNT = 10000
+    if (amountAsInteger < AVAL_MIN_AMOUNT) {
+      return NextResponse.json(
+        { error: `El pedido mínimo es de $${AVAL_MIN_AMOUNT.toLocaleString('es-CO')} COP. Agrega más productos para continuar.` },
+        { status: 400 }
+      )
+    }
 
     const auth = buildAuth()
 
@@ -93,12 +99,11 @@ export async function POST(request: NextRequest) {
         description: `Pedido #${orderId}`,
         amount: {
           currency: 'COP',
-          total: amountInCentavos,
+          total: amountAsInteger,
         },
       },
       expiration,
       returnUrl,
-      // Incluir URL de notificación si la API de Evertec la soporta
       ...(notificationUrl && { notificationUrl }),
       ipAddress: clientIp,
       userAgent: userAgent || 'Unisantander WC',
@@ -107,6 +112,10 @@ export async function POST(request: NextRequest) {
         name: buyerName || '',
       },
     }
+
+    console.log('📤 Payload enviado a Aval Pay Center:', JSON.stringify(sessionPayload, null, 2))
+    console.log('📤 URL:', `${AVAL_BASE_URL}/api/session`)
+    console.log('📤 Monto enviado (COP):', amountAsInteger)
 
     const response = await fetch(`${AVAL_BASE_URL}/api/session`, {
       method: 'POST',
@@ -118,16 +127,21 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json()
 
-    if (!response.ok) {
-      console.error('Error creando sesión de pago Aval:', data)
+    console.log('📥 Respuesta Aval Pay Center:', JSON.stringify(data, null, 2))
+    console.log('📥 HTTP Status:', response.status)
+
+    if (!response.ok || data?.status?.status === 'FAILED') {
+      console.error('❌ Error creando sesión de pago Aval:', data)
+      console.error('❌ Monto rechazado:', amountAsInteger, 'COP')
       const avalMessage = data?.status?.message ?? data?.message
       const errorMessage = typeof avalMessage === 'string' ? avalMessage : 'Error al crear la sesión de pago'
       return NextResponse.json(
         {
           error: errorMessage,
           details: data,
+          sentAmount: amountAsInteger,
         },
-        { status: response.status }
+        { status: response.ok ? 400 : response.status }
       )
     }
 
