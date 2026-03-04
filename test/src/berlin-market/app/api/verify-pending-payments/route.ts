@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabase } from '@/lib/supabase'
-import { AVAL_BASE_URL, AVAL_LOGIN, AVAL_SECRET_KEY, AVAL_SITE_URL } from '@/lib/avalpay'
+import { AVAL_BASE_URL, AVAL_LOGIN, AVAL_SECRET_KEY } from '@/lib/avalpay'
+import { sendOrderConfirmationEmail } from '@/lib/send-order-confirmation'
 
 // Clave secreta para proteger el endpoint del cronjob
 const CRON_SECRET = process.env.CRON_SECRET || 'change-this-secret-key'
@@ -164,9 +165,9 @@ export async function GET(request: NextRequest) {
             console.log(`✅ Pedido ${pago.pedido_id} actualizado a estado: ${orderStatus}`)
             updated++
 
-            // Si el pago fue aprobado, actualizar el stock (si existe la función)
             if (orderStatus === 'aprobado') {
-              console.log(`📦 Stock debería actualizarse para pedido ${pago.pedido_id}`)
+              console.log(`📧 Cron: Enviando email de confirmación para pedido ${pago.pedido_id}`)
+              await sendOrderConfirmationEmail({ pedidoId: pago.pedido_id })
             }
           }
 

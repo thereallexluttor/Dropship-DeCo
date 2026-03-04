@@ -215,8 +215,13 @@ export default function CarritoPage() {
 
         try {
           console.log('🔍 Verificando datos de pago pendientes...')
-          const { requestId, orderData, cartState, timestamp } = JSON.parse(pendingPaymentData)
-          console.log('📦 Datos parseados:', { requestId, hasOrderData: !!orderData, hasCartState: !!cartState, timestamp })
+          const parsedPending = JSON.parse(pendingPaymentData)
+          const { requestId, orderData, cartState, timestamp } = parsedPending
+          // El orderId real se guarda desde processPaymentForUser
+          if (orderData && parsedPending.orderId) {
+            orderData.orderId = parsedPending.orderId
+          }
+          console.log('📦 Datos parseados:', { requestId, orderId: orderData?.orderId, hasOrderData: !!orderData, hasCartState: !!cartState, timestamp })
 
           // MOSTRAR MODAL INMEDIATAMENTE con estado "verifying" para prevenir pagos duplicados
           setCurrentOrderId(orderData?.orderId)
@@ -594,7 +599,6 @@ export default function CarritoPage() {
       console.log('🔄 Estado del pago (polling):', paymentStatus)
 
       if (paymentStatus === 'APPROVED' || paymentStatus === 'APPROVED_PARTIAL') {
-        // Pago aprobado: actualizar modal y limpiar polling
         if (paymentStatusPollingIntervalRef.current) {
           clearInterval(paymentStatusPollingIntervalRef.current)
           paymentStatusPollingIntervalRef.current = null
@@ -602,38 +606,18 @@ export default function CarritoPage() {
         
         setPaymentStatus('approved')
         
-        // Verificar si el pedido ya existe o crearlo
         const pendingPaymentData = localStorage.getItem('pendingPayment')
         if (pendingPaymentData) {
           try {
-            const { orderData: savedOrderData, requestId: savedRequestId } = JSON.parse(pendingPaymentData)
-            
-            // Verificar si ya existe el pedido
-            const { data: userData } = await supabase
-              .from('usuarios')
-              .select('id')
-              .eq('correo', user?.email)
-              .single()
-
-            if (userData) {
-              const { data: existingOrders } = await supabase
-                .from('pedidos')
-                .select('id')
-                .eq('usuario_id', userData.id)
-                .eq('total', savedOrderData.totalAmount)
-                .eq('Direccion', savedOrderData.address)
-                .gte('fecha', new Date(Date.now() - 600000).toISOString())
-                .order('fecha', { ascending: false })
-                .limit(1)
-
-              if (existingOrders && existingOrders.length > 0) {
-                setCurrentOrderId(existingOrders[0].id)
-              } else {
-                // Crear el pedido (pago ya está aprobado según el polling)
-                const orderResult = await createOrderFromPendingPayment(savedOrderData, savedRequestId || currentRequestId || '', 'APPROVED')
-                setCurrentOrderId(orderResult?.id || 'desconocido')
-              }
+            const parsed = JSON.parse(pendingPaymentData)
+            const { orderData: savedOrderData, requestId: savedRequestId } = parsed
+            if (savedOrderData && parsed.orderId) {
+              savedOrderData.orderId = parsed.orderId
             }
+            
+            // El pedido ya existe en la BD, solo actualizar su estado a aprobado
+            const orderResult = await createOrderFromPendingPayment(savedOrderData, savedRequestId || currentRequestId || '', 'APPROVED')
+            setCurrentOrderId(orderResult?.id || parsed.orderId || 'desconocido')
             
             localStorage.removeItem('pendingPayment')
             clearCart()
@@ -657,169 +641,96 @@ export default function CarritoPage() {
     }
   }
 
-  // Función para crear el pedido desde los datos pendientes guardados
+  // Función para actualizar el estado del pedido cuando el pago se confirma
+  // El pedido y detalle ya fueron creados antes de redirigir a la pasarela
   const createOrderFromPendingPayment = async (orderData: any, requestId: string, paymentStatus?: string) => {
     try {
-      console.log('🔄 Creando pedido desde datos pendientes...', { requestId, paymentStatus })
-
-      // Determinar el estado inicial del pedido basado en el estado del pago
-      // Si el pago está aprobado, crear el pedido directamente como aprobado
       const isApproved = paymentStatus === 'APPROVED' || paymentStatus === 'APPROVED_PARTIAL'
-      const initialEstado = isApproved ? 'aprobado' : 'pendiente'
-      
-      console.log(`📦 Creando pedido con estado inicial: ${initialEstado}`, { 
-        paymentStatus, 
-        isApproved 
-      })
+      const newEstado = isApproved ? 'aprobado' : 'pendiente'
 
-      // Verificar si ya existe un pedido con los mismos datos (usuario, total, dirección)
-      // para evitar duplicados en caso de que el proceso se ejecute múltiples veces
-      // Usar una ventana de tiempo más amplia (10 minutos) para capturar posibles duplicados
-      const { data: existingOrders, error: checkError } = await supabase
-        .from('pedidos')
-        .select('id, fecha')
-        .eq('usuario_id', orderData.userId)
-        .eq('total', orderData.totalAmount)
-        .eq('Direccion', orderData.address)
-        .gte('fecha', new Date(Date.now() - 600000).toISOString()) // Últimos 10 minutos
-        .order('fecha', { ascending: false })
-        .limit(1)
+      // Buscar el pedido ya creado usando el orderId guardado o la tabla pagos_pendientes
+      let pedidoId = orderData?.orderId || null
 
-      if (checkError) {
-        console.error('Error verificando pedidos existentes:', checkError)
-        // Continuar con la creación del pedido si falla la verificación
-      } else if (existingOrders && existingOrders.length > 0) {
-        const existingOrder = existingOrders[0]
-        const orderAge = Date.now() - new Date(existingOrder.fecha).getTime()
-        console.log('⚠️ Pedido ya existe, evitando duplicado:', {
-          orderId: existingOrder.id,
-          orderAge: `${Math.round(orderAge / 1000)} segundos`,
-          requestId
-        })
-        return { id: existingOrder.id, alreadyExists: true }
-      }
-
-      // Crear el pedido en la tabla pedidos
-      const { data: orderResult, error: orderError } = await supabase
-        .from('pedidos')
-        .insert([
-          {
-            usuario_id: orderData.userId,
-            fecha: new Date().toISOString(),
-            total: orderData.totalAmount,
-            estado: initialEstado, // Si el pago está aprobado, crear directamente como aprobado
-            Direccion: orderData.address,
-          }
-        ])
-        .select()
-        .single()
-
-      if (orderError) {
-        console.error('Error creando pedido:', orderError)
-        throw orderError
-      }
-
-      console.log('✅ Pedido creado exitosamente:', orderResult.id)
-
-      // Verificar si el detalle del pedido ya existe antes de crearlo
-      const { data: existingDetails, error: detailCheckError } = await supabase
-        .from('detalle_pedido')
-        .select('id')
-        .eq('pedido_id', orderResult.id)
-        .limit(1)
-
-      if (detailCheckError) {
-        console.error('Error verificando detalle existente:', detailCheckError)
-      }
-
-      // Crear los items del detalle del pedido solo si es un pedido nuevo Y no tiene detalles
-      if (!orderResult.alreadyExists && (!existingDetails || existingDetails.length === 0)) {
-        const { error: detailError } = await supabase
-          .from('detalle_pedido')
-          .insert(
-            orderData.orderItems.map((item: any) => ({
-              pedido_id: orderResult.id,
-              producto_id: item.producto_id,
-              cantidad: item.cantidad,
-              subtotal: item.subtotal,
-              tamano_index: item.tamano_index
-            }))
-          )
-
-        if (detailError) {
-          console.error('Error creando detalle del pedido:', detailError)
-          throw detailError
-        }
-        console.log('✅ Detalle del pedido creado exitosamente')
-      } else {
-        if (orderResult.alreadyExists) {
-          console.log('📋 Saltando creación de detalle porque el pedido ya existía')
-        } else if (existingDetails && existingDetails.length > 0) {
-          console.log('📋 Saltando creación de detalle porque ya existe detalle para este pedido')
-        }
-      }
-
-      // Guardar el registro en pagos_pendientes para que el webhook y la sonda puedan encontrarlo
-      try {
-        // Si el pago está aprobado, guardar el estado como APPROVED en lugar de PENDING
-        const pagoEstado = isApproved ? 'APPROVED' : 'PENDING'
-        
-        const { error: pagoPendienteError } = await supabase
+      if (!pedidoId) {
+        const { data: pagoRow } = await supabase
           .from('pagos_pendientes')
-          .insert({
-            request_id: requestId,
-            pedido_id: orderResult.id,
-            referencia: String(orderResult.id),
-            monto: orderData.totalAmount,
-            estado: pagoEstado,
-            ultima_verificacion: isApproved ? new Date().toISOString() : null,
-          })
-
-        if (pagoPendienteError) {
-          console.error('⚠️ Error guardando en pagos_pendientes:', pagoPendienteError)
-          // No lanzar error aquí, solo registrar - el pedido ya fue creado
-        } else {
-          console.log(`✅ Registro guardado en pagos_pendientes con estado ${pagoEstado}:`, { requestId, pedido_id: orderResult.id })
-        }
-      } catch (pagoError) {
-        console.error('⚠️ Error al guardar en pagos_pendientes:', pagoError)
-        // No lanzar error aquí, solo registrar - el pedido ya fue creado
+          .select('pedido_id')
+          .eq('request_id', requestId)
+          .single()
+        pedidoId = pagoRow?.pedido_id || null
       }
 
-      // Enviar correo de confirmación solo si es un pedido nuevo
-      if (!orderResult.alreadyExists) {
+      if (!pedidoId) {
+        // Fallback: buscar pedido reciente del mismo usuario
+        const { data: recentOrders } = await supabase
+          .from('pedidos')
+          .select('id')
+          .eq('usuario_id', orderData.userId)
+          .eq('total', orderData.totalAmount)
+          .eq('Direccion', orderData.address)
+          .gte('fecha', new Date(Date.now() - 1800000).toISOString())
+          .order('fecha', { ascending: false })
+          .limit(1)
+
+        if (recentOrders && recentOrders.length > 0) {
+          pedidoId = recentOrders[0].id
+        }
+      }
+
+      if (!pedidoId) {
+        console.error('❌ No se encontró el pedido para actualizar. requestId:', requestId)
+        return { id: 'desconocido', alreadyExists: false }
+      }
+
+      console.log(`🔄 Actualizando pedido #${pedidoId} a estado: ${newEstado}`)
+
+      const { error: updateError } = await supabase
+        .from('pedidos')
+        .update({ estado: newEstado, updated_at: new Date().toISOString() })
+        .eq('id', pedidoId)
+
+      if (updateError) {
+        console.error('Error actualizando estado del pedido:', updateError)
+      } else {
+        console.log(`✅ Pedido #${pedidoId} actualizado a: ${newEstado}`)
+      }
+
+      // Actualizar pagos_pendientes
+      const pagoEstado = isApproved ? 'APPROVED' : 'PENDING'
+      await supabase
+        .from('pagos_pendientes')
+        .update({ estado: pagoEstado, ultima_verificacion: new Date().toISOString() })
+        .eq('request_id', requestId)
+
+      // Enviar correo de confirmación si está aprobado
+      if (isApproved) {
         try {
           const emailResponse = await fetch('/api/send-order-email', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               userEmail: orderData.userEmail,
               userName: orderData.userName,
-              orderId: orderResult.id,
-              orderDate: orderResult.fecha,
+              orderId: pedidoId,
+              orderDate: new Date().toISOString(),
               totalAmount: orderData.totalAmount,
               address: orderData.address,
               items: orderData.items,
-              orderStatus: orderResult.estado
+              orderStatus: newEstado,
+              userPhone: orderData.userPhone,
             })
           })
-
           if (!emailResponse.ok) {
             console.error('Error al enviar el correo de confirmación')
           }
         } catch (emailError) {
           console.error('Error al enviar el correo:', emailError)
-          // No detener el proceso si falla el envío del correo
         }
-      } else {
-        console.log('📧 Saltando envío de email porque el pedido ya existía')
       }
 
-      return { id: orderResult.id, alreadyExists: orderResult.alreadyExists || false }
+      return { id: pedidoId, alreadyExists: false }
     } catch (error) {
-      console.error('Error creando pedido desde datos pendientes:', error)
+      console.error('Error actualizando pedido:', error)
       throw error
     }
   }
@@ -1021,22 +932,73 @@ export default function CarritoPage() {
         timestamp: Date.now()
       }
 
-      // Crear sesión de pago con AvalPayCenter / PlacetoPay
+      // PASO 1: Crear el pedido y detalle en Supabase ANTES de redirigir a la pasarela
+      // Esto garantiza que el pedido y sus detalles se guardan de forma confiable
+      let createdOrderId: number | null = null
       try {
-        // Generar un ID temporal para la referencia del pago
-        const tempOrderId = `TEMP_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        
+        const { data: orderResult, error: orderError } = await supabase
+          .from('pedidos')
+          .insert([{
+            usuario_id: userId,
+            fecha: new Date().toISOString(),
+            total: totalAmount,
+            estado: 'pendiente',
+            Direccion: orderData.address,
+          }])
+          .select()
+          .single()
+
+        if (orderError || !orderResult) {
+          console.error('Error creando pedido antes de pasarela:', orderError)
+          alert('Error al registrar el pedido. Inténtalo de nuevo.')
+          setIsProcessingPayment(false)
+          return
+        }
+
+        createdOrderId = orderResult.id
+        console.log('✅ Pedido creado antes de pasarela:', createdOrderId)
+
+        const { error: detailError } = await supabase
+          .from('detalle_pedido')
+          .insert(
+            orderItems.map(item => ({
+              pedido_id: orderResult.id,
+              producto_id: item.producto_id,
+              cantidad: item.cantidad,
+              subtotal: item.subtotal,
+              tamano_index: item.tamano_index,
+            }))
+          )
+
+        if (detailError) {
+          console.error('Error creando detalle del pedido:', detailError)
+          // Si falla el detalle, eliminar el pedido huérfano
+          await supabase.from('pedidos').delete().eq('id', orderResult.id)
+          alert('Error al registrar los productos del pedido. Inténtalo de nuevo.')
+          setIsProcessingPayment(false)
+          return
+        }
+
+        console.log('✅ Detalle del pedido creado exitosamente para pedido:', createdOrderId)
+      } catch (dbError) {
+        console.error('Error creando pedido en BD:', dbError)
+        alert('Error al registrar el pedido. Inténtalo de nuevo.')
+        setIsProcessingPayment(false)
+        return
+      }
+
+      // PASO 2: Crear sesión de pago con AvalPayCenter usando el ID real del pedido
+      try {
         const sessionResponse = await fetch('/api/payment-session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            orderId: tempOrderId,
+            orderId: createdOrderId,
             totalAmount,
             buyerEmail: userEmail,
             buyerName: userName,
-            // En un entorno real deberías obtener la IP real desde el backend/proxy
             ipAddress: '127.0.0.1',
             userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unisantander WC',
           }),
@@ -1045,6 +1007,8 @@ export default function CarritoPage() {
         if (!sessionResponse.ok) {
           const errorData = await sessionResponse.json().catch(() => ({}))
           console.error('Error al crear sesión de pago:', errorData)
+          // Marcar pedido como cancelado ya que no se pudo crear la sesión
+          await supabase.from('pedidos').update({ estado: 'cancelado' }).eq('id', createdOrderId)
           const detailMsg = errorData?.details?.status?.message ?? errorData?.details?.message ?? errorData?.error
           const userMsg = typeof detailMsg === 'string'
             ? detailMsg
@@ -1058,21 +1022,50 @@ export default function CarritoPage() {
 
         if (!sessionData.processUrl || !sessionData.requestId) {
           console.error('Respuesta de sesión de pago sin processUrl o requestId:', sessionData)
+          await supabase.from('pedidos').update({ estado: 'cancelado' }).eq('id', createdOrderId)
           alert('No se recibió la URL de procesamiento de pago. Intenta de nuevo más tarde.')
           setIsProcessingPayment(false)
           return
         }
 
-        // Guardar los datos del pedido, estado del carrito y requestId en localStorage para verificar después
-        // Incluir timestamp para poder limpiar datos antiguos
+        // PASO 3: Guardar en pagos_pendientes con email del comprador
+        try {
+          const { error: pagoPendienteError } = await supabase
+            .from('pagos_pendientes')
+            .insert({
+              request_id: sessionData.requestId,
+              pedido_id: createdOrderId,
+              referencia: String(createdOrderId),
+              monto: totalAmount,
+              estado: 'PENDING',
+              email_comprador: userEmail || null,
+              nombre_comprador: userName || null,
+              telefono_comprador: userPhone || null,
+            })
+          if (pagoPendienteError) {
+            console.error('⚠️ Error guardando en pagos_pendientes:', pagoPendienteError)
+            // Reintentar sin campos extra
+            await supabase.from('pagos_pendientes').insert({
+              request_id: sessionData.requestId,
+              pedido_id: createdOrderId,
+              referencia: String(createdOrderId),
+              monto: totalAmount,
+              estado: 'PENDING',
+            })
+          }
+        } catch (pagoErr) {
+          console.error('⚠️ Error en pagos_pendientes:', pagoErr)
+        }
+
+        // Guardar datos mínimos en localStorage para verificar al regresar
         localStorage.setItem('pendingPayment', JSON.stringify({
           requestId: sessionData.requestId,
+          orderId: createdOrderId,
           orderData,
           cartState,
           timestamp: Date.now()
         }))
 
-        // Redirigir al usuario a la pasarela de pago
         console.log('🔗 Redirigiendo a pasarela de pago:', sessionData.processUrl)
         debugCartState('ANTES_REDIRECCION_PASARELA')
 
@@ -1080,6 +1073,9 @@ export default function CarritoPage() {
         return
       } catch (paymentSessionError) {
         console.error('Error inesperado al crear la sesión de pago:', paymentSessionError)
+        if (createdOrderId) {
+          await supabase.from('pedidos').update({ estado: 'cancelado' }).eq('id', createdOrderId)
+        }
         alert('Ocurrió un error al conectar con la pasarela de pago. Inténtalo nuevamente.')
         setIsProcessingPayment(false)
         return

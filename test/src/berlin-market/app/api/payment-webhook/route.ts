@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { supabase } from '@/lib/supabase'
 import { AVAL_LOGIN, AVAL_SECRET_KEY } from '@/lib/avalpay'
+import { sendOrderConfirmationEmail } from '@/lib/send-order-confirmation'
 
 // Función para validar la autenticación del webhook
 function buildAuth() {
@@ -106,7 +107,6 @@ export async function POST(request: NextRequest) {
               if (!pedidoError && pedido) {
                 console.log('✅ Pedido encontrado por referencia:', pedido.id)
                 
-                // Actualizar el estado del pedido
                 const { error: updateError } = await supabase
                   .from('pedidos')
                   .update({
@@ -120,9 +120,9 @@ export async function POST(request: NextRequest) {
                 } else {
                   console.log(`✅ Pedido ${pedido.id} actualizado a estado: ${orderStatus}`)
                   
-                  // Si el pago fue aprobado, actualizar el stock
                   if (orderStatus === 'aprobado') {
-                    console.log(`📦 Stock debería actualizarse para pedido ${pedido.id}`)
+                    console.log(`📧 Webhook: Enviando email de confirmación para pedido ${pedido.id}`)
+                    await sendOrderConfirmationEmail({ pedidoId: pedido.id })
                   }
                 }
               }
@@ -146,7 +146,6 @@ export async function POST(request: NextRequest) {
           } else {
             console.log(`✅ Pedido ${pagoPendiente.pedido_id} actualizado a estado: ${orderStatus}`)
             
-            // Actualizar el estado en pagos_pendientes
             const statusUpper = typeof status === 'string' 
               ? status.toUpperCase() 
               : String(status).toUpperCase()
@@ -159,9 +158,9 @@ export async function POST(request: NextRequest) {
               })
               .eq('id', pagoPendiente.id)
             
-            // Si el pago fue aprobado, actualizar el stock
             if (orderStatus === 'aprobado') {
-              console.log(`📦 Stock debería actualizarse para pedido ${pagoPendiente.pedido_id}`)
+              console.log(`📧 Webhook: Enviando email de confirmación para pedido ${pagoPendiente.pedido_id}`)
+              await sendOrderConfirmationEmail({ pedidoId: pagoPendiente.pedido_id })
             }
           }
         } else {
