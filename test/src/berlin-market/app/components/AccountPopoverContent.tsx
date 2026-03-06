@@ -12,10 +12,14 @@ const AccountForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
 
   // Estados para login
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [recoverEmail, setRecoverEmail] = useState("");
+  const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
 
   // Estados para registro
   const [registerEmail, setRegisterEmail] = useState("");
@@ -40,6 +44,57 @@ const AccountForm = () => {
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
+  };
+
+  const handleOpenRecoverPasswordModal = () => {
+    setRecoverEmail(email);
+    setIsRecoverModalOpen(true);
+  };
+
+  const handleCloseRecoverPasswordModal = () => {
+    if (isRecoveringPassword) return;
+    setIsRecoverModalOpen(false);
+  };
+
+  const handleRecoverPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!recoverEmail || !recoverEmail.trim()) {
+      alert("Por favor ingresa el correo con el que te registraste.");
+      return;
+    }
+
+    setIsRecoveringPassword(true);
+
+    try {
+      const response = await fetch("/api/recover-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: recoverEmail.trim() }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        alert(
+          data?.error ||
+            "No se pudo procesar la recuperación de contraseña. Inténtalo de nuevo."
+        );
+        return;
+      }
+
+      alert(
+        "Si el correo existe en nuestro sistema, te hemos enviado tu contraseña."
+      );
+      setIsRecoverModalOpen(false);
+    } catch (error) {
+      console.error("Error al recuperar contraseña:", error);
+      alert("Error al recuperar la contraseña. Inténtalo de nuevo.");
+    } finally {
+      setIsRecoveringPassword(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -118,6 +173,27 @@ const AccountForm = () => {
     // Validar que las contraseñas coincidan
     if (registerPassword !== confirmPassword) {
       alert("Las contraseñas no coinciden. Por favor verifica que ambas contraseñas sean iguales");
+      return;
+    }
+
+    try {
+      const { data: existingUsers, error: existingUsersError } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('correo', registerEmail.trim())
+        .limit(1);
+
+      if (existingUsersError) {
+        console.error('Error verificando correo existente:', existingUsersError);
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
+        alert("No es posible crear la cuenta porque el correo ya está registrado. Por favor inicia sesión o utiliza otro correo.");
+        return;
+      }
+    } catch (error) {
+      console.error('Error inesperado verificando correo existente:', error);
+      alert("No se pudo verificar si el correo ya está registrado. Inténtalo de nuevo.");
       return;
     }
 
@@ -274,9 +350,13 @@ const AccountForm = () => {
 
           <div className="flex flex-col xs:flex-col sm:flex-col space-y-2 xs:space-y-2 sm:space-y-3">
             <div className="text-center">
-              <a href="#" className="text-[#196428] hover:underline text-xs xs:text-xs sm:text-sm font-medium transition-colors">
+              <button
+                type="button"
+                onClick={handleOpenRecoverPasswordModal}
+                className="text-[#196428] hover:underline text-xs xs:text-xs sm:text-sm font-medium transition-colors"
+              >
                 Olvidé mi contraseña
-              </a>
+              </button>
             </div>
             <div className="text-[10px] xs:text-[10px] sm:text-xs text-gray-600 text-center leading-tight">
               Protegido por reCAPTCHA - <a href="#" className="underline hover:text-[#196428] transition-colors">Privacidad</a> y{' '}
@@ -480,6 +560,50 @@ const AccountForm = () => {
           </div>
         )}
       </div>
+
+      {isRecoverModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg">
+            <h2 className="mb-2 text-center text-lg font-semibold text-gray-900">
+              Recuperar contraseña
+            </h2>
+            <p className="mb-4 text-center text-sm text-gray-600">
+              Ingresa el correo con el que te registraste. Te enviaremos tu
+              contraseña a ese email.
+            </p>
+            <form
+              onSubmit={handleRecoverPasswordSubmit}
+              className="space-y-4"
+            >
+              <div>
+                <input
+                  type="email"
+                  placeholder="Correo electrónico"
+                  value={recoverEmail}
+                  onChange={(e) => setRecoverEmail(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm xs:px-3 xs:py-3 sm:px-4 sm:py-3 md:py-3 focus:outline-none focus:ring-2 focus:ring-[#196428]"
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCloseRecoverPasswordModal}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRecoveringPassword}
+                  className="rounded-lg bg-[#196428] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#145020] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isRecoveringPassword ? "Enviando..." : "Recuperar contraseña"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
