@@ -319,7 +319,7 @@ const AccountForm = () => {
                 type="email"
                 placeholder="Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.toLowerCase())}
                 className="w-full px-3 xs:px-3 sm:px-4 py-3 xs:py-3 sm:py-3 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm xs:text-sm sm:text-base md:text-sm transition-all duration-200"
               />
             </div>
@@ -452,7 +452,7 @@ const AccountForm = () => {
                   type="email"
                   placeholder="Email"
                   value={registerEmail}
-                  onChange={(e) => setRegisterEmail(e.target.value)}
+                  onChange={(e) => setRegisterEmail(e.target.value.toLowerCase())}
                   className="w-full px-3 xs:px-3 sm:px-4 py-3 xs:py-3 sm:py-3 md:py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#196428] bg-white text-sm xs:text-sm sm:text-base md:text-sm pl-10 xs:pl-10 sm:pl-12 transition-all duration-200"
                 />
               </div>
@@ -580,7 +580,7 @@ const AccountForm = () => {
                   type="email"
                   placeholder="Correo electrónico"
                   value={recoverEmail}
-                  onChange={(e) => setRecoverEmail(e.target.value)}
+                  onChange={(e) => setRecoverEmail(e.target.value.toLowerCase())}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm xs:px-3 xs:py-3 sm:px-4 sm:py-3 md:py-3 focus:outline-none focus:ring-2 focus:ring-[#196428]"
                 />
               </div>
