@@ -298,15 +298,15 @@ export default function Map({ stores, selectedStore, onStoreSelect, selectedCity
                     </div>
                   </div>
 
-                  {/* Botón de Google Maps */}
+                  {/* Botón de WhatsApp */}
                   <a
-                    href={`https://www.google.com/maps?q=${store.coords.lat},${store.coords.lng}`}
+                    href={`https://wa.me/${store.phone.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 w-full rounded-xl border border-white/30 bg-white/15 backdrop-blur px-3 py-2.5 text-white transition-all hover:bg-white/25 hover:border-white/40"
                   >
                     <Navigation className="h-4 w-4 text-white" />
-                    <span className="text-xs font-semibold text-white">Ver ruta en Google Maps</span>
+                    <span className="text-xs font-semibold text-white">Escribir por WhatsApp</span>
                   </a>
                 </div>
               </div>

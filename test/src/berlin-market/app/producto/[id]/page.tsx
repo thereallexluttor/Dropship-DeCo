@@ -510,26 +510,9 @@ function ProductPageContent() {
     const storeId = p.stocks?.[selectedSizeIndex]?.tienda ?? p.Tienda ?? selectedStoreIdFromUrl ?? 0
     const store = stores.find((s: Store) => s.id === storeId)
 
-    const sizeInfo = (displayProduct || product)?.tamano?.[selectedSizeIndex]
-    const sizeText = sizeInfo ? `, tamaño ${sizeInfo.cantidad} ${sizeInfo.unidad}` : ''
-    const storeText = store ? ` en la tienda ${store.name} (${store.city})` : ''
-
-    let productUrl = ''
-    if (typeof window !== 'undefined' && p.id) {
-      try {
-        const url = new URL(window.location.href)
-        productUrl = `${url.origin}/producto/${p.id}${selectedStoreIdFromUrl ? `?tienda=${selectedStoreIdFromUrl}` : ''}`
-      } catch {
-        productUrl = ''
-      }
-    }
-
-    const message =
-      `¡Hola! Me gustaría más información sobre el producto "${p.nombre}"${sizeText}${storeText}.` +
-      (productUrl ? `\n\nLink del producto: ${productUrl}` : '')
-
     if (store?.phone) {
-      const whatsappUrl = `https://wa.me/${store.phone}?text=${encodeURIComponent(message)}`
+      const cleanPhone = String(store.phone).replace(/[^0-9]/g, '')
+      const whatsappUrl = `https://wa.me/${cleanPhone}`
       window.open(whatsappUrl, '_blank')
       return
     }

@@ -146,7 +146,7 @@ export default function CategoryMenu({ category, containerRef }: CategoryMenuPro
         href={category.href}
         className="flex flex-col items-center justify-center px-0 py-1 rounded-lg hover:bg-gray-50 transition-colors group"
       >
-        <span className="text-[10px] sm:text-xs lg:text-sm text-center mt-1 text-gray-700 group-hover:text-[#196428] transition-colors">
+        <span className="text-[10px] sm:text-xs lg:text-sm text-center mt-1 text-gray-700 group-hover:text-[#196428] transition-colors uppercase">
           {category.name}
         </span>
       </Link>
