@@ -37,6 +37,7 @@ import {
   Menu
 } from 'lucide-react'
 import { supabase, Producto, UI } from '@/lib/supabase'
+import { normalizeUIRecords } from "@/lib/ui-normalize"
 import { filterProductDataByStore } from '@/lib/productStoreUtils'
 import { useCart } from '@/app/contexts/CartContext'
 import MainLayout from '@/app/components/MainLayout'
@@ -236,7 +237,7 @@ function ProductPageContent() {
 
           if (error) throw error;
           if (data && data.length > 0 && data[0].popup) {
-            setUiElements(data);
+            setUiElements(normalizeUIRecords(data));
             setShowPopup(true);
           }
         } catch (error) {

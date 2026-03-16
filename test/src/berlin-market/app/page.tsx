@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect, useRef, useMemo } from "react"
 import { supabase, Producto, UI } from '@/lib/supabase'
+import { normalizeUIRecords } from "@/lib/ui-normalize"
 import { useCategories } from './hooks/useCategories'
 import { useProducts, type ProductWithDetails } from './hooks/useProducts'
 import { useCart } from './contexts/CartContext'
@@ -176,7 +177,7 @@ export default function Home() {
 
         if (error) throw error;
         if (data && data.length > 0) {
-          setUiElements(data);
+          setUiElements(normalizeUIRecords(data));
         }
       } catch (error) {
         console.error('Error cargando banners UI:', error);
@@ -311,6 +312,7 @@ export default function Home() {
 
       return () => clearInterval(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uiElements]);
 
   useEffect(() => {

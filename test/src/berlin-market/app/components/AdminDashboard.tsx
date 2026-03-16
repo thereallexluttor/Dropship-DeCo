@@ -53,6 +53,7 @@ import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layo
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { normalizeUIRecord, normalizeUIRecords } from '@/lib/ui-normalize';
 
 // Función helper para formatear precios sin ceros decimales innecesarios
 const formatPrice = (price: number): string => {
@@ -200,6 +201,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     // Cargar datos críticos primero, luego diferir el resto
     loadDataOptimized();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Nueva función optimizada para conexiones lentas
@@ -323,7 +325,7 @@ const AdminDashboard = () => {
         supabase.from('aliados').select('*').order('id', { ascending: true })
       ]);
 
-      if (!uiResult.error) setUiElements(uiResult.data || []);
+      if (!uiResult.error) setUiElements(normalizeUIRecords(uiResult.data || []));
       if (!sobreNosotrosResult.error) setSobreNosotros(sobreNosotrosResult.data);
       if (!trabajosResult.error) setTrabajos(trabajosResult.data || []);
       if (!aplicacionesResult.error) setAplicaciones((aplicacionesResult.data as AplicacionConTrabajo[]) || []);
@@ -995,7 +997,7 @@ const AdminDashboard = () => {
 
         console.log('✅ Elementos UI cargados exitosamente:', uiData?.length || 0, 'elementos');
         console.table(uiData || []); // Mostrar todos los elementos UI en tabla
-        setUiElements(uiData || []);
+        setUiElements(normalizeUIRecords(uiData || []));
 
         // Cargar datos de Sobre Nosotros
         console.log('🔄 Cargando datos de Sobre Nosotros desde Supabase...');
@@ -2536,15 +2538,16 @@ const AdminDashboard = () => {
   const handleCreateUI = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const normalized = normalizeUIRecord(newUI);
       const { data, error } = await supabase
         .from('ui')
-        .insert([newUI])
+        .insert([normalized])
         .select();
 
       if (error) throw error;
 
       if (data) {
-        setUiElements([...uiElements, data[0]]);
+        setUiElements([...uiElements, normalizeUIRecord(data[0])]);
         setNewUI({
           banner: [],
           hiddenbanner: [],
@@ -2564,18 +2567,19 @@ const AdminDashboard = () => {
     if (!editingUI || !editingUI.id) return;
 
     try {
+      const normalized = normalizeUIRecord(editingUI);
       const { error } = await supabase
         .from('ui')
         .update({
-          banner: editingUI.banner,
-          hiddenbanner: editingUI.hiddenbanner,
-          popup: editingUI.popup
+          banner: normalized.banner,
+          hiddenbanner: normalized.hiddenbanner,
+          popup: normalized.popup
         })
-        .eq('id', editingUI.id);
+        .eq('id', normalized.id);
 
       if (error) throw error;
 
-      setUiElements(uiElements.map(ui => ui.id === editingUI.id ? editingUI : ui));
+      setUiElements(uiElements.map(ui => ui.id === normalized.id ? normalized : ui));
       setEditingUI(null);
       alert('Elemento UI actualizado exitosamente');
     } catch (error: any) {
@@ -2607,7 +2611,7 @@ const AdminDashboard = () => {
   };
 
   const startEditUI = (ui: UI) => {
-    setEditingUI({ ...ui });
+    setEditingUI(normalizeUIRecord(ui));
   };
 
   const cancelEditUI = () => {
