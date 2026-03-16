@@ -641,63 +641,61 @@ export default function Home() {
 
           <section className="relative w-full">
             <div className="container mx-auto px-4">
-                <div className="relative aspect-[16/6] w-full max-w-6xl mx-auto">
+              <div className="relative w-full max-w-6xl mx-auto">
                 {/* Carousel */}
-                <div className="absolute inset-0">
-                  {carouselSlides.map((slide, index) => (
-                    <div
-                      key={index}
-                      className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                        activeSlide === index ? "opacity-100" : "opacity-0"
-                      }`}
-                    >
-                      {slide.type === 'video' ? (
-                        <video
+                {carouselSlides.map((slide, index) => (
+                  <div
+                    key={index}
+                    className={`transition-opacity duration-500 ease-in-out ${
+                      activeSlide === index ? "opacity-100" : "opacity-0 hidden"
+                    }`}
+                  >
+                    {slide.type === 'video' ? (
+                      <video
+                        src={slide.url}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        className="w-full h-auto object-contain rounded-lg"
+                      />
+                    ) : (
+                      <div className="relative w-full">
+                        <Image
                           src={slide.url}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          preload="metadata"
-                          className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                          alt={slide.alt}
+                          width={1920}
+                          height={1080}
+                          className="w-full h-auto object-contain rounded-lg"
+                          sizes="100vw"
+                          priority={index === 0}
                         />
-                      ) : (
-                        <div className="relative w-full h-full">
-                          <Image
-                            src={slide.url}
-                            alt={slide.alt}
-                            fill
-                            className="object-cover rounded-lg"
-                            sizes="100vw"
-                            priority={index === 0}
-                          />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="container mx-auto px-2 xs:px-3 sm:px-4">
-                          {/* Texto y botón a la izquierda */}
-                          <div className="text-left ml-[3%] xs:ml-[4%] sm:ml-[5%] md:ml-[7%] lg:ml-[8%]">
-                            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-white drop-shadow-lg mb-2 sm:mb-3 md:mb-4 lg:mb-5 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] leading-tight">
-                              Descubre las<br />
-                              mejores ofertas
-                            </h2>
-                            <Link
-                              href="/tienda"
-                              className="inline-block bg-[#196428] hover:bg-[#196428] text-white
-                              text-xs sm:text-sm md:text-base lg:text-lg
-                              py-0.5 sm:py-1 md:py-1.5 lg:py-2
-                              px-4 sm:px-5 md:px-6 lg:px-7
-                              rounded-full border-2 border-white transition-all duration-300 transform hover:scale-105 shadow-lg"
-                            >
-                              click aquí
-                            </Link>
-                          </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center pointer-events-none">
+                      <div className="container mx-auto px-2 xs:px-3 sm:px-4">
+                        {/* Texto y botón a la izquierda */}
+                        <div className="text-left ml-[3%] xs:ml-[4%] sm:ml-[5%] md:ml-[7%] lg:ml-[8%] pointer-events-auto">
+                          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-white drop-shadow-lg mb-2 sm:mb-3 md:mb-4 lg:mb-5 max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] leading-tight">
+                            Descubre las<br />
+                            mejores ofertas
+                          </h2>
+                          <Link
+                            href="/tienda"
+                            className="inline-block bg-[#196428] hover:bg-[#196428] text-white
+                            text-xs sm:text-sm md:text-base lg:text-lg
+                            py-0.5 sm:py-1 md:py-1.5 lg:py-2
+                            px-4 sm:px-5 md:px-6 lg:px-7
+                            rounded-full border-2 border-white transition-all duration-300 transform hover:scale-105 shadow-lg"
+                          >
+                            click aquí
+                          </Link>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-
+                  </div>
+                ))}
               </div>
             </div>
           </section>
