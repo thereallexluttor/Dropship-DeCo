@@ -49,7 +49,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown, Briefcase, Users, User, Mail, Phone, FileText, Eye, Download, MapPin, ShoppingBag, ClipboardList, Search, TrendingUp, DollarSign, BarChart3, PieChart, Activity, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, FolderPlus, FolderOpen, Package, Tag, Layout, ChevronUp, ChevronDown, Briefcase, Users, User, Mail, Phone, FileText, Eye, Download, MapPin, ShoppingBag, ClipboardList, Search, TrendingUp, DollarSign, BarChart3, PieChart, Activity, RefreshCw, Percent } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -76,6 +76,29 @@ const calcularDiasTranscurridos = (fecha: string): number => {
   return Math.floor(diferencia / (1000 * 60 * 60 * 24));
 };
 
+const getDaysInMonth = (year: number, month1to12: number) =>
+  new Date(year, month1to12, 0).getDate();
+
+const getTodayLocalIso = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+};
+
+const MESES_DESCUENTO = [
+  { value: 1, label: 'Enero' },
+  { value: 2, label: 'Febrero' },
+  { value: 3, label: 'Marzo' },
+  { value: 4, label: 'Abril' },
+  { value: 5, label: 'Mayo' },
+  { value: 6, label: 'Junio' },
+  { value: 7, label: 'Julio' },
+  { value: 8, label: 'Agosto' },
+  { value: 9, label: 'Septiembre' },
+  { value: 10, label: 'Octubre' },
+  { value: 11, label: 'Noviembre' },
+  { value: 12, label: 'Diciembre' },
+] as const;
+
 const AdminDashboard = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [subcategorias, setSubcategorias] = useState<Subcategoria[]>([]);
@@ -101,6 +124,13 @@ const AdminDashboard = () => {
   const [busquedaProductos, setBusquedaProductos] = useState<string>('');
   const [filtroCategoriaProductos, setFiltroCategoriaProductos] = useState<number>(0);
   const [filtroSubcategoriaProductos, setFiltroSubcategoriaProductos] = useState<number>(0);
+  const nowDescuentoInit = new Date();
+  const [descuentoMarcaId, setDescuentoMarcaId] = useState<string>('');
+  const [descuentoPorcentaje, setDescuentoPorcentaje] = useState<string>('');
+  const [descuentoDia, setDescuentoDia] = useState(String(nowDescuentoInit.getDate()));
+  const [descuentoMes, setDescuentoMes] = useState(String(nowDescuentoInit.getMonth() + 1));
+  const [descuentoAno, setDescuentoAno] = useState(String(nowDescuentoInit.getFullYear()));
+  const [descuentoAplicando, setDescuentoAplicando] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tablesConfigured, setTablesConfigured] = useState<boolean | null>(null);
@@ -197,6 +227,19 @@ const AdminDashboard = () => {
 
   // Forzar actualización de tipos
   useEffect(() => {}, []);
+
+  useEffect(() => {
+    const y = parseInt(descuentoAno, 10);
+    const m = parseInt(descuentoMes, 10);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) return;
+    const max = getDaysInMonth(y, m);
+    setDescuentoDia((prev) => {
+      const d = parseInt(prev, 10);
+      if (!Number.isFinite(d) || d > max) return String(max);
+      if (d < 1) return '1';
+      return prev;
+    });
+  }, [descuentoMes, descuentoAno]);
 
   useEffect(() => {
     // Cargar datos críticos primero, luego diferir el resto
@@ -2161,6 +2204,71 @@ const AdminDashboard = () => {
     setEditingMarca(null);
   };
 
+  const handleAplicarDescuentoMarca = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!descuentoMarcaId) {
+      alert('Selecciona una marca');
+      return;
+    }
+    const pct = parseInt(descuentoPorcentaje, 10);
+    if (!Number.isFinite(pct) || pct < 1 || pct > 100) {
+      alert('El porcentaje debe ser un número entre 1 y 100');
+      return;
+    }
+    const y = parseInt(descuentoAno, 10);
+    const m = parseInt(descuentoMes, 10);
+    const d = parseInt(descuentoDia, 10);
+    if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+      alert('Fecha inválida');
+      return;
+    }
+    const maxD = getDaysInMonth(y, m);
+    if (d < 1 || d > maxD) {
+      alert('Día inválido para el mes seleccionado');
+      return;
+    }
+    const fechaIso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const today = getTodayLocalIso();
+    if (fechaIso < today) {
+      alert('La fecha de vigencia debe ser hoy o una fecha futura');
+      return;
+    }
+    setDescuentoAplicando(true);
+    try {
+      const marcaId = parseInt(descuentoMarcaId, 10);
+      const { data: updatedRows, error } = await supabase
+        .from('productos')
+        .update({
+          descuento: true,
+          descuento_valor: pct,
+          descuento_valido_hasta: fechaIso,
+        })
+        .eq('id_marca', marcaId)
+        .select('id');
+      if (error) throw error;
+      const count = updatedRows?.length ?? 0;
+      const { data: allProductos, error: fetchErr } = await supabase
+        .from('productos')
+        .select('*')
+        .order('id');
+      if (fetchErr) throw fetchErr;
+      if (allProductos) setProductos(allProductos);
+      alert(`Descuento del ${pct}% aplicado a ${count} producto(s). Vigente hasta el ${fechaIso} (inclusive).`);
+    } catch (err: unknown) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('descuento_valido_hasta') || msg.includes('column')) {
+        alert(
+          'Falta la columna descuento_valido_hasta en la tabla productos. Ejecuta sql/add_descuento_valido_hasta.sql en Supabase.'
+        );
+      } else {
+        alert(msg || 'Error al aplicar el descuento');
+      }
+    } finally {
+      setDescuentoAplicando(false);
+    }
+  };
+
   const startEditProducto = (producto: Producto) => {
     // Inicializar stocks si no existe o sincronizar con campos antiguos
     let stocks = producto.stocks || [];
@@ -3162,6 +3270,13 @@ const AdminDashboard = () => {
             >
               <Tag className="h-4 w-4" />
               Marcas
+            </TabsTrigger>
+            <TabsTrigger 
+              value="descuentos" 
+              className="flex items-center justify-start w-full gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+            >
+              <Percent className="h-4 w-4" />
+              Descuentos
             </TabsTrigger>
             
             <div className="px-3 py-2 mt-4">
@@ -4389,6 +4504,7 @@ const AdminDashboard = () => {
                               <option value="MG">Miligramos (MG)</option>
                               <option value="OZ">Onzas (OZ)</option>
                               <option value="LB">Libras (LB)</option>
+                              <option value="Galones">Galones</option>
                               <option value="UI">Unidad Internacional (UI)</option>
                               <option value="Unidad">Unidad</option>
                               <option value="Caja">Caja</option>
@@ -4893,6 +5009,7 @@ const AdminDashboard = () => {
                                               <option value="MG">Miligramos (MG)</option>
                                               <option value="OZ">Onzas (OZ)</option>
                                               <option value="LB">Libras (LB)</option>
+                                              <option value="Galones">Galones</option>
                                               <option value="UI">Unidad Internacional (UI)</option>
                                               <option value="Unidad">Unidad</option>
                                               <option value="Caja">Caja</option>
@@ -5233,6 +5350,150 @@ const AdminDashboard = () => {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="descuentos" className="space-y-6 border border-gray-200 rounded-md p-6 bg-white">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Percent className="h-5 w-5" />
+                Descuentos por marca
+              </CardTitle>
+              <CardDescription>
+                Aplica un descuento en porcentaje a todos los productos de una marca. La vigencia es hasta el día
+                indicado (inclusive); al día siguiente el cron deja el descuento en false y limpia los valores.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAplicarDescuentoMarca} className="space-y-6">
+                <div className="space-y-2">
+                  <label htmlFor="descuento-marca" className="block text-sm font-medium text-gray-700">
+                    Marca
+                  </label>
+                  <select
+                    id="descuento-marca"
+                    value={descuentoMarcaId}
+                    onChange={(e) => setDescuentoMarcaId(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
+                    aria-label="Seleccionar marca para descuento"
+                  >
+                    <option value="">Seleccione una marca</option>
+                    {marcas.map((marca) => (
+                      <option key={marca.id} value={String(marca.id)}>
+                        {marca.nombre_marca}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="descuento-porcentaje" className="block text-sm font-medium text-gray-700">
+                    Descuento (%)
+                  </label>
+                  <Input
+                    id="descuento-porcentaje"
+                    type="number"
+                    min={1}
+                    max={100}
+                    step={1}
+                    value={descuentoPorcentaje}
+                    onChange={(e) => setDescuentoPorcentaje(e.target.value)}
+                    placeholder="Ej: 15"
+                    className="max-w-xs"
+                    required
+                    aria-label="Porcentaje de descuento"
+                  />
+                </div>
+                <fieldset className="space-y-3">
+                  <legend className="text-sm font-medium text-gray-700 mb-2">Válido hasta (día, mes, año)</legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label htmlFor="descuento-dia" className="block text-xs text-gray-600">
+                        Día
+                      </label>
+                      <select
+                        id="descuento-dia"
+                        value={descuentoDia}
+                        onChange={(e) => setDescuentoDia(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
+                        aria-label="Día de fin de vigencia"
+                      >
+                        {Array.from(
+                          {
+                            length: (() => {
+                              const ySel = parseInt(descuentoAno, 10);
+                              const mSel = parseInt(descuentoMes, 10);
+                              if (
+                                !Number.isFinite(ySel) ||
+                                !Number.isFinite(mSel) ||
+                                mSel < 1 ||
+                                mSel > 12
+                              ) {
+                                return 31;
+                              }
+                              return getDaysInMonth(ySel, mSel);
+                            })(),
+                          },
+                          (_, i) => i + 1
+                        ).map((n) => (
+                          <option key={n} value={String(n)}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label htmlFor="descuento-mes" className="block text-xs text-gray-600">
+                        Mes
+                      </label>
+                      <select
+                        id="descuento-mes"
+                        value={descuentoMes}
+                        onChange={(e) => setDescuentoMes(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
+                        aria-label="Mes de fin de vigencia"
+                      >
+                        {MESES_DESCUENTO.map((mes) => (
+                          <option key={mes.value} value={String(mes.value)}>
+                            {mes.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label htmlFor="descuento-ano" className="block text-xs text-gray-600">
+                        Año
+                      </label>
+                      <select
+                        id="descuento-ano"
+                        value={descuentoAno}
+                        onChange={(e) => setDescuentoAno(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm"
+                        aria-label="Año de fin de vigencia"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const y = new Date().getFullYear() + i;
+                          return (
+                            <option key={y} value={String(y)}>
+                              {y}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+                </fieldset>
+                <p className="text-xs text-gray-500">
+                  Requiere la columna <code className="bg-gray-100 px-1 rounded">descuento_valido_hasta</code> en
+                  Supabase. Script: <code className="bg-gray-100 px-1 rounded">sql/add_descuento_valido_hasta.sql</code>.
+                  Expiración automática: <code className="bg-gray-100 px-1 rounded">/api/expire-descuentos</code> (cron
+                  en vercel.json).
+                </p>
+                <Button type="submit" disabled={descuentoAplicando} className="w-full sm:w-auto">
+                  {descuentoAplicando ? 'Aplicando…' : 'Aplicar descuento a productos de la marca'}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>

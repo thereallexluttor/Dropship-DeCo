@@ -58,7 +58,7 @@ export interface Marca {
 
 // Tipos para tamaños de productos
 export interface TamanoProducto {
-  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB' | 'UI' | 'Unidad' | 'Caja' | 'Tabletas' | 'Comprimidos' | 'Capsulas' | 'Sachet' | 'Blister'
+  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB' | 'Galones' | 'UI' | 'Unidad' | 'Caja' | 'Tabletas' | 'Comprimidos' | 'Capsulas' | 'Sachet' | 'Blister'
   cantidad: number
 }
 
@@ -66,7 +66,7 @@ export interface TamanoProducto {
 export interface ProductoStock {
   id?: string  // identificador único para cada combinación
   cantidad: number  // cantidad del tamaño
-  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB' | 'UI' | 'Unidad' | 'Caja' | 'Tabletas' | 'Comprimidos' | 'Capsulas' | 'Sachet' | 'Blister'
+  unidad: 'ML' | 'L' | 'G' | 'KG' | 'MG' | 'OZ' | 'LB' | 'Galones' | 'UI' | 'Unidad' | 'Caja' | 'Tabletas' | 'Comprimidos' | 'Capsulas' | 'Sachet' | 'Blister'
   precio: number   // precio para este tamaño
   stock: number    // stock disponible para este tamaño
   tienda?: number  // tienda asociada a este tamaño (opcional)
@@ -83,7 +83,9 @@ export interface Producto {
   descripcion: string
   imagen_url?: string | null
   descuento?: boolean
-  descuento_valor?: number | string
+  descuento_valor?: number | string | null
+  /** Último día (inclusive) en que aplica el descuento por marca; formato YYYY-MM-DD */
+  descuento_valido_hasta?: string | null
   destacado?: boolean
   novedad?: boolean
   id_marca?: number | null
