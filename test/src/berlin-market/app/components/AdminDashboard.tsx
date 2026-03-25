@@ -4504,6 +4504,9 @@ const AdminDashboard = () => {
                               <option value="MG">Miligramos (MG)</option>
                               <option value="OZ">Onzas (OZ)</option>
                               <option value="LB">Libras (LB)</option>
+                              <option value="CM">Centimetros (CM)</option>
+                              <option value="Tallas">Tallas</option>
+                              <option value="M">Metros (M)</option>
                               <option value="Galones">Galones</option>
                               <option value="UI">Unidad Internacional (UI)</option>
                               <option value="Unidad">Unidad</option>
@@ -5010,6 +5013,9 @@ const AdminDashboard = () => {
                                               <option value="MG">Miligramos (MG)</option>
                                               <option value="OZ">Onzas (OZ)</option>
                                               <option value="LB">Libras (LB)</option>
+                                              <option value="CM">Centimetros (CM)</option>
+                                              <option value="Tallas">Tallas</option>
+                                              <option value="M">Metros (M)</option>
                                               <option value="Galones">Galones</option>
                                               <option value="UI">Unidad Internacional (UI)</option>
                                               <option value="Unidad">Unidad</option>
