@@ -54,6 +54,7 @@ import ProductSizeBadges from "../components/ProductSizeBadges"
 import { useCart } from "../contexts/CartContext"
 import { loadStoresFromSupabase, type Store } from "../lib/stores"
 import { productAvailableInStore, filterProductDataByStore } from "@/lib/productStoreUtils"
+import { SHOPPING_PAUSED, SHOPPING_PAUSE_MESSAGE_SHORT } from "@/lib/shoppingPause"
 
 function TiendaPageContent() {
   const [activeSlide, setActiveSlide] = useState(0)
@@ -1901,12 +1902,15 @@ function TiendaPageContent() {
                               )}
                               {hasPrices && currentPrice > 0 && (
                                 <button
+                                  type="button"
+                                  disabled={SHOPPING_PAUSED}
                                   onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
                                     handleAddToCart(product)
                                   }}
-                                  className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+                                  aria-label={SHOPPING_PAUSED ? SHOPPING_PAUSE_MESSAGE_SHORT : `Agregar ${product.nombre} al carrito`}
+                                  className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-gray-700"
                                 >
                                   <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </button>

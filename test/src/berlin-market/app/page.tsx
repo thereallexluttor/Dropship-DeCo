@@ -33,6 +33,7 @@ import { useProducts, type ProductWithDetails } from './hooks/useProducts'
 import { useCart } from './contexts/CartContext'
 import { loadStoresFromSupabase, type Store } from './lib/stores'
 import { productAvailableInStore } from '@/lib/productStoreUtils'
+import { SHOPPING_PAUSED, SHOPPING_PAUSE_MESSAGE_SHORT } from '@/lib/shoppingPause'
 import ProductCard from "./components/ProductCard"
 import FadeInOnScroll from './components/FadeInOnScroll'
 import CategoryMenu from './components/CategoryMenu'
@@ -757,12 +758,15 @@ export default function Home() {
                           {/* Botón de carrito flotante */}
                           {hasPrices && currentPrice > 0 && (
                             <button
+                              type="button"
+                              disabled={SHOPPING_PAUSED}
                               onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
                                 handleAddToCart(producto)
                               }}
-                              className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+                              aria-label={SHOPPING_PAUSED ? SHOPPING_PAUSE_MESSAGE_SHORT : `Agregar ${producto.nombre} al carrito`}
+                              className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-gray-700"
                             >
                               <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                             </button>
@@ -958,12 +962,15 @@ export default function Home() {
                                           </div>
                                         )}
                                         <button
+                                          type="button"
+                                          disabled={SHOPPING_PAUSED}
                                           onClick={(e) => {
                                             e.preventDefault()
                                             e.stopPropagation()
                                             handleAddToCart(producto)
                                           }}
-                                          className="absolute top-2 right-2 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-1.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100"
+                                          aria-label={SHOPPING_PAUSED ? SHOPPING_PAUSE_MESSAGE_SHORT : `Agregar ${producto.nombre} al carrito`}
+                                          className="absolute top-2 right-2 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-1.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-gray-700"
                                         >
                                           <ShoppingCart className="h-3.5 w-3.5" />
                                         </button>
@@ -1117,12 +1124,15 @@ export default function Home() {
                                     </div>
                                   )}
                                   <button
+                                    type="button"
+                                    disabled={SHOPPING_PAUSED}
                                     onClick={(e) => {
                                       e.preventDefault()
                                       e.stopPropagation()
                                       handleAddToCart(producto)
                                     }}
-                                    className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+                                    aria-label={SHOPPING_PAUSED ? SHOPPING_PAUSE_MESSAGE_SHORT : `Agregar ${producto.nombre} al carrito`}
+                                    className="absolute top-3 right-3 bg-white hover:bg-[#196428] text-gray-700 hover:text-white p-2.5 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-gray-700"
                                   >
                                     <ShoppingCart className="h-4 md:h-5 w-4 md:w-5" />
                                   </button>

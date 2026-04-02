@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Producto, TamanoProducto } from '@/lib/supabase'
+import { SHOPPING_PAUSED, SHOPPING_PAUSE_MESSAGE } from '@/lib/shoppingPause'
 import { useCartNotification, NotificationType, NOTIFICATION_TYPES } from './CartNotificationContext'
 
 export interface CartItemWithSize extends Producto {
@@ -156,6 +157,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const addToCart = (product: Producto, quantity: number = 1, selectedSizeIndex: number = 0, selectedStoreId?: number) => {
+    if (SHOPPING_PAUSED) {
+      showNotification(product, quantity, NOTIFICATION_TYPES.ERROR, SHOPPING_PAUSE_MESSAGE)
+      return
+    }
+
     const effectiveStoreId = selectedStoreId ?? product.stocks?.[selectedSizeIndex]?.tienda ?? product.Tienda ?? 0
 
     // Verificar stock disponible ANTES de agregar al carrito
@@ -229,6 +235,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const updateQuantity = (productId: number, quantity: number, selectedSizeIndex?: number, selectedStoreId?: number) => {
+    if (SHOPPING_PAUSED && quantity > 0) {
+      const existing = items.find(item => {
+        if (item.id !== productId) return false
+        if (selectedSizeIndex !== undefined && selectedStoreId !== undefined) {
+          return (item.selectedSizeIndex ?? 0) === selectedSizeIndex && (item.selectedStoreId ?? 0) === selectedStoreId
+        }
+        return true
+      })
+      if (existing && quantity > existing.quantity) {
+        showNotification(existing, quantity - existing.quantity, NOTIFICATION_TYPES.ERROR, SHOPPING_PAUSE_MESSAGE)
+        return
+      }
+    }
+
     if (quantity <= 0) {
       if (selectedSizeIndex !== undefined && selectedStoreId !== undefined) {
         removeFromCart(productId, selectedSizeIndex, selectedStoreId)

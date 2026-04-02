@@ -71,6 +71,7 @@ import CartCounter from "../components/CartCounter"
 import ProductSizeBadges from "../components/ProductSizeBadges"
 import PaymentStatusModal from "../components/PaymentStatusModal"
 import { supabase } from "../../lib/supabase"
+import { SHOPPING_PAUSED, SHOPPING_PAUSE_MESSAGE } from "@/lib/shoppingPause"
 
 export default function CarritoPage() {
   const router = useRouter()
@@ -778,6 +779,11 @@ export default function CarritoPage() {
   const handlePayment = async () => {
     debugCartState('INICIO_HANDLE_PAYMENT')
 
+    if (SHOPPING_PAUSED) {
+      alert(SHOPPING_PAUSE_MESSAGE)
+      return
+    }
+
     if (!user) {
       // Si no está autenticado, mostrar modal de autenticación / invitado
       console.log('🔐 Usuario no autenticado - mostrando modal de login / invitado')
@@ -829,6 +835,12 @@ export default function CarritoPage() {
 
   // Función reutilizable para procesar el pago (usuario registrado o invitado)
   const processPaymentForUser = async (userId: number, userEmail: string, userName: string, userPhone?: string) => {
+    if (SHOPPING_PAUSED) {
+      alert(SHOPPING_PAUSE_MESSAGE)
+      setIsProcessingPayment(false)
+      return
+    }
+
     // Validar que el carrito no esté vacío
     if (items.length === 0) {
       alert('Tu carrito está vacío. Agrega algunos productos antes de proceder al pago.')
@@ -1093,6 +1105,11 @@ export default function CarritoPage() {
 
     debugCartState('INICIO_PAGO_INVITADO')
 
+    if (SHOPPING_PAUSED) {
+      alert(SHOPPING_PAUSE_MESSAGE)
+      return
+    }
+
     if (!guestName.trim() || !guestPhone.trim() || !guestEmail.trim()) {
       alert('Por favor completa nombre, celular y correo electrónico para continuar como invitado.')
       return
@@ -1340,6 +1357,14 @@ export default function CarritoPage() {
         <main className="py-4 sm:py-6 md:py-8">
           <div className="container mx-auto px-3 sm:px-4">
             <div className="max-w-4xl mx-auto">
+              {SHOPPING_PAUSED && (
+                <div
+                  role="alert"
+                  className="mb-4 sm:mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-sm"
+                >
+                  {SHOPPING_PAUSE_MESSAGE}
+                </div>
+              )}
               {/* Título */}
               <div className="mb-4 sm:mb-6 md:mb-8">
                 <h1 className="text-2xl sm:text-3xl font-black text-black mb-1 sm:mb-2">Carrito de Compras</h1>
@@ -1475,8 +1500,10 @@ export default function CarritoPage() {
                               </span>
 
                               <button
+                                type="button"
                                 onClick={() => updateQuantity(item.id!, (item.quantity || 1) + 1, item.selectedSizeIndex, item.selectedStoreId)}
-                                className="w-9 h-9 sm:w-10 sm:h-10 bg-white hover:bg-[#196428] hover:text-white active:bg-[#145020] text-gray-700 rounded-lg flex items-center justify-center transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md"
+                                disabled={SHOPPING_PAUSED}
+                                className="w-9 h-9 sm:w-10 sm:h-10 bg-white hover:bg-[#196428] hover:text-white active:bg-[#145020] text-gray-700 rounded-lg flex items-center justify-center transition-all duration-200 touch-manipulation shadow-sm hover:shadow-md disabled:opacity-40 disabled:pointer-events-none disabled:hover:bg-white disabled:hover:text-gray-700"
                                 aria-label="Aumentar cantidad"
                               >
                                 <Plus className="h-4 w-4" />
@@ -1615,8 +1642,9 @@ export default function CarritoPage() {
 
                     <div className="space-y-3 sm:space-y-4">
                       <button
+                        type="button"
                         onClick={handlePayment}
-                        disabled={isProcessingPayment || paymentStatusModalOpen || isProcessingPaymentRef.current || (getTotalPrice() + shippingFee) < 10000}
+                        disabled={SHOPPING_PAUSED || isProcessingPayment || paymentStatusModalOpen || isProcessingPaymentRef.current || (getTotalPrice() + shippingFee) < 10000}
                         className="group relative w-full bg-gradient-to-r from-[#196428] to-[#2d7a3d] hover:from-[#145020] hover:to-[#196428] active:from-[#0f3a15] active:to-[#145020] disabled:from-gray-400 disabled:to-gray-500 text-white py-4 sm:py-4 px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 disabled:cursor-not-allowed touch-manipulation shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 overflow-hidden"
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2">
@@ -1628,7 +1656,11 @@ export default function CarritoPage() {
                           ) : (
                             <>
                               <ShoppingBag className="h-5 w-5" />
-                              {user ? 'Confirmar Pedido' : 'Proceder al Pago'}
+                              {SHOPPING_PAUSED
+                                ? 'Compras pausadas'
+                                : user
+                                  ? 'Confirmar Pedido'
+                                  : 'Proceder al Pago'}
                             </>
                           )}
                         </span>
@@ -1900,6 +1932,7 @@ export default function CarritoPage() {
                     </p>
                     <button
                       type="button"
+                      disabled={SHOPPING_PAUSED}
                       onClick={() => {
                         setIsAuthModalOpen(false)
                         setGuestName("")
@@ -1908,9 +1941,9 @@ export default function CarritoPage() {
                         setIsGuestCheckout(false)
                         setIsGuestModalOpen(true)
                       }}
-                      className="w-full bg-white hover:bg-gray-50 text-[#196428] font-semibold py-2 rounded-lg border border-[#196428]/40 hover:border-[#196428] transition-all duration-200 text-sm hover:shadow-md"
+                      className="w-full bg-white hover:bg-gray-50 text-[#196428] font-semibold py-2 rounded-lg border border-[#196428]/40 hover:border-[#196428] transition-all duration-200 text-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Continuar como invitado
+                      {SHOPPING_PAUSED ? 'Compras pausadas' : 'Continuar como invitado'}
                     </button>
                   </div>
                 </div>
@@ -1959,10 +1992,10 @@ export default function CarritoPage() {
               </div>
               <button
                 type="submit"
-                disabled={isProcessingPayment}
+                disabled={SHOPPING_PAUSED || isProcessingPayment}
                 className="w-full bg-[#196428] hover:bg-[#145020] active:bg-[#0f3a15] text-white font-semibold py-2.5 sm:py-2 rounded-lg transition-all duration-200 text-sm disabled:opacity-50 hover:shadow-lg touch-manipulation"
               >
-                {isProcessingPayment ? 'Procesando...' : 'Ir a la pasarela de pago'}
+                {SHOPPING_PAUSED ? 'Compras pausadas' : isProcessingPayment ? 'Procesando...' : 'Ir a la pasarela de pago'}
               </button>
             </form>
           </div>

@@ -7,6 +7,7 @@ import {
   AVAL_RETURN_URL,
   AVAL_NOTIFICATION_URL,
 } from '@/lib/avalpay'
+import { SHOPPING_PAUSED, SHOPPING_PAUSE_MESSAGE } from '@/lib/shoppingPause'
 
 // Genera la estructura de autenticación requerida por la pasarela
 function buildAuth() {
@@ -46,6 +47,13 @@ function getClientIp(request: NextRequest, bodyIp?: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    if (SHOPPING_PAUSED) {
+      return NextResponse.json(
+        { error: SHOPPING_PAUSE_MESSAGE },
+        { status: 503 }
+      )
+    }
+
     const body = await request.json()
 
     const {
