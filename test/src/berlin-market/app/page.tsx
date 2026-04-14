@@ -386,6 +386,11 @@ export default function Home() {
     productAvailableInStore(producto, selectedStoreId)
   )
 
+  // Filtrar ofertas por tienda seleccionada
+  const productosEnOfertaFiltrados = productosEnOferta.filter((producto) =>
+    productAvailableInStore(producto, selectedStoreId)
+  )
+
   const PRODUCTS_PER_SLIDE = 8
   const MOBILE_PRODUCTS_PER_SLIDE = 4 // 2x2 grid
   const totalProductSlides = Math.max(1, Math.ceil(productosDestacadosFiltrados.length / PRODUCTS_PER_SLIDE))
@@ -702,10 +707,33 @@ export default function Home() {
           </section>
 
           {/* Ofertas de la semana */}
-          {productosEnOferta.length >= 4 && (
+          {productosEnOfertaFiltrados.length > 0 && (
             <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#ffffff' }}>
               <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-                <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black mb-4 sm:mb-6 md:mb-7">Ofertas de la semana</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 md:mb-7 gap-3 sm:gap-4">
+                  <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black">Ofertas de la semana</h2>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <label htmlFor="tienda-select" className="text-sm sm:text-base font-semibold text-gray-700 whitespace-nowrap">
+                      Selecciona tu ciudad
+                    </label>
+                    <select
+                      id="tienda-select"
+                      value={selectedStoreId}
+                      onChange={(e) => setSelectedStoreId(Number(e.target.value))}
+                      className="px-3 sm:px-4 py-2 rounded-lg border-2 border-gray-300 bg-white text-sm sm:text-base font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] transition-all cursor-pointer min-w-[180px] sm:min-w-[220px]"
+                    >
+                      {tiendas.length === 0 ? (
+                        <option value={1}>Cargando tiendas...</option>
+                      ) : (
+                        tiendas.map((tienda) => (
+                          <option key={tienda.id} value={tienda.id}>
+                            {tienda.name} - {tienda.city}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                </div>
                 <div className="flex md:grid md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-4 md:pb-2 md:overflow-x-hidden scroll-container">
                   <style jsx global>{`
                     @media (max-width: 768px) {
@@ -718,7 +746,7 @@ export default function Home() {
                       }
                     }
                   `}</style>
-                  {productosEnOferta.slice(0, 4).map((producto) => {
+                  {productosEnOfertaFiltrados.slice(0, 4).map((producto) => {
                     const selectedSizeIndex = selectedSizes[producto.id!] || 0;
                     const hasSizes = producto.tamano && producto.tamano.length > 0;
                     const hasPrices = producto.precios && producto.precios.length > 0;
@@ -836,9 +864,9 @@ export default function Home() {
                                   </span>
                                 </div>
                               ) : currentPrice === 0 ? (
-                                <span className="text-lg sm:text-xl font-black text-gray-900">
-                                  Preguntar en tienda
-                                </span>
+                                <p className="text-gray-400 text-xs italic mt-auto">
+                                  Preguntar precio en tienda
+                                </p>
                               ) : (
                                 <span className="text-lg sm:text-xl font-black text-gray-900">
                                   ${currentPrice.toLocaleString('es-CO')}
@@ -846,11 +874,11 @@ export default function Home() {
                               )}
                             </div>
                           ) : hasPrices && currentPrice === 0 ? (
-                            <span className="text-lg sm:text-xl font-black text-gray-900">
-                              Preguntar en tienda
-                            </span>
+                            <p className="text-gray-400 text-xs italic mt-auto">
+                              Preguntar precio en tienda
+                            </p>
                           ) : (
-                            <p className="mt-auto text-gray-400 text-xs italic">Precio no disponible</p>
+                            <p className="mt-auto text-gray-400 text-xs italic">Preguntar precio en tienda</p>
                           )}
                         </div>
                       </div>
@@ -865,35 +893,34 @@ export default function Home() {
           {/* Productos destacados */}
           <section className="py-6 sm:py-8 md:py-10" style={{ backgroundColor: '#ffffff' }}>
             <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 md:mb-7 gap-3 sm:gap-4">
+              <div className="mb-4 sm:mb-6 md:mb-7">
                 <h2 className="text-2xl sm:text-2.5xl md:text-3xl font-black text-black">Productos destacados</h2>
-                {/* Selector de ciudad */}
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <label htmlFor="tienda-select" className="text-sm sm:text-base font-semibold text-gray-700 whitespace-nowrap">
-                    Selecciona tu ciudad
-                  </label>
-                  <select
-                    id="tienda-select"
-                    value={selectedStoreId}
-                    onChange={(e) => setSelectedStoreId(Number(e.target.value))}
-                    className="px-3 sm:px-4 py-2 rounded-lg border-2 border-gray-300 bg-white text-sm sm:text-base font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] transition-all cursor-pointer min-w-[180px] sm:min-w-[220px]"
-                  >
-                    {tiendas.length === 0 ? (
-                      <option value={1}>Cargando tiendas...</option>
-                    ) : (
-                      tiendas.map((tienda) => (
-                        <option key={tienda.id} value={tienda.id}>
-                          {tienda.name} - {tienda.city}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
               </div>
               
               {/* Mensaje cuando no hay productos para la tienda seleccionada */}
               {productosDestacadosFiltrados.length === 0 ? (
                 <div className="text-center py-8 sm:py-12 md:py-16">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-5">
+                    <label htmlFor="tienda-select-empty" className="text-sm sm:text-base font-semibold text-gray-700 whitespace-nowrap">
+                      Selecciona tu ciudad
+                    </label>
+                    <select
+                      id="tienda-select-empty"
+                      value={selectedStoreId}
+                      onChange={(e) => setSelectedStoreId(Number(e.target.value))}
+                      className="px-3 sm:px-4 py-2 rounded-lg border-2 border-gray-300 bg-white text-sm sm:text-base font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#196428] focus:border-[#196428] transition-all cursor-pointer min-w-[220px]"
+                    >
+                      {tiendas.length === 0 ? (
+                        <option value={1}>Cargando tiendas...</option>
+                      ) : (
+                        tiendas.map((tienda) => (
+                          <option key={tienda.id} value={tienda.id}>
+                            {tienda.name} - {tienda.city}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
                   <p className="text-base sm:text-lg md:text-xl text-gray-600 font-medium">
                     No hay productos destacados disponibles para esta tienda.
                   </p>
@@ -1069,7 +1096,7 @@ export default function Home() {
               </div>
 
               {/* Vista tablet/desktop: carrusel 4x1 con navegación */}
-              <div className="hidden md:flex items-center gap-3 md:gap-4">
+              <div className="hidden md:flex md:w-[1235px] items-center gap-3 md:gap-4 md:ml-[-58px] md:mr-[-58px]">
                 {/* Botón de navegación izquierdo */}
                 <button 
                   onClick={prevProductSlide}
@@ -1194,7 +1221,7 @@ export default function Home() {
                                       )}
                                     </div>
                                   ) : (
-                                    <p className="text-gray-400 text-xs italic mt-auto">Precio no disponible</p>
+                                    <p className="text-gray-400 text-xs italic mt-auto">Preguntar precio en tienda</p>
                                   )}
                                 </div>
                               </div>

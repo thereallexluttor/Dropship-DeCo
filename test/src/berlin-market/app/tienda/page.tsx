@@ -109,6 +109,7 @@ function TiendaPageContent() {
   const searchQueryParam = searchParams.get('search')
   const categoryParam = searchParams.get('categoria')
   const subcategoryParam = searchParams.get('subcategoria')
+  const baseCategoryParam = searchParams.get('categoriaBase')
 
   // Estado para filtros desde URL
   const [isSearchFromUrl, setIsSearchFromUrl] = useState(false)
@@ -149,6 +150,23 @@ function TiendaPageContent() {
             setSearchQuery("")
             clearSearchResults()
             clearLiveSearchResults()
+          }
+
+          if (categoryId === CATEGORIES.NOVEDADES || categoryId === CATEGORIES.OFERTAS) {
+            const parsedBaseCategory = baseCategoryParam ? parseInt(baseCategoryParam) : NaN
+            if (!isNaN(parsedBaseCategory)) {
+              setSelectedSpecialBaseCategory(parsedBaseCategory)
+              const baseCategory = categories.find(cat => cat.id === parsedBaseCategory)
+              const specialLabel = categoryId === CATEGORIES.NOVEDADES ? "Novedades" : "Ofertas"
+              if (baseCategory) {
+                setCurrentTitle(`${specialLabel} - ${baseCategory.name}`)
+                setCurrentBreadcrumbs(["Inicio", "Tienda", baseCategory.name, specialLabel])
+              }
+            } else {
+              setSelectedSpecialBaseCategory(null)
+            }
+          } else {
+            setSelectedSpecialBaseCategory(null)
           }
 
           // Si también hay subcategoría, verificar que pertenece a la categoría
@@ -242,7 +260,7 @@ function TiendaPageContent() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryParam, subcategoryParam, categories, productsByCategory])
+  }, [categoryParam, subcategoryParam, baseCategoryParam, categories, productsByCategory])
 
   // Función para agregar productos al carrito considerando el tamaño y tienda seleccionados
   const handleAddToCart = (product: ProductWithDetails) => {
@@ -258,6 +276,7 @@ function TiendaPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<number>(1000) // ID de categoría por defecto (todos los productos)
   const [selectedSubcategory, setSelectedSubcategory] = useState<number>(1000) // ID de subcategoría por defecto (todos los productos)
   const [selectedMascotasSubcategoryIds, setSelectedMascotasSubcategoryIds] = useState<number[] | null>(null) // Subcategorías agrupadas en Mascotas
+  const [selectedSpecialBaseCategory, setSelectedSpecialBaseCategory] = useState<number | null>(null) // Contexto de categoría para Ofertas/Novedades
   const [currentTitle, setCurrentTitle] = useState<string>("Todos los productos")
   const [currentBreadcrumbs, setCurrentBreadcrumbs] = useState<string[]>(["Inicio", "Tienda"])
 
@@ -308,12 +327,18 @@ function TiendaPageContent() {
   const handleCategoryChange = (
     categoryId: number,
     subcategoryId: number,
-    mascotasGroup?: { displayName: string; subcategoryIds: number[] }
+    mascotasGroup?: { displayName: string; subcategoryIds: number[] },
+    specialBaseCategory?: number
   ) => {
     // Actualizar estados inmediatamente
     setSelectedCategory(categoryId)
     setSelectedSubcategory(subcategoryId)
     setSelectedMascotasSubcategoryIds(mascotasGroup?.subcategoryIds ?? null)
+    setSelectedSpecialBaseCategory(
+      categoryId === CATEGORIES.OFERTAS || categoryId === CATEGORIES.NOVEDADES
+        ? specialBaseCategory ?? null
+        : null
+    )
 
     // Limpiar búsqueda cuando se cambia de categoría
     setSearchQuery("")
@@ -337,17 +362,41 @@ function TiendaPageContent() {
     }
 
     if (categoryId === CATEGORIES.NOVEDADES) {
+      if (specialBaseCategory) {
+        const baseCategory = categories.find(cat => cat.id === specialBaseCategory)
+        if (baseCategory) {
+          setCurrentTitle(`Novedades - ${baseCategory.name}`)
+          setCurrentBreadcrumbs(["Inicio", "Tienda", baseCategory.name, "Novedades"])
+        } else {
+          setCurrentTitle("Novedades")
+          setCurrentBreadcrumbs(["Inicio", "Tienda", "Novedades"])
+        }
+        router.push(`/tienda?categoria=998&categoriaBase=${specialBaseCategory}`)
+        return
+      }
+
       setCurrentTitle("Novedades")
       setCurrentBreadcrumbs(["Inicio", "Tienda", "Novedades"])
-      // Actualizar URL sin esperar
       router.push('/tienda?categoria=998')
       return
     }
 
     if (categoryId === CATEGORIES.OFERTAS) {
+      if (specialBaseCategory) {
+        const baseCategory = categories.find(cat => cat.id === specialBaseCategory)
+        if (baseCategory) {
+          setCurrentTitle(`Ofertas - ${baseCategory.name}`)
+          setCurrentBreadcrumbs(["Inicio", "Tienda", baseCategory.name, "Ofertas"])
+        } else {
+          setCurrentTitle("Productos con descuento")
+          setCurrentBreadcrumbs(["Inicio", "Tienda", "Ofertas"])
+        }
+        router.push(`/tienda?categoria=999&categoriaBase=${specialBaseCategory}`)
+        return
+      }
+
       setCurrentTitle("Productos con descuento")
       setCurrentBreadcrumbs(["Inicio", "Tienda", "Ofertas"])
-      // Actualizar URL sin esperar
       router.push('/tienda?categoria=999')
       return
     }
@@ -657,13 +706,30 @@ function TiendaPageContent() {
     return getProductsBySubcategory(selectedCategory, selectedSubcategory) || []
   })()
 
+  const filterProductsBySpecialBaseCategory = (productsToFilter: ProductWithDetails[]) => {
+    if (!selectedSpecialBaseCategory) {
+      return productsToFilter
+    }
+
+    if (selectedSpecialBaseCategory === CATEGORIES.MASCOTAS) {
+      return productsToFilter.filter((product) => {
+        const productCategoryId = product.subcategoria?.categories_id
+        return productCategoryId === 4 || productCategoryId === 5
+      })
+    }
+
+    return productsToFilter.filter((product) => {
+      return product.subcategoria?.categories_id === selectedSpecialBaseCategory
+    })
+  }
+
   // Determinar qué productos mostrar según la categoría seleccionada o búsqueda
   let baseProducts = selectedCategory === CATEGORIES.TODOS_LOS_PRODUCTOS
     ? products // Todos los productos disponibles
     : selectedCategory === CATEGORIES.OFERTAS
-    ? discountedProducts
+    ? filterProductsBySpecialBaseCategory(discountedProducts)
     : selectedCategory === CATEGORIES.NOVEDADES
-    ? newProducts
+    ? filterProductsBySpecialBaseCategory(newProducts)
     : selectedCategory === CATEGORIES.MASCOTAS
     ? currentProducts // Mascotas ya está manejado en currentProducts
     : currentProducts.length > 0
@@ -877,9 +943,11 @@ function TiendaPageContent() {
               return (
                 <>
                   <button
-                    onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
+                    onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS, undefined, categoryData.categoryId)}
                     className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
-                      selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
+                      selectedCategory === CATEGORIES.OFERTAS &&
+                      selectedSubcategory === CATEGORIES.OFERTAS &&
+                      selectedSpecialBaseCategory === categoryData.categoryId
                         ? "text-[#196428] font-medium bg-[#196428]/5"
                         : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                     }`}
@@ -887,9 +955,11 @@ function TiendaPageContent() {
                     <span className="uppercase">Ofertas</span>
                   </button>
                   <button
-                    onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
+                    onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES, undefined, categoryData.categoryId)}
                     className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
-                      selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES
+                      selectedCategory === CATEGORIES.NOVEDADES &&
+                      selectedSubcategory === CATEGORIES.NOVEDADES &&
+                      selectedSpecialBaseCategory === categoryData.categoryId
                         ? "text-[#196428] font-medium bg-[#196428]/5"
                         : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                     }`}
@@ -1200,7 +1270,9 @@ function TiendaPageContent() {
                         <button
                           onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
                           className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
-                            selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
+                            selectedCategory === CATEGORIES.OFERTAS &&
+                            selectedSubcategory === CATEGORIES.OFERTAS &&
+                            selectedSpecialBaseCategory === null
                               ? "text-[#196428] font-medium bg-[#196428]/5"
                               : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                           }`}
@@ -1219,7 +1291,9 @@ function TiendaPageContent() {
                           <button
                             onClick={() => handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS)}
                             className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
-                              selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS
+                              selectedCategory === CATEGORIES.OFERTAS &&
+                              selectedSubcategory === CATEGORIES.OFERTAS &&
+                              selectedSpecialBaseCategory === null
                                 ? "text-[#196428] font-medium bg-[#196428]/5"
                                 : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                             }`}
@@ -1229,7 +1303,9 @@ function TiendaPageContent() {
                           <button
                             onClick={() => handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES)}
                             className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-all duration-200 ${
-                              selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES
+                              selectedCategory === CATEGORIES.NOVEDADES &&
+                              selectedSubcategory === CATEGORIES.NOVEDADES &&
+                              selectedSpecialBaseCategory === null
                                 ? "text-[#196428] font-medium bg-[#196428]/5"
                                 : "text-gray-700 hover:text-[#196428] hover:bg-gray-50"
                             }`}
@@ -2120,7 +2196,7 @@ function TiendaPageContent() {
                     handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS);
                     setIsCategoriesDrawerOpen(false);
                   }}
-                  className={`block text-sm w-full text-left px-2 py-2 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                  className={`block text-sm w-full text-left px-2 py-2 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS && selectedSpecialBaseCategory === null ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
                 >
                   Productos con descuento
                 </button>
@@ -2200,19 +2276,19 @@ function TiendaPageContent() {
                         <>
                           <button
                             onClick={() => {
-                              handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS);
+                              handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS, undefined, categoryData.categoryId);
                               setIsCategoriesDrawerOpen(false);
                             }}
-                            className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                            className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS && selectedSpecialBaseCategory === categoryData.categoryId ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
                           >
                             Ofertas
                           </button>
                           <button
                             onClick={() => {
-                              handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES);
+                              handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES, undefined, categoryData.categoryId);
                               setIsCategoriesDrawerOpen(false);
                             }}
-                            className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                            className={`block text-sm w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES && selectedSpecialBaseCategory === categoryData.categoryId ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
                           >
                             Novedades
                           </button>
@@ -2234,7 +2310,7 @@ function TiendaPageContent() {
                       handleCategoryChange(CATEGORIES.OFERTAS, CATEGORIES.OFERTAS);
                       setIsCategoriesDrawerOpen(false);
                     }}
-                    className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                    className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.OFERTAS && selectedSubcategory === CATEGORIES.OFERTAS && selectedSpecialBaseCategory === null ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
                   >
                     <span className="lowercase">Ofertas</span>
                   </button>
@@ -2243,7 +2319,7 @@ function TiendaPageContent() {
                       handleCategoryChange(CATEGORIES.NOVEDADES, CATEGORIES.NOVEDADES);
                       setIsCategoriesDrawerOpen(false);
                     }}
-                    className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
+                    className={`block text-xs w-full text-left px-2 py-1 rounded hover:bg-gray-50 ${selectedCategory === CATEGORIES.NOVEDADES && selectedSubcategory === CATEGORIES.NOVEDADES && selectedSpecialBaseCategory === null ? "text-[#196428] font-medium bg-green-50" : "text-gray-600 hover:text-[#196428]"}`}
                   >
                     <span className="lowercase">Novedades</span>
                   </button>
