@@ -4556,7 +4556,11 @@ const AdminDashboard = () => {
                                             type="radio"
                                             name={`tienda-${index}`}
                                             checked={isChecked}
-                                            onChange={() => toggleTiendaStock(newProducto, setNewProducto as any, index, tienda.id!)}
+                                            onChange={(e) => {
+                                              toggleTiendaStock(newProducto, setNewProducto as any, index, tienda.id!)
+                                              const detailsElement = e.currentTarget.closest('details')
+                                              detailsElement?.removeAttribute('open')
+                                            }}
                                             className="border-gray-300 text-gray-900 focus:ring-gray-900 mr-2"
                                           />
                                           <span className="text-sm">{tienda.nombre} - {tienda.ciudad}</span>
@@ -5065,7 +5069,14 @@ const AdminDashboard = () => {
                                                             type="radio"
                                                             name={`tienda-edit-${index}`}
                                                             checked={isChecked}
-                                                            onChange={() => editingProducto && toggleTiendaStock(editingProducto, (producto) => setEditingProducto(producto as Producto), index, tienda.id!)}
+                                                            onChange={(e) => {
+                                                              if (!editingProducto) {
+                                                                return
+                                                              }
+                                                              toggleTiendaStock(editingProducto, (producto) => setEditingProducto(producto as Producto), index, tienda.id!)
+                                                              const detailsElement = e.currentTarget.closest('details')
+                                                              detailsElement?.removeAttribute('open')
+                                                            }}
                                                             className="border-gray-300 text-gray-900 focus:ring-gray-900 mr-2"
                                                           />
                                                           <span className="text-sm">{tienda.nombre} - {tienda.ciudad}</span>

@@ -55,14 +55,14 @@ import AccountPopoverContent from "./components/AccountPopoverContent"
 import Header from "./components/Header"
 
 // Helper to leverage Supabase Image Transformations for faster, cheaper delivery
-function optimizeSupabaseImage(url: string, width: number, quality: number = 60, format: string = 'webp') {
+// Keep original file format to avoid breaking unsupported conversions.
+function optimizeSupabaseImage(url: string, width: number, quality: number = 60) {
   try {
     const base = typeof window === 'undefined' ? 'http://localhost' : window.location.origin
     const parsed = new URL(url, base)
     if (parsed.hostname.includes('supabase.co')) {
       parsed.searchParams.set('width', String(width))
       parsed.searchParams.set('quality', String(quality))
-      parsed.searchParams.set('format', format)
       return parsed.toString()
     }
     return url
