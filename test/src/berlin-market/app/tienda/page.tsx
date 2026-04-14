@@ -280,6 +280,27 @@ function TiendaPageContent() {
   const [currentTitle, setCurrentTitle] = useState<string>("Todos los productos")
   const [currentBreadcrumbs, setCurrentBreadcrumbs] = useState<string[]>(["Inicio", "Tienda"])
 
+  // Categorías/subcategorías visibles según tienda seleccionada
+  const visibleProductsByCategory = useMemo(() => {
+    if (selectedStoreId <= 0) {
+      return productsByCategory
+    }
+
+    return productsByCategory
+      .map((categoryData) => ({
+        ...categoryData,
+        subcategories: categoryData.subcategories
+          .map((subcategoryData) => ({
+            ...subcategoryData,
+            products: subcategoryData.products.filter((product) =>
+              productAvailableInStore(product, selectedStoreId)
+            )
+          }))
+          .filter((subcategoryData) => subcategoryData.products.length > 0)
+      }))
+      .filter((categoryData) => categoryData.subcategories.length > 0)
+  }, [productsByCategory, selectedStoreId])
+
   // Normalizar nombre para agrupar subcategorías (ej: " CONCENTRADO" y "CONCENTRADO" -> mismo grupo)
   const normalizeSubcategoryName = (name: string) =>
     (name || "")
@@ -291,8 +312,8 @@ function TiendaPageContent() {
 
   // Agrupar subcategorías de PERRO y GATO por nombre normalizado
   const getMascotasGroupedSubcategories = () => {
-    const perroData = productsByCategory.find(cat => cat.categoryId === 4)
-    const gatoData = productsByCategory.find(cat => cat.categoryId === 5)
+    const perroData = visibleProductsByCategory.find(cat => cat.categoryId === 4)
+    const gatoData = visibleProductsByCategory.find(cat => cat.categoryId === 5)
     const allSubs = [
       ...(perroData?.subcategories || []).map(s => ({ ...s, categoryId: 4 })),
       ...(gatoData?.subcategories || []).map(s => ({ ...s, categoryId: 5 }))
@@ -868,7 +889,7 @@ function TiendaPageContent() {
   // Función para generar categorías dinámicamente
   const renderDynamicCategories = () => {
     // Filtrar PERRO (id:4) y GATO (id:5) y crear entrada especial para Mascotas
-    const filteredCategories = productsByCategory.filter(cat => cat.categoryId !== 4 && cat.categoryId !== 5)
+    const filteredCategories = visibleProductsByCategory.filter(cat => cat.categoryId !== 4 && cat.categoryId !== 5)
     
     const mascotasGroups = getMascotasGroupedSubcategories()
     
@@ -2204,7 +2225,7 @@ function TiendaPageContent() {
 
               {/* Categorías dinámicas desde Supabase */}
               {(() => {
-                const filteredCategories = productsByCategory.filter(cat => cat.categoryId !== 4 && cat.categoryId !== 5)
+                const filteredCategories = visibleProductsByCategory.filter(cat => cat.categoryId !== 4 && cat.categoryId !== 5)
                 const mascotasGroups = getMascotasGroupedSubcategories()
                 
                 const mascotasCategoryData = {

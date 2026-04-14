@@ -1986,8 +1986,28 @@ const AdminDashboard = () => {
 
         if (error) throw error;
 
+        // Sincronizar "destacado" en filas relacionadas del mismo producto (una por tienda)
+        const idsRelacionados = productos
+          .filter((p) => p.nombre === producto.nombre && p.id !== producto.id)
+          .map((p) => p.id);
+
+        if (idsRelacionados.length > 0) {
+          const { error: destacadoSyncError } = await supabase
+            .from('productos')
+            .update({ destacado: payload.destacado })
+            .in('id', idsRelacionados);
+
+          if (destacadoSyncError) throw destacadoSyncError;
+        }
+
         setProductos((prev) =>
-          prev.map((p) => (p.id === producto.id ? (updated as Producto) : p))
+          prev.map((p) => {
+            if (p.id === producto.id) return updated as Producto;
+            if (idsRelacionados.includes(p.id)) {
+              return { ...p, destacado: payload.destacado };
+            }
+            return p;
+          })
         );
         setEditingProducto(null);
         alert('Producto actualizado exitosamente');
